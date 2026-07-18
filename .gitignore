@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+local.properties
+
+# Native build
+.externalNativeBuild/
+.cxx/
+
+# OS
+.DS_Store
+
+# Artifacts
+*.apk
+*.aab
+*.keystore
+output-metadata.json
