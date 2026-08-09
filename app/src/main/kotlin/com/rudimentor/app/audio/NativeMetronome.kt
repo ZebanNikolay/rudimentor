@@ -11,6 +11,8 @@ internal object NativeMetronome {
 
     fun setBpm(bpm: Int) = nativeSetBpm(Bpm.clamp(bpm))
 
+    fun setPattern(pattern: BeatPattern) = nativeSetPattern(pattern.size, pattern.accentMask)
+
     fun tickCount(): Long = nativeGetTickCount()
 
     private external fun nativeStart(): Boolean
@@ -18,6 +20,8 @@ internal object NativeMetronome {
     private external fun nativeStop()
 
     private external fun nativeSetBpm(bpm: Int)
+
+    private external fun nativeSetPattern(beatCount: Int, accentMask: Int)
 
     private external fun nativeGetTickCount(): Long
 }
