@@ -6,18 +6,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val RudiMentorColors = darkColorScheme(
-    primary = Color(0xFFFF3B3B),
-    onPrimary = Color(0xFF240000),
-    primaryContainer = Color(0xFF5B1010),
-    onPrimaryContainer = Color(0xFFFFDAD6),
-    background = Color(0xFF090909),
-    onBackground = Color(0xFFF5F0F0),
-    surface = Color(0xFF121212),
-    onSurface = Color(0xFFF5F0F0),
-    surfaceVariant = Color(0xFF242020),
-    onSurfaceVariant = Color(0xFFD8C2C0),
-    outline = Color(0xFF655B5A),
-    error = Color(0xFFFFB4AB),
+    primary = Color(0xFFD8A09A),
+    onPrimary = Color(0xFF3B0908),
+    primaryContainer = Color(0xFF7A3E3A),
+    onPrimaryContainer = Color(0xFFFFEDEA),
+    secondary = Color(0xFFC9B8B4),
+    onSecondary = Color(0xFF312A28),
+    secondaryContainer = Color(0xFF47403E),
+    onSecondaryContainer = Color(0xFFF0E2DE),
+    background = Color(0xFF11100F),
+    onBackground = Color(0xFFE9E1DF),
+    surface = Color(0xFF181716),
+    onSurface = Color(0xFFE9E1DF),
+    surfaceVariant = Color(0xFF292624),
+    onSurfaceVariant = Color(0xFFCEC3C0),
+    outline = Color(0xFF8E817E),
+    error = Color(0xFFE8A19A),
 )
 
 @Composable

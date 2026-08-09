@@ -14,6 +14,28 @@ class BeatPatternTest {
         assertEquals(4, pattern.size)
         assertEquals(1, pattern.accentMask)
         assertEquals(listOf(true, false, false, false), pattern.accents)
+        assertEquals(listOf(Hand.Right, Hand.Left, Hand.Right, Hand.Left), pattern.hands)
+    }
+
+    @Test
+    fun `hands toggle independently into all-right and all-left sequences`() {
+        val allRight = BeatPattern.default()
+            .toggleHand(1)
+            .toggleHand(3)
+        val allLeft = allRight.hands.indices.fold(allRight) { pattern, index ->
+            pattern.toggleHand(index)
+        }
+
+        assertEquals(List(4) { Hand.Right }, allRight.hands)
+        assertEquals(List(4) { Hand.Left }, allLeft.hands)
+        assertEquals(listOf(true, false, false, false), allLeft.accents)
+    }
+
+    @Test
+    fun `changing one hand leaves every other beat unchanged`() {
+        val pattern = BeatPattern.default().toggleHand(2)
+
+        assertEquals(listOf(Hand.Right, Hand.Left, Hand.Left, Hand.Left), pattern.hands)
     }
 
     @Test
@@ -34,7 +56,22 @@ class BeatPatternTest {
             .first { it.size == BeatPattern.MAX_BEATS }
 
         assertEquals(8, maximum.size)
+        assertEquals(
+            listOf(
+                Hand.Right,
+                Hand.Left,
+                Hand.Right,
+                Hand.Left,
+                Hand.Right,
+                Hand.Left,
+                Hand.Right,
+                Hand.Left,
+            ),
+            maximum.hands,
+        )
         assertSame(maximum, maximum.addBeat())
-        assertEquals(7, maximum.removeBeat().size)
+        val shortened = maximum.removeBeat()
+        assertEquals(7, shortened.size)
+        assertEquals(7, shortened.hands.size)
     }
 }

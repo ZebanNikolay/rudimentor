@@ -2,9 +2,11 @@ package com.rudimentor.app.audio
 
 data class BeatPattern(
     val accents: List<Boolean>,
+    val hands: List<Hand>,
 ) {
     init {
         require(accents.size in MIN_BEATS..MAX_BEATS)
+        require(hands.size == accents.size)
     }
 
     val size: Int = accents.size
@@ -19,16 +21,28 @@ data class BeatPattern(
         },
     )
 
+    fun toggleHand(index: Int): BeatPattern = copy(
+        hands = hands.mapIndexed { beatIndex, hand ->
+            if (beatIndex == index) hand.other() else hand
+        },
+    )
+
     fun addBeat(): BeatPattern = if (size == MAX_BEATS) {
         this
     } else {
-        copy(accents = accents + false)
+        copy(
+            accents = accents + false,
+            hands = hands + Hand.defaultFor(size),
+        )
     }
 
     fun removeBeat(): BeatPattern = if (size == MIN_BEATS) {
         this
     } else {
-        copy(accents = accents.dropLast(1))
+        copy(
+            accents = accents.dropLast(1),
+            hands = hands.dropLast(1),
+        )
     }
 
     companion object {
@@ -37,6 +51,19 @@ data class BeatPattern(
 
         fun default(): BeatPattern = BeatPattern(
             accents = List(MIN_BEATS) { index -> index == 0 },
+            hands = List(MIN_BEATS, Hand::defaultFor),
         )
+    }
+}
+
+enum class Hand(val label: String) {
+    Right("R"),
+    Left("L"),
+    ;
+
+    fun other(): Hand = if (this == Right) Left else Right
+
+    companion object {
+        fun defaultFor(index: Int): Hand = if (index % 2 == 0) Right else Left
     }
 }
