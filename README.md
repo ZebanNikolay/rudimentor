@@ -9,6 +9,7 @@ Pick a level (rudiment pattern + tempo), practice along with the metronome while
 - **Metronome** — a low-latency metronome with a 30–240 BPM range, ±10/±20 controls, and an editable 4–8 beat pattern
 - **Pattern accents** — in abstract mode, tap any beat to switch between a stronger accented click and the regular click
 - **Custom sticking** — in R/L mode, tap each beat independently to build any right/left sequence
+- **Prototype Lab** — compare ten synchronized interactive beat indicators and choose the style used by Metronome
 - **Levels** — R/L sticking patterns with a running cursor, repetition counter, and locally stored progress
 
 ## Tech
