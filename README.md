@@ -4,15 +4,27 @@ A practice-pad drum trainer for Android.
 
 Pick a level (rudiment pattern + tempo), practice along with the metronome while a running R/L cursor guides your sticking, and track your progress level by level.
 
-## Planned MVP
+## Current MVP
 
-- **Metronome** — a simple, low-latency metronome (development starts here)
+- **Metronome** — a low-latency metronome with a 30–240 BPM range, ±1/±5 controls, start/stop, and a four-beat visual pulse
 - **Levels** — R/L sticking patterns with a running cursor, repetition counter, and locally stored progress
 
 ## Tech
 
 - Kotlin, Jetpack Compose, Material 3
 - Custom C++ audio engine built on [Oboe](https://github.com/google/oboe) with sample-accurate tick scheduling in the audio callback (no timer-based scheduling), designed with future microphone-based scoring in mind
+
+The audio callback schedules ticks against its rendered-frame counter and logs every tick as `tick`, `frame`, and `bpm` under the `RudiMentorAudio` log tag. Kotlin receives the completed tick count through JNI for UI animation; it does not schedule audio.
+
+## Build
+
+Install Android SDK 35, NDK, and CMake 3.22.1, then run:
+
+```shell
+./gradlew assembleDebug
+```
+
+Open the project in Android Studio to install missing SDK components automatically and run it on a device with Android 8.1 or newer.
 
 ## References
 
