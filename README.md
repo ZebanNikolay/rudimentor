@@ -25,6 +25,14 @@ Install Android SDK 35, NDK, and CMake 3.22.1, then run:
 ./gradlew assembleDebug
 ```
 
+Debug builds use Android's default debug key unless `RUDIMENTOR_DEBUG_KEYSTORE` points to the project's private development keystore. Maintainers should use that stable keystore when producing installable development updates so Android recognizes each APK as the same app:
+
+```shell
+RUDIMENTOR_DEBUG_KEYSTORE=/private/path/rudimentor-dev-debug.keystore ./gradlew assembleDebug
+```
+
+The optional `RUDIMENTOR_DEBUG_KEYSTORE_PASSWORD`, `RUDIMENTOR_DEBUG_KEY_ALIAS`, and `RUDIMENTOR_DEBUG_KEY_PASSWORD` variables override the standard Android debug-key defaults. The generated APK name and the version shown on the main screen both identify its version and build number.
+
 Open the project in Android Studio to install missing SDK components automatically and run it on a device with Android 8.1 or newer.
 
 ## References
