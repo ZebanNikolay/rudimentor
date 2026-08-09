@@ -5,10 +5,9 @@ import org.junit.Test
 
 class BpmTest {
     @Test
-    fun `adjust clamps tempo to supported range`() {
-        assertEquals(Bpm.MIN, Bpm.adjust(Bpm.MIN, -5))
-        assertEquals(119, Bpm.adjust(120, -1))
-        assertEquals(125, Bpm.adjust(120, 5))
-        assertEquals(Bpm.MAX, Bpm.adjust(Bpm.MAX, 1))
+    fun `quick steps adjust tempo and clamp to supported range`() {
+        assertEquals(listOf(100, 110, 130, 140), Bpm.QUICK_STEPS.map { Bpm.adjust(120, it) })
+        assertEquals(Bpm.MIN, Bpm.adjust(40, -20))
+        assertEquals(Bpm.MAX, Bpm.adjust(230, 20))
     }
 }

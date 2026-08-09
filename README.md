@@ -6,7 +6,7 @@ Pick a level (rudiment pattern + tempo), practice along with the metronome while
 
 ## Current MVP
 
-- **Metronome** — a low-latency metronome with a 30–240 BPM range, ±1/±5 controls, and an editable 4–8 beat pattern
+- **Metronome** — a low-latency metronome with a 30–240 BPM range, ±10/±20 controls, and an editable 4–8 beat pattern
 - **Pattern accents** — in abstract mode, tap any beat to switch between a stronger accented click and the regular click
 - **Custom sticking** — in R/L mode, tap each beat independently to build any right/left sequence
 - **Levels** — R/L sticking patterns with a running cursor, repetition counter, and locally stored progress
