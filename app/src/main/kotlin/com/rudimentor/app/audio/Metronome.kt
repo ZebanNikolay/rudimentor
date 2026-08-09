@@ -44,6 +44,10 @@ class Metronome(
         NativeMetronome.setBpm(bpm)
     }
 
+    fun setPattern(pattern: BeatPattern) {
+        NativeMetronome.setPattern(pattern)
+    }
+
     companion object {
         private const val TICK_OBSERVER_INTERVAL_MS = 8L
     }

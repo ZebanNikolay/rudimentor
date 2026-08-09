@@ -6,33 +6,39 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,11 +46,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -55,12 +63,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rudimentor.app.audio.BeatPattern
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.audio.Metronome
 
@@ -83,14 +95,12 @@ fun RudiMentorApp() {
 
 @Composable
 private fun MainMenu(onOpenMetronome: () -> Unit) {
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 32.dp),
+                .padding(contentPadding)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
         ) {
             Text(
                 text = "RUDI",
@@ -112,10 +122,10 @@ private fun MainMenu(onOpenMetronome: () -> Unit) {
                 fontSize = 16.sp,
             )
 
-            Spacer(modifier = Modifier.height(52.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             MenuCard(
                 title = "Metronome",
-                subtitle = "Lock in your pulse",
+                subtitle = "Build your beat pattern",
                 icon = Icons.Rounded.Timer,
                 enabled = true,
                 onClick = onOpenMetronome,
@@ -203,11 +213,14 @@ private fun MenuCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MetronomeScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val metronome = remember(scope) { Metronome(scope) }
     var bpm by remember { mutableIntStateOf(Bpm.DEFAULT) }
+    var pattern by remember { mutableStateOf(BeatPattern.default()) }
+    var showSticking by remember { mutableStateOf(true) }
     var isRunning by remember { mutableStateOf(false) }
     var tick by remember { mutableLongStateOf(0L) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -233,91 +246,65 @@ private fun MetronomeScreen(onBack: () -> Unit) {
     LaunchedEffect(metronome) {
         metronome.ticks.collect { tick = it }
     }
+    LaunchedEffect(pattern) {
+        metronome.setPattern(pattern)
+    }
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "METRONOME",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 3.sp,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            stop()
+                            onBack()
+                        },
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back to main menu",
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                ),
+            )
+        },
+    ) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
+                .padding(contentPadding)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = {
-                    stop()
-                    onBack()
-                }) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back to main menu")
-                }
-                Text(
-                    text = "METRONOME",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 3.sp,
-                )
-                Spacer(modifier = Modifier.size(48.dp))
-            }
-
-            Spacer(modifier = Modifier.height(54.dp))
-            Text(
-                text = bpm.toString(),
-                fontSize = 96.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-5).sp,
-                lineHeight = 100.sp,
+            PatternEditor(
+                pattern = pattern,
+                activeBeat = if (isRunning && tick > 0) ((tick - 1) % pattern.size).toInt() else -1,
+                showSticking = showSticking,
+                onToggleAccent = { index -> pattern = pattern.toggleAccent(index) },
+                onRemoveBeat = { pattern = pattern.removeBeat() },
+                onAddBeat = { pattern = pattern.addBeat() },
             )
-            Text(
-                text = "BEATS PER MINUTE",
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
-            )
-
-            Spacer(modifier = Modifier.height(44.dp))
-            BeatIndicator(tick = tick, isRunning = isRunning)
-            Spacer(modifier = Modifier.height(44.dp))
-
-            Slider(
-                value = bpm.toFloat(),
-                onValueChange = { updateBpm(it.toInt()) },
-                valueRange = Bpm.MIN.toFloat()..Bpm.MAX.toFloat(),
-                steps = Bpm.MAX - Bpm.MIN - 1,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("${Bpm.MIN}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                Text("${Bpm.MAX}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-            }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                listOf(-5, -1, 1, 5).forEach { delta ->
-                    FilledTonalButton(
-                        onClick = { updateBpm(Bpm.adjust(bpm, delta)) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Text(
-                            text = if (delta > 0) "+$delta" else "$delta",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-            }
+            TempoControl(bpm = bpm, onBpmChange = ::updateBpm)
+
+            Spacer(modifier = Modifier.height(24.dp))
+            StickingSetting(
+                checked = showSticking,
+                onCheckedChange = { showSticking = it },
+            )
 
             Spacer(modifier = Modifier.weight(1f))
             errorMessage?.let {
@@ -335,16 +322,21 @@ private fun MetronomeScreen(onBack: () -> Unit) {
                         stop()
                     } else {
                         metronome.setBpm(bpm)
+                        metronome.setPattern(pattern)
                         isRunning = metronome.start()
                         errorMessage = if (isRunning) null else "Could not open the audio output."
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
-                shape = RoundedCornerShape(20.dp),
+                    .height(56.dp),
+                shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRunning) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+                    containerColor = if (isRunning) {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
                 ),
             ) {
                 Icon(
@@ -364,36 +356,202 @@ private fun MetronomeScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun BeatIndicator(tick: Long, isRunning: Boolean) {
-    val activeBeat = if (tick > 0) ((tick - 1) % 4).toInt() else -1
-    Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-        repeat(4) { index ->
-            val isActive = isRunning && index == activeBeat
-            key(tick, index) {
-                var expanded by remember { mutableStateOf(isActive) }
-                LaunchedEffect(isActive) {
-                    if (isActive) expanded = false
-                }
-                val scale by animateFloatAsState(
-                    targetValue = if (expanded) 1.4f else 1f,
-                    animationSpec = spring(dampingRatio = 0.45f, stiffness = 500f),
-                    label = "beat pulse",
-                )
-                Box(
+private fun PatternEditor(
+    pattern: BeatPattern,
+    activeBeat: Int,
+    showSticking: Boolean,
+    onToggleAccent: (Int) -> Unit,
+    onRemoveBeat: () -> Unit,
+    onAddBeat: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "YOUR PATTERN",
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+            )
+            Text(
+                text = "${pattern.size} beats",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+            )
+        }
+        IconButton(
+            onClick = onRemoveBeat,
+            enabled = pattern.size > BeatPattern.MIN_BEATS,
+        ) {
+            Icon(Icons.Rounded.Remove, contentDescription = "Remove beat")
+        }
+        IconButton(
+            onClick = onAddBeat,
+            enabled = pattern.size < BeatPattern.MAX_BEATS,
+        ) {
+            Icon(Icons.Rounded.Add, contentDescription = "Add beat")
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        pattern.accents.forEachIndexed { index, isAccent ->
+            val isActive = index == activeBeat
+            val scale by animateFloatAsState(
+                targetValue = if (isActive) 1.12f else 1f,
+                animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
+                label = "beat pulse",
+            )
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center,
+            ) {
+                Surface(
+                    onClick = { onToggleAccent(index) },
                     modifier = Modifier
+                        .widthIn(max = 52.dp)
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
                         .scale(scale)
-                        .size(if (index == 0) 18.dp else 14.dp)
-                        .background(
-                            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            shape = CircleShape,
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = if (isActive) Color.Transparent else MaterialTheme.colorScheme.outline,
-                            shape = CircleShape,
-                        ),
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = "Beat ${index + 1}, ${if (isAccent) "accented" else "normal"}"
+                        },
+                    shape = CircleShape,
+                    color = if (isAccent) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    contentColor = if (isAccent) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    border = if (isActive) {
+                        BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface)
+                    } else {
+                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    },
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (showSticking) {
+                            Text(
+                                text = if (index % 2 == 0) "R" else "L",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Spacer(modifier = Modifier.height(12.dp))
+    Text(
+        text = "Tap a beat to toggle its accent",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 12.sp,
+    )
+}
+
+@Composable
+private fun TempoControl(
+    bpm: Int,
+    onBpmChange: (Int) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "TEMPO",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+            )
+            Text(
+                text = "Beats per minute",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+            )
+        }
+        Text(
+            text = bpm.toString(),
+            fontSize = 48.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = (-2).sp,
+            lineHeight = 48.sp,
+        )
+    }
+
+    Slider(
+        value = bpm.toFloat(),
+        onValueChange = { onBpmChange(it.toInt()) },
+        valueRange = Bpm.MIN.toFloat()..Bpm.MAX.toFloat(),
+        steps = Bpm.MAX - Bpm.MIN - 1,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        listOf(-5, -1, 1, 5).forEach { delta ->
+            FilledTonalButton(
+                onClick = { onBpmChange(Bpm.adjust(bpm, delta)) },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(42.dp),
+                shape = RoundedCornerShape(14.dp),
+                contentPadding = PaddingValues(0.dp),
+            ) {
+                Text(
+                    text = if (delta > 0) "+$delta" else "$delta",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun StickingSetting(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Surface(
+        onClick = { onCheckedChange(!checked) },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("R/L sticking", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (checked) "Alternating right and left" else "Abstract beats",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                )
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = null,
+                modifier = Modifier.semantics { contentDescription = "Show right and left sticking" },
+            )
         }
     }
 }
