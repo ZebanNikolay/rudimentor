@@ -19,4 +19,5 @@ local.properties
 *.apk
 *.aab
 *.keystore
+*.jks
 output-metadata.json
