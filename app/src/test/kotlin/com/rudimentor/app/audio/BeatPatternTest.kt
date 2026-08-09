@@ -13,6 +13,7 @@ class BeatPatternTest {
 
         assertEquals(4, pattern.size)
         assertEquals(1, pattern.accentMask)
+        assertEquals(10, pattern.leftHandMask)
         assertEquals(listOf(true, false, false, false), pattern.accents)
         assertEquals(listOf(Hand.Right, Hand.Left, Hand.Right, Hand.Left), pattern.hands)
     }
@@ -73,5 +74,20 @@ class BeatPatternTest {
         val shortened = maximum.removeBeat()
         assertEquals(7, shortened.size)
         assertEquals(7, shortened.hands.size)
+    }
+
+    @Test
+    fun `resizing preserves every still-valid customized beat`() {
+        val customized = BeatPattern.default()
+            .toggleAccent(2)
+            .toggleHand(1)
+            .resized(8)
+            .toggleHand(6)
+
+        val restored = customized.resized(5).resized(8)
+
+        assertEquals(customized.accents.take(5), restored.accents.take(5))
+        assertEquals(customized.hands.take(5), restored.hands.take(5))
+        assertEquals(Hand.Right, restored.hands[1])
     }
 }

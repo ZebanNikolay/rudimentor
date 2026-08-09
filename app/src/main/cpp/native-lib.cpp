@@ -23,8 +23,8 @@ Java_com_rudimentor_app_audio_NativeMetronome_nativeSetBpm(JNIEnv *, jobject, ji
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_rudimentor_app_audio_NativeMetronome_nativeSetPattern(
-        JNIEnv *, jobject, jint beatCount, jint accentMask) {
-    engine.setPattern(beatCount, accentMask);
+        JNIEnv *, jobject, jint beatCount, jint accentMask, jint leftHandMask) {
+    engine.setPattern(beatCount, accentMask, leftHandMask);
 }
 
 extern "C" JNIEXPORT jlong JNICALL

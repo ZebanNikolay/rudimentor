@@ -11,8 +11,8 @@ val developmentKeyAlias = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY_AL
     .orElse("androiddebugkey")
 val developmentKeyPassword = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY_PASSWORD")
     .orElse(developmentKeystorePassword)
-val appVersionName = "0.1.0-dev.5"
-val appVersionCode = 5
+val appVersionName = "0.1.0-dev.6"
+val appVersionCode = 6
 
 base {
     archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")
@@ -91,10 +91,19 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.graphics.shapes)
+    implementation(libs.material.color.utilities)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.oboe)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }

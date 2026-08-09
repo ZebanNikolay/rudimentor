@@ -15,6 +15,10 @@ data class BeatPattern(
         if (isAccent) mask or (1 shl index) else mask
     }
 
+    val leftHandMask: Int = hands.foldIndexed(0) { index, mask, hand ->
+        if (hand == Hand.Left) mask or (1 shl index) else mask
+    }
+
     fun toggleAccent(index: Int): BeatPattern = copy(
         accents = accents.mapIndexed { beatIndex, isAccent ->
             if (beatIndex == index) !isAccent else isAccent
@@ -42,6 +46,14 @@ data class BeatPattern(
         copy(
             accents = accents.dropLast(1),
             hands = hands.dropLast(1),
+        )
+    }
+
+    fun resized(newSize: Int): BeatPattern {
+        val targetSize = newSize.coerceIn(MIN_BEATS, MAX_BEATS)
+        return BeatPattern(
+            accents = List(targetSize) { index -> accents.getOrElse(index) { false } },
+            hands = List(targetSize) { index -> hands.getOrElse(index) { Hand.defaultFor(index) } },
         )
     }
 

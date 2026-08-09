@@ -55,11 +55,13 @@ void MetronomeEngine::setBpm(int bpm) {
     bpm_.store(std::clamp(bpm, kMinBpm, kMaxBpm), std::memory_order_release);
 }
 
-void MetronomeEngine::setPattern(int beatCount, int accentMask) {
+void MetronomeEngine::setPattern(int beatCount, int accentMask, int leftHandMask) {
     const int clampedBeatCount = std::clamp(beatCount, kMinBeats, kMaxBeats);
     const int validAccentBits = (1 << clampedBeatCount) - 1;
     pattern_.store(
-            (clampedBeatCount << kPatternShift) | (accentMask & validAccentBits),
+            (clampedBeatCount << kBeatCountShift) |
+                    ((leftHandMask & validAccentBits) << kLeftHandShift) |
+                    (accentMask & validAccentBits),
             std::memory_order_release);
 }
 
@@ -78,28 +80,32 @@ oboe::DataCallbackResult MetronomeEngine::onAudioReady(
         if (static_cast<double>(renderedFrames_) >= nextTickFrame_) {
             const int64_t tick = tickCount_.fetch_add(1, std::memory_order_acq_rel) + 1;
             const int pattern = pattern_.load(std::memory_order_acquire);
-            const int beatCount = pattern >> kPatternShift;
+            const int beatCount = pattern >> kBeatCountShift;
             const int accentMask = pattern & ((1 << beatCount) - 1);
+            const int leftHandMask = (pattern >> kLeftHandShift) & ((1 << beatCount) - 1);
             const int beatIndex = static_cast<int>((tick - 1) % beatCount);
             clickFrame_ = 0;
             clickAccent_ = (accentMask & (1 << beatIndex)) != 0;
+            clickLeftHand_ = (leftHandMask & (1 << beatIndex)) != 0;
             phase_ = 0.0;
             nextTickFrame_ += static_cast<double>(sampleRate_) * 60.0 /
                               bpm_.load(std::memory_order_acquire);
             __android_log_print(
                     ANDROID_LOG_INFO,
                     kLogTag,
-                    "tick=%lld frame=%lld bpm=%d beat=%d accent=%d",
+                    "tick=%lld frame=%lld bpm=%d beat=%d accent=%d hand=%c",
                     static_cast<long long>(tick),
                     static_cast<long long>(renderedFrames_),
                     bpm_.load(std::memory_order_relaxed),
                     beatIndex,
-                    clickAccent_);
+                    clickAccent_,
+                    clickLeftHand_ ? 'L' : 'R');
         }
 
         float sample = 0.0F;
         if (clickFrame_ < kClickFrames) {
-            const double frequency = clickAccent_ ? 1760.0 : 1320.0;
+            const double baseFrequency = clickLeftHand_ ? 1120.0 : 1320.0;
+            const double frequency = clickAccent_ ? baseFrequency + 440.0 : baseFrequency;
             const float amplitude = clickAccent_ ? 0.8F : 0.5F;
             const float envelope = std::exp(-7.0F * static_cast<float>(clickFrame_) /
                                             static_cast<float>(kClickFrames));

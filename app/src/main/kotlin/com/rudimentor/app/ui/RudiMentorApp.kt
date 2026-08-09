@@ -11,15 +11,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -76,7 +73,11 @@ import androidx.compose.ui.unit.sp
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.audio.BeatPattern
 import com.rudimentor.app.audio.Bpm
+import com.rudimentor.app.audio.Hand
 import com.rudimentor.app.audio.Metronome
+import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.PatternMode
+import com.rudimentor.app.ui.theme.PaletteId
 
 private enum class Screen {
     Menu,
@@ -88,12 +89,17 @@ private enum class Screen {
 fun RudiMentorApp(
     buildInfo: BuildInfo,
     prototypeLabEnabled: Boolean,
+    settings: AppSettings,
+    onSelectStyle: (BeatIndicatorStyle) -> Unit,
+    onSelectPalette: (PaletteId) -> Unit,
+    onSelectMode: (PatternMode) -> Unit,
+    onToggleBeat: (Int) -> Unit,
+    onAddBeat: () -> Unit,
+    onRemoveBeat: () -> Unit,
 ) {
     var screenName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
-    var selectedStyleName by rememberSaveable { mutableStateOf(BeatIndicatorStyle.Default.name) }
     val savedScreen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
     val screen = if (savedScreen == Screen.PrototypeLab && !prototypeLabEnabled) Screen.Menu else savedScreen
-    val selectedStyle = BeatIndicatorStyle.fromSavedValue(selectedStyleName)
 
     AnimatedContent(targetState = screen, label = "screen") { currentScreen ->
         when (currentScreen) {
@@ -104,12 +110,19 @@ fun RudiMentorApp(
                 onOpenPrototypeLab = { screenName = Screen.PrototypeLab.name },
             )
             Screen.Metronome -> MetronomeScreen(
-                indicatorStyle = selectedStyle,
+                settings = settings,
+                onSelectMode = onSelectMode,
+                onToggleBeat = onToggleBeat,
+                onAddBeat = onAddBeat,
+                onRemoveBeat = onRemoveBeat,
                 onBack = { screenName = Screen.Menu.name },
             )
             Screen.PrototypeLab -> PrototypeLabScreen(
-                selectedStyle = selectedStyle,
-                onStyleSelected = { selectedStyleName = it.name },
+                settings = settings,
+                onStyleSelected = onSelectStyle,
+                onPaletteSelected = onSelectPalette,
+                onModeSelected = onSelectMode,
+                onToggleBeat = onToggleBeat,
                 onBack = { screenName = Screen.Menu.name },
             )
         }
@@ -261,18 +274,25 @@ private fun MenuCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MetronomeScreen(
-    indicatorStyle: BeatIndicatorStyle,
+    settings: AppSettings,
+    onSelectMode: (PatternMode) -> Unit,
+    onToggleBeat: (Int) -> Unit,
+    onAddBeat: () -> Unit,
+    onRemoveBeat: () -> Unit,
     onBack: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val metronome = remember(scope) { Metronome(scope) }
     var bpm by remember { mutableIntStateOf(Bpm.DEFAULT) }
-    var pattern by remember { mutableStateOf(BeatPattern.default()) }
-    var showSticking by remember { mutableStateOf(true) }
     var isRunning by remember { mutableStateOf(false) }
     var tick by remember { mutableLongStateOf(0L) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
+    val audioPattern = if (settings.mode == PatternMode.RightLeft) {
+        settings.pattern
+    } else {
+        settings.pattern.copy(hands = List(settings.pattern.size) { Hand.Right })
+    }
 
     fun stop() {
         metronome.stop()
@@ -295,16 +315,18 @@ private fun MetronomeScreen(
     LaunchedEffect(metronome) {
         metronome.ticks.collect { tick = it }
     }
-    LaunchedEffect(pattern) {
-        metronome.setPattern(pattern)
+    LaunchedEffect(audioPattern) {
+        metronome.setPattern(audioPattern)
     }
 
     if (showSettings) {
         MetronomeSettingsSheet(
             bpm = bpm,
-            showSticking = showSticking,
+            showSticking = settings.mode == PatternMode.RightLeft,
             onBpmChange = ::updateBpm,
-            onShowStickingChange = { showSticking = it },
+            onShowStickingChange = {
+                onSelectMode(if (it) PatternMode.RightLeft else PatternMode.Abstract)
+            },
             onDismiss = { showSettings = false },
         )
     }
@@ -348,14 +370,13 @@ private fun MetronomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             PatternEditor(
-                pattern = pattern,
-                indicatorStyle = indicatorStyle,
-                activeBeat = if (isRunning && tick > 0) ((tick - 1) % pattern.size).toInt() else -1,
-                showSticking = showSticking,
-                onToggleAccent = { index -> pattern = pattern.toggleAccent(index) },
-                onToggleHand = { index -> pattern = pattern.toggleHand(index) },
-                onRemoveBeat = { pattern = pattern.removeBeat() },
-                onAddBeat = { pattern = pattern.addBeat() },
+                pattern = settings.pattern,
+                indicatorStyle = settings.trackerStyle,
+                activeBeat = if (isRunning && tick > 0) ((tick - 1) % settings.pattern.size).toInt() else -1,
+                showSticking = settings.mode == PatternMode.RightLeft,
+                onToggleBeat = onToggleBeat,
+                onRemoveBeat = onRemoveBeat,
+                onAddBeat = onAddBeat,
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -374,7 +395,7 @@ private fun MetronomeScreen(
                         stop()
                     } else {
                         metronome.setBpm(bpm)
-                        metronome.setPattern(pattern)
+                        metronome.setPattern(audioPattern)
                         isRunning = metronome.start()
                         errorMessage = if (isRunning) null else "Could not open the audio output."
                     }
@@ -426,7 +447,7 @@ private fun MetronomeScreen(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "$bpm BPM · ${if (showSticking) "R/L" else "ABSTRACT"}",
+                    text = "$bpm BPM · ${if (settings.mode == PatternMode.RightLeft) "R/L" else "ABSTRACT"}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                 )
@@ -441,15 +462,13 @@ private fun PatternEditor(
     indicatorStyle: BeatIndicatorStyle,
     activeBeat: Int,
     showSticking: Boolean,
-    onToggleAccent: (Int) -> Unit,
-    onToggleHand: (Int) -> Unit,
+    onToggleBeat: (Int) -> Unit,
     onRemoveBeat: () -> Unit,
     onAddBeat: () -> Unit,
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -481,39 +500,13 @@ private fun PatternEditor(
     }
 
     Spacer(modifier = Modifier.height(16.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        pattern.accents.forEachIndexed { index, isAccent ->
-            if (index == 4) {
-                Spacer(modifier = Modifier.width(16.dp))
-            } else if (index > 0) {
-                Spacer(modifier = Modifier.width(5.dp))
-            }
-            val isActive = index == activeBeat
-            val hand = pattern.hands[index]
-            Box(
-                modifier = Modifier.size(48.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                BeatIndicator(
-                    style = indicatorStyle,
-                    beatNumber = index + 1,
-                    isAccent = isAccent,
-                    hand = hand,
-                    showSticking = showSticking,
-                    isActive = isActive,
-                    onClick = {
-                        if (showSticking) onToggleHand(index) else onToggleAccent(index)
-                    },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .aspectRatio(1f),
-                )
-            }
-        }
-    }
+    BeatRow(
+        pattern = pattern,
+        style = indicatorStyle,
+        mode = if (showSticking) PatternMode.RightLeft else PatternMode.Abstract,
+        activeBeat = activeBeat,
+        onBeatClick = onToggleBeat,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -13,7 +13,7 @@ public:
     bool start();
     void stop();
     void setBpm(int bpm);
-    void setPattern(int beatCount, int accentMask);
+    void setPattern(int beatCount, int accentMask, int leftHandMask);
     int64_t tickCount() const;
 
     oboe::DataCallbackResult onAudioReady(
@@ -28,13 +28,14 @@ private:
     static constexpr int kMaxBpm = 240;
     static constexpr int kMinBeats = 4;
     static constexpr int kMaxBeats = 8;
-    static constexpr int kPatternShift = 8;
+    static constexpr int kBeatCountShift = 16;
+    static constexpr int kLeftHandShift = 8;
     static constexpr int kClickFrames = 960;
 
     mutable std::mutex streamMutex_;
     std::shared_ptr<oboe::AudioStream> stream_;
     std::atomic<int> bpm_{120};
-    std::atomic<int> pattern_{(4 << kPatternShift) | 1};
+    std::atomic<int> pattern_{(4 << kBeatCountShift) | (10 << kLeftHandShift) | 1};
     std::atomic<int64_t> tickCount_{0};
     std::atomic<bool> running_{false};
     int32_t sampleRate_ = 48000;
@@ -42,5 +43,6 @@ private:
     double nextTickFrame_ = 0.0;
     int clickFrame_ = kClickFrames;
     bool clickAccent_ = false;
+    bool clickLeftHand_ = false;
     double phase_ = 0.0;
 };
