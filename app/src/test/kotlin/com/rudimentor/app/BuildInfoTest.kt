@@ -6,8 +6,8 @@ import org.junit.Test
 class BuildInfoTest {
     @Test
     fun `display label identifies both the installed version and build`() {
-        val buildInfo = BuildInfo(versionName = "0.1.0-dev.3", versionCode = 3)
+        val buildInfo = BuildInfo(versionName = "0.1.0-dev.4", versionCode = 4)
 
-        assertEquals("Version 0.1.0-dev.3 · Build 3", buildInfo.displayLabel)
+        assertEquals("Version 0.1.0-dev.4 · Build 4", buildInfo.displayLabel)
     }
 }

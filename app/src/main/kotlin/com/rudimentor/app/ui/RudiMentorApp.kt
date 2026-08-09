@@ -515,16 +515,6 @@ private fun PatternEditor(
             }
         }
     }
-    Spacer(modifier = Modifier.height(12.dp))
-    Text(
-        text = if (showSticking) {
-            "Tap each beat to switch R / L"
-        } else {
-            "Tap each beat to toggle its accent"
-        },
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = 12.sp,
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -612,7 +602,7 @@ private fun TempoControl(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        listOf(-5, -1, 1, 5).forEach { delta ->
+        Bpm.QUICK_STEPS.forEach { delta ->
             FilledTonalButton(
                 onClick = { onBpmChange(Bpm.adjust(bpm, delta)) },
                 modifier = Modifier
@@ -648,11 +638,6 @@ private fun StickingSetting(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("R/L sticking", fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    text = if (checked) "Tap beats to choose each hand" else "Tap beats to choose accents",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                )
             }
             Switch(
                 checked = checked,
