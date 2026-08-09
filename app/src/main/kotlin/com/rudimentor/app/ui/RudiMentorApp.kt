@@ -2,11 +2,8 @@ package com.rudimentor.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +27,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Stop
@@ -62,15 +61,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -84,19 +81,37 @@ import com.rudimentor.app.audio.Metronome
 private enum class Screen {
     Menu,
     Metronome,
+    PrototypeLab,
 }
 
 @Composable
-fun RudiMentorApp(buildInfo: BuildInfo) {
-    var screen by remember { mutableStateOf(Screen.Menu) }
+fun RudiMentorApp(
+    buildInfo: BuildInfo,
+    prototypeLabEnabled: Boolean,
+) {
+    var screenName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
+    var selectedStyleName by rememberSaveable { mutableStateOf(BeatIndicatorStyle.Default.name) }
+    val savedScreen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
+    val screen = if (savedScreen == Screen.PrototypeLab && !prototypeLabEnabled) Screen.Menu else savedScreen
+    val selectedStyle = BeatIndicatorStyle.fromSavedValue(selectedStyleName)
 
     AnimatedContent(targetState = screen, label = "screen") { currentScreen ->
         when (currentScreen) {
             Screen.Menu -> MainMenu(
                 buildInfo = buildInfo,
-                onOpenMetronome = { screen = Screen.Metronome },
+                prototypeLabEnabled = prototypeLabEnabled,
+                onOpenMetronome = { screenName = Screen.Metronome.name },
+                onOpenPrototypeLab = { screenName = Screen.PrototypeLab.name },
             )
-            Screen.Metronome -> MetronomeScreen(onBack = { screen = Screen.Menu })
+            Screen.Metronome -> MetronomeScreen(
+                indicatorStyle = selectedStyle,
+                onBack = { screenName = Screen.Menu.name },
+            )
+            Screen.PrototypeLab -> PrototypeLabScreen(
+                selectedStyle = selectedStyle,
+                onStyleSelected = { selectedStyleName = it.name },
+                onBack = { screenName = Screen.Menu.name },
+            )
         }
     }
 }
@@ -104,7 +119,9 @@ fun RudiMentorApp(buildInfo: BuildInfo) {
 @Composable
 private fun MainMenu(
     buildInfo: BuildInfo,
+    prototypeLabEnabled: Boolean,
     onOpenMetronome: () -> Unit,
+    onOpenPrototypeLab: () -> Unit,
 ) {
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { contentPadding ->
         Column(
@@ -133,7 +150,7 @@ private fun MainMenu(
                 fontSize = 16.sp,
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             MenuCard(
                 title = "Metronome",
                 subtitle = "Build your beat pattern",
@@ -141,7 +158,7 @@ private fun MainMenu(
                 enabled = true,
                 onClick = onOpenMetronome,
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             MenuCard(
                 title = "Levels",
                 subtitle = "Rudiment training · Coming soon",
@@ -149,6 +166,16 @@ private fun MainMenu(
                 enabled = false,
                 onClick = {},
             )
+            if (prototypeLabEnabled) {
+                Spacer(modifier = Modifier.height(12.dp))
+                MenuCard(
+                    title = "Prototype Lab",
+                    subtitle = "Compare beat indicators · Dev only",
+                    icon = Icons.Rounded.Science,
+                    enabled = true,
+                    onClick = onOpenPrototypeLab,
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
@@ -189,7 +216,7 @@ private fun MenuCard(
         shape = RoundedCornerShape(24.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(124.dp)
+            .height(108.dp)
             .border(1.dp, borderColor, RoundedCornerShape(24.dp))
             .clickable(enabled = enabled, onClick = onClick),
     ) {
@@ -233,7 +260,10 @@ private fun MenuCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MetronomeScreen(onBack: () -> Unit) {
+private fun MetronomeScreen(
+    indicatorStyle: BeatIndicatorStyle,
+    onBack: () -> Unit,
+) {
     val scope = rememberCoroutineScope()
     val metronome = remember(scope) { Metronome(scope) }
     var bpm by remember { mutableIntStateOf(Bpm.DEFAULT) }
@@ -319,6 +349,7 @@ private fun MetronomeScreen(onBack: () -> Unit) {
         ) {
             PatternEditor(
                 pattern = pattern,
+                indicatorStyle = indicatorStyle,
                 activeBeat = if (isRunning && tick > 0) ((tick - 1) % pattern.size).toInt() else -1,
                 showSticking = showSticking,
                 onToggleAccent = { index -> pattern = pattern.toggleAccent(index) },
@@ -407,6 +438,7 @@ private fun MetronomeScreen(onBack: () -> Unit) {
 @Composable
 private fun PatternEditor(
     pattern: BeatPattern,
+    indicatorStyle: BeatIndicatorStyle,
     activeBeat: Int,
     showSticking: Boolean,
     onToggleAccent: (Int) -> Unit,
@@ -415,7 +447,9 @@ private fun PatternEditor(
     onAddBeat: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -459,59 +493,24 @@ private fun PatternEditor(
             }
             val isActive = index == activeBeat
             val hand = pattern.hands[index]
-            val scale by animateFloatAsState(
-                targetValue = if (isActive) 1.12f else 1f,
-                animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
-                label = "beat pulse",
-            )
             Box(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.size(48.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Surface(
+                BeatIndicator(
+                    style = indicatorStyle,
+                    beatNumber = index + 1,
+                    isAccent = isAccent,
+                    hand = hand,
+                    showSticking = showSticking,
+                    isActive = isActive,
                     onClick = {
                         if (showSticking) onToggleHand(index) else onToggleAccent(index)
                     },
                     modifier = Modifier
-                        .widthIn(max = 52.dp)
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .scale(scale)
-                        .semantics {
-                            role = Role.Button
-                            contentDescription = if (showSticking) {
-                                "Beat ${index + 1}, ${if (hand.label == "R") "right" else "left"} hand"
-                            } else {
-                                "Beat ${index + 1}, ${if (isAccent) "accented" else "normal"}"
-                            }
-                        },
-                    shape = CircleShape,
-                    color = if (isAccent) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    },
-                    contentColor = if (isAccent) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    border = if (isActive) {
-                        BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface)
-                    } else {
-                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                    },
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        if (showSticking) {
-                            Text(
-                                text = hand.label,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Black,
-                            )
-                        }
-                    }
-                }
+                        .size(48.dp)
+                        .aspectRatio(1f),
+                )
             }
         }
     }

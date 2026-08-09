@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
                         versionName = BuildConfig.VERSION_NAME,
                         versionCode = BuildConfig.VERSION_CODE,
                     ),
+                    prototypeLabEnabled = BuildConfig.DEBUG,
                 )
             }
         }
