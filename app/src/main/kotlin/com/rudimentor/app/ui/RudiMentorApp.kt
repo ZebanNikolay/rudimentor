@@ -72,6 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.audio.BeatPattern
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.audio.Metronome
@@ -82,19 +83,25 @@ private enum class Screen {
 }
 
 @Composable
-fun RudiMentorApp() {
+fun RudiMentorApp(buildInfo: BuildInfo) {
     var screen by remember { mutableStateOf(Screen.Menu) }
 
     AnimatedContent(targetState = screen, label = "screen") { currentScreen ->
         when (currentScreen) {
-            Screen.Menu -> MainMenu(onOpenMetronome = { screen = Screen.Metronome })
+            Screen.Menu -> MainMenu(
+                buildInfo = buildInfo,
+                onOpenMetronome = { screen = Screen.Metronome },
+            )
             Screen.Metronome -> MetronomeScreen(onBack = { screen = Screen.Menu })
         }
     }
 }
 
 @Composable
-private fun MainMenu(onOpenMetronome: () -> Unit) {
+private fun MainMenu(
+    buildInfo: BuildInfo,
+    onOpenMetronome: () -> Unit,
+) {
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { contentPadding ->
         Column(
             modifier = Modifier
@@ -148,6 +155,13 @@ private fun MainMenu(onOpenMetronome: () -> Unit) {
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = buildInfo.displayLabel,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
             )
         }
     }

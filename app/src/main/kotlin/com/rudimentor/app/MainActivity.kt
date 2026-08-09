@@ -13,7 +13,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RudiMentorTheme {
-                RudiMentorApp()
+                RudiMentorApp(
+                    buildInfo = BuildInfo(
+                        versionName = BuildConfig.VERSION_NAME,
+                        versionCode = BuildConfig.VERSION_CODE,
+                    ),
+                )
             }
         }
     }

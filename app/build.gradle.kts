@@ -4,6 +4,20 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val developmentKeystorePath = providers.environmentVariable("RUDIMENTOR_DEBUG_KEYSTORE")
+val developmentKeystorePassword = providers.environmentVariable("RUDIMENTOR_DEBUG_KEYSTORE_PASSWORD")
+    .orElse("android")
+val developmentKeyAlias = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY_ALIAS")
+    .orElse("androiddebugkey")
+val developmentKeyPassword = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY_PASSWORD")
+    .orElse(developmentKeystorePassword)
+val appVersionName = "0.1.0-dev.2"
+val appVersionCode = 2
+
+base {
+    archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")
+}
+
 android {
     namespace = "com.rudimentor.app"
     compileSdk = 35
@@ -13,8 +27,8 @@ android {
         applicationId = "com.rudimentor.app"
         minSdk = 27
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -27,6 +41,16 @@ android {
     }
 
     buildTypes {
+        debug {
+            if (developmentKeystorePath.isPresent) {
+                signingConfig = signingConfigs.getByName("debug").apply {
+                    storeFile = rootProject.file(developmentKeystorePath.get())
+                    storePassword = developmentKeystorePassword.get()
+                    keyAlias = developmentKeyAlias.get()
+                    keyPassword = developmentKeyPassword.get()
+                }
+            }
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -37,6 +61,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
         prefab = true
     }
