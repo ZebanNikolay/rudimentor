@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -44,12 +45,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -238,6 +242,7 @@ private fun MetronomeScreen(onBack: () -> Unit) {
     var isRunning by remember { mutableStateOf(false) }
     var tick by remember { mutableLongStateOf(0L) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showSettings by remember { mutableStateOf(false) }
 
     fun stop() {
         metronome.stop()
@@ -262,6 +267,16 @@ private fun MetronomeScreen(onBack: () -> Unit) {
     }
     LaunchedEffect(pattern) {
         metronome.setPattern(pattern)
+    }
+
+    if (showSettings) {
+        MetronomeSettingsSheet(
+            bpm = bpm,
+            showSticking = showSticking,
+            onBpmChange = ::updateBpm,
+            onShowStickingChange = { showSticking = it },
+            onDismiss = { showSettings = false },
+        )
     }
 
     Scaffold(
@@ -307,17 +322,9 @@ private fun MetronomeScreen(onBack: () -> Unit) {
                 activeBeat = if (isRunning && tick > 0) ((tick - 1) % pattern.size).toInt() else -1,
                 showSticking = showSticking,
                 onToggleAccent = { index -> pattern = pattern.toggleAccent(index) },
+                onToggleHand = { index -> pattern = pattern.toggleHand(index) },
                 onRemoveBeat = { pattern = pattern.removeBeat() },
                 onAddBeat = { pattern = pattern.addBeat() },
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-            TempoControl(bpm = bpm, onBpmChange = ::updateBpm)
-
-            Spacer(modifier = Modifier.height(24.dp))
-            StickingSetting(
-                checked = showSticking,
-                onCheckedChange = { showSticking = it },
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -347,9 +354,14 @@ private fun MetronomeScreen(onBack: () -> Unit) {
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isRunning) {
-                        MaterialTheme.colorScheme.surfaceVariant
+                        MaterialTheme.colorScheme.primaryContainer
                     } else {
                         MaterialTheme.colorScheme.primary
+                    },
+                    contentColor = if (isRunning) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onPrimary
                     },
                 ),
             ) {
@@ -365,6 +377,29 @@ private fun MetronomeScreen(onBack: () -> Unit) {
                     letterSpacing = 2.sp,
                 )
             }
+            Spacer(modifier = Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = { showSettings = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(18.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+            ) {
+                Icon(Icons.Rounded.Tune, contentDescription = null)
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "SETTINGS",
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "$bpm BPM · ${if (showSticking) "R/L" else "ABSTRACT"}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                )
+            }
         }
     }
 }
@@ -375,6 +410,7 @@ private fun PatternEditor(
     activeBeat: Int,
     showSticking: Boolean,
     onToggleAccent: (Int) -> Unit,
+    onToggleHand: (Int) -> Unit,
     onRemoveBeat: () -> Unit,
     onAddBeat: () -> Unit,
 ) {
@@ -413,11 +449,16 @@ private fun PatternEditor(
     Spacer(modifier = Modifier.height(16.dp))
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         pattern.accents.forEachIndexed { index, isAccent ->
+            if (index == 4) {
+                Spacer(modifier = Modifier.width(16.dp))
+            } else if (index > 0) {
+                Spacer(modifier = Modifier.width(5.dp))
+            }
             val isActive = index == activeBeat
+            val hand = pattern.hands[index]
             val scale by animateFloatAsState(
                 targetValue = if (isActive) 1.12f else 1f,
                 animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
@@ -428,7 +469,9 @@ private fun PatternEditor(
                 contentAlignment = Alignment.Center,
             ) {
                 Surface(
-                    onClick = { onToggleAccent(index) },
+                    onClick = {
+                        if (showSticking) onToggleHand(index) else onToggleAccent(index)
+                    },
                     modifier = Modifier
                         .widthIn(max = 52.dp)
                         .fillMaxWidth()
@@ -436,7 +479,11 @@ private fun PatternEditor(
                         .scale(scale)
                         .semantics {
                             role = Role.Button
-                            contentDescription = "Beat ${index + 1}, ${if (isAccent) "accented" else "normal"}"
+                            contentDescription = if (showSticking) {
+                                "Beat ${index + 1}, ${if (hand.label == "R") "right" else "left"} hand"
+                            } else {
+                                "Beat ${index + 1}, ${if (isAccent) "accented" else "normal"}"
+                            }
                         },
                     shape = CircleShape,
                     color = if (isAccent) {
@@ -458,7 +505,7 @@ private fun PatternEditor(
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (showSticking) {
                             Text(
-                                text = if (index % 2 == 0) "R" else "L",
+                                text = hand.label,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Black,
                             )
@@ -470,10 +517,56 @@ private fun PatternEditor(
     }
     Spacer(modifier = Modifier.height(12.dp))
     Text(
-        text = "Tap a beat to toggle its accent",
+        text = if (showSticking) {
+            "Tap each beat to switch R / L"
+        } else {
+            "Tap each beat to toggle its accent"
+        },
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 12.sp,
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MetronomeSettingsSheet(
+    bpm: Int,
+    showSticking: Boolean,
+    onBpmChange: (Int) -> Unit,
+    onShowStickingChange: (Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+        ) {
+            Text(
+                text = "SETTINGS",
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            TempoControl(bpm = bpm, onBpmChange = onBpmChange)
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+            Spacer(modifier = Modifier.height(16.dp))
+            StickingSetting(
+                checked = showSticking,
+                onCheckedChange = onShowStickingChange,
+            )
+        }
+    }
 }
 
 @Composable
@@ -556,7 +649,7 @@ private fun StickingSetting(
             Column(modifier = Modifier.weight(1f)) {
                 Text("R/L sticking", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    text = if (checked) "Alternating right and left" else "Abstract beats",
+                    text = if (checked) "Tap beats to choose each hand" else "Tap beats to choose accents",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                 )
