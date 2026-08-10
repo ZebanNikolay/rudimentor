@@ -1,6 +1,8 @@
 package com.rudimentor.app.ui.metronome
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.splineBasedDecay
+import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -98,7 +100,9 @@ fun BeatDrum(
     }
 
     val density = LocalDensity.current
-    val slotHeightPx = with(density) { RudiDimens.DrumSlotHeight.toPx() }
+    // Rows are pitched tighter than the focus slot is tall, so the neighbours stay clear
+    // of the fade instead of hiding in it.
+    val slotHeightPx = with(density) { RudiDimens.DrumSlotHeight.toPx() } * ROW_PITCH
     val scope = rememberCoroutineScope()
 
     // The barrel position is a continuous virtual row index, so it can cross the loop
@@ -123,6 +127,7 @@ fun BeatDrum(
         }
     }
 
+    val decay = splineBasedDecay<Float>(density)
     val dragState = rememberDraggableState { delta ->
         scope.launch { position.snapTo(position.value - delta / slotHeightPx) }
     }
@@ -149,21 +154,27 @@ fun BeatDrum(
                 orientation = Orientation.Vertical,
                 onDragStarted = { dragging = true },
                 onDragStopped = { velocity ->
-                    // Flick projection plus a spring settle: the barrel keeps turning a
-                    // little past the finger and then locks onto the nearest row.
-                    val flick = (-velocity / slotHeightPx) * FLICK_PROJECTION
-                    val target = (position.value + flick)
+                    // The barrel always settles on a row: the fling is projected with a
+                    // decay curve, clamped to one row per flick, then eased home by a
+                    // slightly under-damped spring so it resists, gives and locks in.
+                    val rowsPerSecond = -velocity / slotHeightPx
+                    val projected = decay.calculateTargetValue(position.value, rowsPerSecond)
+                    val target = projected
                         .coerceIn(position.value - 1f, position.value + 1f)
                         .roundToInt()
-                    position.animateTo(
-                        targetValue = target.toFloat(),
-                        animationSpec = spring(
-                            dampingRatio = 0.85f,
-                            stiffness = Spring.StiffnessMediumLow,
-                        ),
-                        initialVelocity = -velocity / slotHeightPx,
-                    )
-                    dragging = false
+                    // Run the settle outside the gesture scope so lifting the finger can
+                    // never leave the barrel parked between two rows.
+                    scope.launch {
+                        position.animateTo(
+                            targetValue = target.toFloat(),
+                            animationSpec = spring(
+                                dampingRatio = 0.72f,
+                                stiffness = Spring.StiffnessLow,
+                            ),
+                            initialVelocity = rowsPerSecond,
+                        )
+                        dragging = false
+                    }
                     onSelectRow(target.mod(grid.rowCount))
                 },
             ),
@@ -319,5 +330,5 @@ private val DrumEasing = CubicBezierEasing(0.3f, 0.7f, 0.3f, 1f)
 private const val VISIBLE_SLOTS = 3
 private const val FADE_STOP = 0.22f
 
-/** Seconds of projected travel used to turn a flick into at most one extra row. */
-private const val FLICK_PROJECTION = 0.12f
+/** Row spacing as a fraction of the focus slot height. */
+private const val ROW_PITCH = 0.66f

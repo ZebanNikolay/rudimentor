@@ -20,7 +20,6 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -118,7 +117,8 @@ fun Pad(
     // A lit pad is a key with the lamp switched on: flat brick fill and an even halo
     // around the whole outline, never a directional drop shadow.
     val glow: Modifier = if (lit && !muted) {
-        val strength = if (tone == PadTone.Accent) 0.75f else 0.5f
+        // A quarter of the first pass: the lamp reads as lit, not as a flare.
+        val strength = if (tone == PadTone.Accent) 0.19f else 0.125f
         Modifier.drawBehind {
             val side = this.size.minDimension
             val radius = side * 1.25f
@@ -201,7 +201,8 @@ fun Pad(
                 val steps = 10
                 val step = depth / steps
                 val topBias = side * 0.035f
-                val maxAlpha = if (light) 0.16f else 0.5f
+                // A third of the first pass: the recess is a hint, not a vignette.
+                val maxAlpha = if (light) 0.055f else 0.17f
                 clipPath(outline) {
                     for (i in 0 until steps) {
                         val t = i / steps.toFloat()
@@ -266,7 +267,8 @@ fun Pad(
                 fontFamily = JetBrainsMono,
                 fontWeight = FontWeight.Bold,
                 fontSize = maxOf(9f, size.value * letterFraction).sp,
-                textDecoration = if (muted) TextDecoration.LineThrough else TextDecoration.None,
+                // A muted pad is told apart by the dashed outline and the dimmed letter
+                // only — the letter is never struck through.
             )
         }
     }
