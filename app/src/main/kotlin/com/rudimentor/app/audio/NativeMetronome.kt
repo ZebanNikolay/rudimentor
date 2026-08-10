@@ -11,7 +11,8 @@ internal object NativeMetronome {
 
     fun setBpm(bpm: Int) = nativeSetBpm(Bpm.clamp(bpm))
 
-    fun setPattern(pattern: BeatPattern) = nativeSetPattern(pattern.size, pattern.accentMask)
+    /** The engine plays a flat step sequence; rows only exist in the UI. */
+    fun setSequence(sequence: IntArray) = nativeSetSequence(sequence)
 
     fun tickCount(): Long = nativeGetTickCount()
 
@@ -21,7 +22,7 @@ internal object NativeMetronome {
 
     private external fun nativeSetBpm(bpm: Int)
 
-    private external fun nativeSetPattern(beatCount: Int, accentMask: Int)
+    private external fun nativeSetSequence(sequence: IntArray)
 
     private external fun nativeGetTickCount(): Long
 }

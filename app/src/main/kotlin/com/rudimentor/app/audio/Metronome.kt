@@ -44,8 +44,8 @@ class Metronome(
         NativeMetronome.setBpm(bpm)
     }
 
-    fun setPattern(pattern: BeatPattern) {
-        NativeMetronome.setPattern(pattern)
+    fun setGrid(grid: BeatGrid) {
+        NativeMetronome.setSequence(grid.toSequence())
     }
 
     companion object {
