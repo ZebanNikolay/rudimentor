@@ -26,9 +26,11 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /**
- * Общий фундамент маленьких квадратных кнопок брендбука: пэд-квадрат с обводкой Line,
- * ripple цветом Text, `clip(shape)` до `clickable` (иначе ripple лезет из-под скругления),
- * слот под глиф в центре. Используется как основа для BackButton, StepperKey, TempoKey.
+ * The shared base for the brandbook's small square buttons: a pad-shaped
+ * square with a Line stroke, ripple in the Text color, `clip(shape)` before
+ * `clickable` (otherwise ripple leaks past the rounded corners), and a glyph
+ * slot in the middle. Used as the foundation for BackButton, StepperKey, and
+ * TempoKey.
  */
 @Composable
 fun SquareIconButton(
@@ -64,8 +66,9 @@ fun SquareIconButton(
 }
 
 /**
- * Кнопка «назад»: тот же квадрат 32 dp с шевроном 8×14. Живёт в общем компоненте,
- * чтобы AppToolbar не зависел от экрана метронома.
+ * The back button: the same 32 dp square with an 8x14 chevron. Lives in the
+ * shared component so that AppToolbar does not depend on the metronome
+ * screen.
  */
 @Composable
 fun BackButton(

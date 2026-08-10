@@ -30,8 +30,8 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
-// BackButton и TransportButton теперь живут в ui/component; TempoKey и StepperButton —
-// обёртки над SquareIconButton.
+// BackButton and TransportButton now live in ui/component; TempoKey and
+// StepperButton are thin wrappers over SquareIconButton.
 
 /** What a stepper changes: the beats in the current row, or the rows of the drum. */
 enum class Dimension {

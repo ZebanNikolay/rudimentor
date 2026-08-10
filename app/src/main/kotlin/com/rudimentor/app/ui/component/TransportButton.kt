@@ -26,9 +26,10 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /**
- * Большая кнопка транспорта Play/Stop: 92 dp пэд с монолитной подставкой 4 dp,
- * ripple цветом Text, ровный halo пока метроном играет. Визуально не меняется —
- * вынесено из ui/metronome/MetronomeControls в переиспользуемый компонент.
+ * The large Play/Stop transport button: a 92 dp pad with a 4 dp monolithic
+ * slab, ripple in the Text color, and a steady halo while the metronome is
+ * running. The visual is unchanged -- extracted from
+ * ui/metronome/MetronomeControls into a reusable component.
  */
 @Composable
 fun TransportButton(

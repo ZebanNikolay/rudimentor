@@ -15,9 +15,10 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
 /**
- * Единый тулбар второстепенных экранов: слева кнопка назад, рядом название экрана
- * стилем Rubric, справа — свободный слот под вторичную метрику (таймер, streak и т.д.).
- * Логотип в тулбар не входит: его ставит только главный экран.
+ * The shared toolbar for secondary screens: a back button on the left, the
+ * screen title in the Rubric style next to it, and a free slot on the right
+ * for a secondary metric (timer, streak, and so on). The logo is not part of
+ * this toolbar -- only the home screen renders it.
  */
 @Composable
 fun AppToolbar(

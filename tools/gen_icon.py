@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Generate the adaptive launcher icon drawables from the real JetBrains Mono Bold glyph.
 
-Adaptive icon: background — сплошной фирменный красный (`@color/ic_launcher_background`).
-Foreground — только белая буква R и LED-точка; никакого собственного квадрата/пэда/рамки:
-форму дают системная маска и адаптивный фон. Monochrome-слой рисует ту же пару фигур
-(система тонирует его).
+Adaptive icon: background is the solid brand red (`@color/ic_launcher_background`).
+Foreground is only the white R letter and the LED dot; there is no inner square,
+pad, or frame -- the launcher mask and the adaptive background give the shape.
+The monochrome layer draws the same pair of shapes (the launcher tints it).
 
-Canvas 108dp; adaptive icons держат ключевое содержимое в safe-zone 66dp по центру.
-Виртуальный габарит `SLOT` = 52dp задаёт размер буквы и положение LED; при `LETTER_CAP_RATIO`
-0.31 буква ~16dp, точка ~6dp — всё уверенно вписывается в safe-zone.
+Canvas is 108dp; adaptive icons keep the key content inside a centered 66dp
+safe-zone. The virtual `SLOT` = 52dp sets the letter size and the LED position;
+with `LETTER_CAP_RATIO` 0.31 the letter is about 16dp and the dot about 6dp,
+both comfortably inside the safe-zone.
 """
 from fontTools.misc.transform import Transform
 from fontTools.pens.svgPathPen import SVGPathPen
@@ -16,8 +17,8 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 
 FONT = "app/src/main/res/font/jetbrains_mono_bold.ttf"
-# Виртуальный габарит, от которого меряются буква и точка. Пэд как отдельная фигура
-# больше не рисуется — красный даёт adaptive background.
+# Virtual slot the letter and the dot are measured from. The pad is no longer
+# drawn as a separate shape -- the adaptive background provides the red.
 SLOT = 52.0
 CENTER = 54.0
 LETTER_CAP_RATIO = 0.31  # cap height relative to SLOT (≈0.42 em font size)
@@ -70,15 +71,17 @@ def led_path() -> str:
 def main() -> None:
     led, letter = led_path(), letter_path("R")
 
-    # Foreground: только буква R и LED-точка, обе белые. Красный фон приходит из
-    # `@color/ic_launcher_background`, углы обрезает системная маска.
+    # Foreground is only the R letter and the LED dot, both white. The red
+    # background comes from `@color/ic_launcher_background`, and the launcher
+    # mask trims the corners.
     foreground = HEADER + (
         f'    <path\n        android:fillColor="#FFFFFF"\n        android:pathData="{letter}" />\n'
         f'    <path\n        android:fillColor="#FFFFFF"\n        android:pathData="{led}" />\n'
         "</vector>\n"
     )
 
-    # Monochrome-слой тонируется лаунчером; рисуем ту же пару фигур сплошным белым.
+    # The launcher tints the monochrome layer; draw the same pair of shapes
+    # in solid white.
     monochrome = HEADER + (
         '    <path\n        android:fillColor="#FFFFFF"\n'
         f'        android:pathData="{letter} {led}" />\n'
