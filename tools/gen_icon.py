@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Generate the adaptive launcher icon drawables from the real JetBrains Mono Bold glyph.
 
-Canvas 108dp; Android adaptive icons keep key content inside the 66dp mask-safe circle.
-Pad: rounded square, side PAD, corner 22% of the side, centred at (54, 54).
-The furthest point of a 22%-rounded square from its centre is 0.418 * side, so a 68dp
-pad stays inside the 33dp safe radius and survives every launcher mask without cuts.
-The letter is the real "R" glyph outline, cap-height scaled and ink-centred on the pad.
+Adaptive icon: background — сплошной фирменный красный (`@color/ic_launcher_background`).
+Foreground — только белая буква R и LED-точка; никакого собственного квадрата/пэда/рамки:
+форму дают системная маска и адаптивный фон. Monochrome-слой рисует ту же пару фигур
+(система тонирует его).
+
+Canvas 108dp; adaptive icons держат ключевое содержимое в safe-zone 66dp по центру.
+Виртуальный габарит `SLOT` = 52dp задаёт размер буквы и положение LED; при `LETTER_CAP_RATIO`
+0.31 буква ~16dp, точка ~6dp — всё уверенно вписывается в safe-zone.
 """
 from fontTools.misc.transform import Transform
 from fontTools.pens.svgPathPen import SVGPathPen
@@ -13,10 +16,11 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 
 FONT = "app/src/main/res/font/jetbrains_mono_bold.ttf"
-PAD = 52.0
+# Виртуальный габарит, от которого меряются буква и точка. Пэд как отдельная фигура
+# больше не рисуется — красный даёт adaptive background.
+SLOT = 52.0
 CENTER = 54.0
-CORNER = PAD * 0.22
-LETTER_CAP_RATIO = 0.31  # cap height relative to the pad side (≈0.42 em font size)
+LETTER_CAP_RATIO = 0.31  # cap height relative to SLOT (≈0.42 em font size)
 FOREGROUND = "app/src/main/res/drawable/ic_launcher_foreground.xml"
 MONOCHROME = "app/src/main/res/drawable/ic_launcher_monochrome.xml"
 
@@ -38,7 +42,7 @@ def letter_path(char: str) -> str:
     name = font.getBestCmap()[ord(char)]
     cap = getattr(font["OS/2"], "sCapHeight", None) or font["head"].unitsPerEm * 0.73
     glyph = font["glyf"][name]
-    scale = (PAD * LETTER_CAP_RATIO) / cap
+    scale = (SLOT * LETTER_CAP_RATIO) / cap
     ink_cx = (glyph.xMin + glyph.xMax) / 2 * scale
     ink_cy = (glyph.yMin + glyph.yMax) / 2 * scale
     # y is flipped: font units go up, the drawable canvas goes down.
@@ -48,29 +52,14 @@ def letter_path(char: str) -> str:
     return pen.getCommands()
 
 
-def pad_path() -> str:
-    left = CENTER - PAD / 2
-    side = PAD - 2 * CORNER
-    return (
-        f"M{left + CORNER:.2f},{left:.2f} "
-        f"h{side:.2f} "
-        f"a{CORNER:.2f},{CORNER:.2f} 0 0 1 {CORNER:.2f},{CORNER:.2f} "
-        f"v{side:.2f} "
-        f"a{CORNER:.2f},{CORNER:.2f} 0 0 1 -{CORNER:.2f},{CORNER:.2f} "
-        f"h-{side:.2f} "
-        f"a{CORNER:.2f},{CORNER:.2f} 0 0 1 -{CORNER:.2f},-{CORNER:.2f} "
-        f"v-{side:.2f} "
-        f"a{CORNER:.2f},{CORNER:.2f} 0 0 1 {CORNER:.2f},-{CORNER:.2f} z"
-    )
-
-
 def led_path() -> str:
-    left = CENTER - PAD / 2
-    right = CENTER + PAD / 2
-    diameter = PAD * 0.12
+    """Little LED dot in the upper-right of the same virtual SLOT the letter uses."""
+    left = CENTER - SLOT / 2
+    right = CENTER + SLOT / 2
+    diameter = SLOT * 0.12
     radius = diameter / 2
-    cx = right - PAD * 0.13 - radius
-    cy = left + PAD * 0.11 + radius
+    cx = right - SLOT * 0.13 - radius
+    cy = left + SLOT * 0.11 + radius
     return (
         f"M{cx - radius:.2f},{cy:.2f} "
         f"a{radius:.2f},{radius:.2f} 0 1 1 {diameter:.2f},0 "
@@ -79,23 +68,20 @@ def led_path() -> str:
 
 
 def main() -> None:
-    pad, led, letter = pad_path(), led_path(), letter_path("R")
+    led, letter = led_path(), letter_path("R")
 
+    # Foreground: только буква R и LED-точка, обе белые. Красный фон приходит из
+    # `@color/ic_launcher_background`, углы обрезает системная маска.
     foreground = HEADER + (
-        '    <path\n        android:fillColor="#C92A2A"\n'
-        '        android:strokeColor="#E03131"\n        android:strokeWidth="1"\n'
-        f'        android:pathData="{pad}" />\n'
-        f'    <path\n        android:fillColor="#FFD7D7"\n        android:pathData="{led}" />\n'
         f'    <path\n        android:fillColor="#FFFFFF"\n        android:pathData="{letter}" />\n'
+        f'    <path\n        android:fillColor="#FFFFFF"\n        android:pathData="{led}" />\n'
         "</vector>\n"
     )
 
-    # The monochrome layer is tinted by the launcher, so the letter and the LED are
-    # punched out of the pad with an even-odd fill instead of being painted.
+    # Monochrome-слой тонируется лаунчером; рисуем ту же пару фигур сплошным белым.
     monochrome = HEADER + (
         '    <path\n        android:fillColor="#FFFFFF"\n'
-        '        android:fillType="evenOdd"\n'
-        f'        android:pathData="{pad} {letter} {led}" />\n'
+        f'        android:pathData="{letter} {led}" />\n'
         "</vector>\n"
     )
 
@@ -103,7 +89,7 @@ def main() -> None:
         fh.write(foreground)
     with open(MONOCHROME, "w") as fh:
         fh.write(monochrome)
-    print(f"pad {PAD:.0f}dp · corner {CORNER:.2f}dp · letter cap {PAD * LETTER_CAP_RATIO:.2f}dp")
+    print(f"letter cap {SLOT * LETTER_CAP_RATIO:.2f}dp · LED radius {SLOT * 0.06:.2f}dp")
 
 
 if __name__ == "__main__":

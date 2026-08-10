@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -41,7 +40,8 @@ import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.audio.Metronome
 import com.rudimentor.app.data.AppSettings
-import com.rudimentor.app.ui.component.RudiMentorLogo
+import com.rudimentor.app.ui.component.AppToolbar
+import com.rudimentor.app.ui.component.TransportButton
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import kotlinx.coroutines.delay
@@ -121,34 +121,20 @@ fun MetronomeScreen(
                 .padding(horizontal = 18.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    BackButton(
-                        onClick = {
-                            stop()
-                            onBack()
-                        },
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
+            AppToolbar(
+                title = "METRONOME",
+                onBack = {
+                    stop()
+                    onBack()
+                },
+                rightContent = {
                     Text(
-                        text = "METRONOME",
-                        style = RudiTextStyles.Rubric,
-                        color = RudiColors.Muted,
+                        text = formatElapsed(elapsedSeconds),
+                        style = RudiTextStyles.Timer,
+                        color = if (running) RudiColors.Text else RudiColors.Muted,
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    // The wordmark rides along on every screen, sized down to a toolbar module.
-                    RudiMentorLogo(padSize = 9.dp)
-                }
-                Text(
-                    text = formatElapsed(elapsedSeconds),
-                    style = RudiTextStyles.Timer,
-                    color = if (running) RudiColors.Text else RudiColors.Muted,
-                )
-            }
+                },
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
             Box(
