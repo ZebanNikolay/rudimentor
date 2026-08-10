@@ -340,6 +340,48 @@ fun TransportButton(
     }
 }
 
+/** Toolbar key that leaves the metronome: a chevron in the same pad language. */
+@Composable
+fun BackButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(RudiDimens.StepperButtonCorner)
+    Box(
+        modifier = modifier
+            .size(32.dp)
+            .clip(shape)
+            .background(color = RudiColors.SurfaceAlt, shape = shape)
+            .border(width = RudiDimens.PadBorder, color = RudiColors.Line, shape = shape)
+            .clickable(
+                indication = ripple(color = RudiColors.Text),
+                interactionSource = null,
+                onClick = onClick,
+            )
+            .semantics { contentDescription = "Back" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.width(8.dp).height(14.dp)) {
+            val stroke = 1.8.dp.toPx()
+            val inset = stroke / 2f
+            drawLine(
+                color = RudiColors.Text,
+                start = Offset(size.width - inset, inset),
+                end = Offset(inset, size.height / 2f),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                color = RudiColors.Text,
+                start = Offset(inset, size.height / 2f),
+                end = Offset(size.width - inset, size.height - inset),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
 /** The handle that pulls up the settings sheet. */
 @Composable
 fun SettingsHandle(

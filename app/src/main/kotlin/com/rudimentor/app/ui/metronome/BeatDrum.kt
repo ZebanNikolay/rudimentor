@@ -44,7 +44,9 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -261,6 +263,7 @@ private fun BeatRowPads(
     onToggleHand: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptics = LocalHapticFeedback.current
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val count = row.size
         val gap: Dp = when {
@@ -311,6 +314,8 @@ private fun BeatRowPads(
                                     longPressed = true
                                 }
                                 if (longPressed) {
+                                    // A hand swap is a mode change, so it is confirmed by touch.
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                     onToggleHand(index)
                                     waitForUpOrCancellation()
                                 } else if (released) {
@@ -330,7 +335,12 @@ private fun BeatRowPads(
 
 private val DrumEasing = CubicBezierEasing(0.3f, 0.7f, 0.3f, 1f)
 private const val VISIBLE_SLOTS = 3
-private const val FADE_STOP = 0.22f
+// The fade only has to swallow rows leaving the barrel, so it starts past the neighbours.
+private const val FADE_STOP = 0.15f
 
-/** Row spacing as a fraction of the focus slot height. */
-private const val ROW_PITCH = 0.66f
+/**
+ * Row spacing as a fraction of the focus slot height. The neighbours must clear the guide
+ * lines of the focus slot (±0.5 slot) yet stay out of the edge fade, so the pitch sits
+ * between the two: tight enough to read, wide enough not to touch the divider.
+ */
+private const val ROW_PITCH = 0.82f
