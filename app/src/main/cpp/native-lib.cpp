@@ -1,5 +1,7 @@
 #include <jni.h>
 
+#include <vector>
+
 #include "MetronomeEngine.h"
 
 namespace {
@@ -22,9 +24,20 @@ Java_com_rudimentor_app_audio_NativeMetronome_nativeSetBpm(JNIEnv *, jobject, ji
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_rudimentor_app_audio_NativeMetronome_nativeSetPattern(
-        JNIEnv *, jobject, jint beatCount, jint accentMask) {
-    engine.setPattern(beatCount, accentMask);
+Java_com_rudimentor_app_audio_NativeMetronome_nativeSetSequence(
+        JNIEnv *env, jobject, jintArray sequence) {
+    if (sequence == nullptr) {
+        return;
+    }
+    const jsize length = env->GetArrayLength(sequence);
+    if (length <= 0) {
+        return;
+    }
+    std::vector<jint> steps(static_cast<size_t>(length));
+    env->GetIntArrayRegion(sequence, 0, length, steps.data());
+
+    std::vector<int> values(steps.begin(), steps.end());
+    engine.setSequence(values.data(), static_cast<int>(values.size()));
 }
 
 extern "C" JNIEXPORT jlong JNICALL

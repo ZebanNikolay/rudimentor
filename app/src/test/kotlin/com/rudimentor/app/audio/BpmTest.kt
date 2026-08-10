@@ -1,13 +1,31 @@
 package com.rudimentor.app.audio
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BpmTest {
     @Test
-    fun `quick steps adjust tempo and clamp to supported range`() {
-        assertEquals(listOf(100, 110, 130, 140), Bpm.QUICK_STEPS.map { Bpm.adjust(120, it) })
-        assertEquals(Bpm.MIN, Bpm.adjust(40, -20))
-        assertEquals(Bpm.MAX, Bpm.adjust(230, 20))
+    fun `the tempo keys move in tens and stay inside the supported range`() {
+        assertEquals(110, Bpm.adjust(Bpm.DEFAULT, Bpm.STEP))
+        assertEquals(90, Bpm.adjust(Bpm.DEFAULT, -Bpm.STEP))
+        assertEquals(Bpm.MIN, Bpm.adjust(Bpm.MIN, -Bpm.STEP))
+        assertEquals(Bpm.MAX, Bpm.adjust(Bpm.MAX, Bpm.STEP))
+    }
+
+    @Test
+    fun `the range ends disable the matching key`() {
+        assertFalse(Bpm.canDecrease(Bpm.MIN))
+        assertTrue(Bpm.canDecrease(Bpm.MIN + Bpm.STEP))
+        assertFalse(Bpm.canIncrease(Bpm.MAX))
+        assertTrue(Bpm.canIncrease(Bpm.MAX - Bpm.STEP))
+    }
+
+    @Test
+    fun `the default tempo is a practice pad tempo inside the range`() {
+        assertEquals(100, Bpm.DEFAULT)
+        assertEquals(40, Bpm.MIN)
+        assertEquals(240, Bpm.MAX)
     }
 }

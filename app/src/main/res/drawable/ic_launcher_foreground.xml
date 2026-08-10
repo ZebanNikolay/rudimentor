@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive icon foreground: one lit brick pad with the LED, no glow. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#C92A2A"
+        android:strokeColor="#E03131"
+        android:strokeWidth="1"
+        android:pathData="M37.2,24 h33.6 a13.2,13.2 0 0 1 13.2,13.2 v33.6 a13.2,13.2 0 0 1 -13.2,13.2 h-33.6 a13.2,13.2 0 0 1 -13.2,-13.2 v-33.6 a13.2,13.2 0 0 1 13.2,-13.2 z" />
+    <path
+        android:fillColor="#FFD7D7"
+        android:pathData="M76.2,30.6 a3.6,3.6 0 1 1 0,7.2 a3.6,3.6 0 1 1 0,-7.2 z" />
+    <!-- The R of the right hand, JetBrains Mono Bold at 25dp, traced as paths. -->
+    <group android:translateX="45.4" android:translateY="41.4">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M0,0 h9.1 a5.6,5.6 0 0 1 5.6,5.6 v2.6 a5.6,5.6 0 0 1 -4.1,5.4 l4.6,11.6 h-4.6 l-4.2,-10.8 h-2.9 v10.8 h-3.5 z M3.5,3.4 v7.6 h5.3 a2.4,2.4 0 0 0 2.4,-2.4 v-2.8 a2.4,2.4 0 0 0 -2.4,-2.4 z" />
+    </group>
+</vector>
