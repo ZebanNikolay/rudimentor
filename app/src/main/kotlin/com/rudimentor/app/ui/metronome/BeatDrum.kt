@@ -77,9 +77,10 @@ fun BeatDrum(
     playingRow: Int?,
     playingBeat: Int?,
     editable: Boolean,
+    rowSwipeEnabled: Boolean = true,
     onSelectRow: (Int) -> Unit,
-    onCycleBeat: (Int) -> Unit,
-    onToggleHand: (Int) -> Unit,
+    onCycleBeat: (Int, Int) -> Unit,
+    onToggleHand: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (grid.rowCount == 1) {
@@ -90,8 +91,8 @@ fun BeatDrum(
             showLetters = showLetters,
             litBeat = if (playingRow == 0) playingBeat else null,
             editable = editable,
-            onCycleBeat = onCycleBeat,
-            onToggleHand = onToggleHand,
+            onCycleBeat = { beat -> onCycleBeat(0, beat) },
+            onToggleHand = { beat -> onToggleHand(0, beat) },
             modifier = modifier
                 .fillMaxWidth()
                 .height(RudiDimens.DrumSlotHeight),
@@ -152,6 +153,7 @@ fun BeatDrum(
             .draggable(
                 state = dragState,
                 orientation = Orientation.Vertical,
+                enabled = rowSwipeEnabled,
                 onDragStarted = { dragging = true },
                 onDragStopped = { velocity ->
                     // The barrel always settles on a row: the fling is projected with a
@@ -237,8 +239,8 @@ fun BeatDrum(
                     showLetters = showLetters,
                     litBeat = if (playingRow == rowIndex) playingBeat else null,
                     editable = editable && isCentre,
-                    onCycleBeat = onCycleBeat,
-                    onToggleHand = onToggleHand,
+                    onCycleBeat = { beat -> onCycleBeat(rowIndex, beat) },
+                    onToggleHand = { beat -> onToggleHand(rowIndex, beat) },
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.width(RudiDimens.RowNumberWidth))

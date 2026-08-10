@@ -1,14 +1,19 @@
 package com.rudimentor.app.ui.component
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -138,36 +143,19 @@ fun Pad(
         Modifier
     }
 
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) 0.92f else 1f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessHigh),
+        label = "padPress",
+    )
+
     Box(
         modifier = modifier
             .size(size)
             .then(glow)
             .alpha(padAlpha)
-            .then(
-                if (pressed) {
-                    Modifier.drawBehind {
-                        val inset = 3.dp.toPx()
-                        val stroke = 2.dp.toPx()
-                        val radius = if (round) {
-                            (this.size.height + inset * 2) / 2f
-                        } else {
-                            (this.size.width + inset * 2) * RudiDimens.PAD_CORNER_FRACTION
-                        }
-                        drawRoundRect(
-                            color = RudiColors.BrickLit,
-                            topLeft = Offset(-inset, -inset),
-                            size = Size(
-                                this.size.width + inset * 2,
-                                this.size.height + inset * 2,
-                            ),
-                            cornerRadius = CornerRadius(radius, radius),
-                            style = Stroke(width = stroke),
-                        )
-                    }
-                } else {
-                    Modifier
-                },
-            ),
+            // Press feedback is a small squeeze of the pad itself — no extra outline.
+            .scale(pressScale),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(size)) {

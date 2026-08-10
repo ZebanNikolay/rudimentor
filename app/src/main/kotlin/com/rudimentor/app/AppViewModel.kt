@@ -34,16 +34,18 @@ class AppViewModel(
 
     fun removeRow() = update { setRowCountInternal(grid.rowCount - 1) }
 
-    fun addBeat() = update { withActiveRowLength(+1) }
+    fun addBeat(rowIndex: Int) = update { withRowLength(rowIndex, +1) }
 
-    fun removeBeat() = update { withActiveRowLength(-1) }
+    fun removeBeat(rowIndex: Int) = update { withRowLength(rowIndex, -1) }
 
-    fun cycleBeat(beatIndex: Int) = update {
-        copy(grid = grid.cycleState(safeActiveRow, beatIndex))
+    // The row always comes from the caller: the edit lands on the row the user touched,
+    // never on a stale "active row".
+    fun cycleBeat(rowIndex: Int, beatIndex: Int) = update {
+        copy(grid = grid.cycleState(rowIndex.coerceIn(0, grid.rowCount - 1), beatIndex))
     }
 
-    fun toggleHand(beatIndex: Int) = update {
-        copy(grid = grid.toggleHand(safeActiveRow, beatIndex))
+    fun toggleHand(rowIndex: Int, beatIndex: Int) = update {
+        copy(grid = grid.toggleHand(rowIndex.coerceIn(0, grid.rowCount - 1), beatIndex))
     }
 
     fun setShowHandLetters(show: Boolean) = update { copy(showHandLetters = show) }
@@ -54,10 +56,10 @@ class AppViewModel(
         return copy(grid = resized, activeRow = safeActiveRow.coerceIn(0, resized.rowCount - 1))
     }
 
-    private fun AppSettings.withActiveRowLength(delta: Int): AppSettings {
-        val row = grid.rows[safeActiveRow]
-        val target = (row.size + delta).coerceIn(BeatRow.MIN_BEATS, BeatRow.MAX_BEATS)
-        return copy(grid = grid.withRowLength(safeActiveRow, target))
+    private fun AppSettings.withRowLength(rowIndex: Int, delta: Int): AppSettings {
+        val index = rowIndex.coerceIn(0, grid.rowCount - 1)
+        val target = (grid.rows[index].size + delta).coerceIn(BeatRow.MIN_BEATS, BeatRow.MAX_BEATS)
+        return copy(grid = grid.withRowLength(index, target))
     }
 
     private fun update(transform: AppSettings.() -> AppSettings) {

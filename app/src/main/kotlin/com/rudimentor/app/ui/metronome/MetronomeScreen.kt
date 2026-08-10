@@ -48,10 +48,10 @@ import kotlinx.coroutines.delay
 fun MetronomeScreen(
     settings: AppSettings,
     buildInfo: BuildInfo,
-    onCycleBeat: (Int) -> Unit,
-    onToggleHand: (Int) -> Unit,
-    onAddBeat: () -> Unit,
-    onRemoveBeat: () -> Unit,
+    onCycleBeat: (Int, Int) -> Unit,
+    onToggleHand: (Int, Int) -> Unit,
+    onAddBeat: (Int) -> Unit,
+    onRemoveBeat: (Int) -> Unit,
     onAddRow: () -> Unit,
     onRemoveRow: () -> Unit,
     onSelectRow: (Int) -> Unit,
@@ -150,7 +150,9 @@ fun MetronomeScreen(
                     showLetters = settings.showHandLetters,
                     playingRow = position?.row,
                     playingBeat = position?.beat,
-                    editable = !running,
+                    // Editing stays live during playback: hearing the change is the point.
+                    editable = true,
+                    rowSwipeEnabled = !running,
                     onSelectRow = onSelectRow,
                     onCycleBeat = onCycleBeat,
                     onToggleHand = onToggleHand,
@@ -163,14 +165,16 @@ fun MetronomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val activeLength = grid.rows[settings.safeActiveRow].size
+                // The stepper always describes the row in the focus slot, so its value
+                // follows the drum instead of a stale stored index.
+                val activeLength = grid.rows[visibleRow].size
                 DimensionStepper(
                     dimension = Dimension.Beats,
                     value = activeLength,
                     canDecrease = activeLength > BeatRow.MIN_BEATS,
                     canIncrease = activeLength < BeatRow.MAX_BEATS,
-                    onDecrease = onRemoveBeat,
-                    onIncrease = onAddBeat,
+                    onDecrease = { onRemoveBeat(visibleRow) },
+                    onIncrease = { onAddBeat(visibleRow) },
                 )
                 DimensionStepper(
                     dimension = Dimension.Rows,
