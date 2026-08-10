@@ -160,7 +160,7 @@ fun MetronomeScreen(
             Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val activeLength = grid.rows[settings.safeActiveRow].size
@@ -215,7 +215,7 @@ fun MetronomeScreen(
                 },
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             SettingsHandle(onClick = { showSettings = true })
         }
     }

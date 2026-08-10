@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.SpaceGrotesk
 
@@ -78,6 +80,16 @@ fun RudiMentorLogo(
             fontWeight = FontWeight.Bold,
             fontSize = wordSize.sp,
             letterSpacing = LogoGeometry.Tracking,
+            // line-height 1 with trimmed font padding, so the negative lead lands exactly
+            // where the brandbook puts it and "t" climbs into the pad row.
+            lineHeight = 1f.em,
+            style = androidx.compose.ui.text.TextStyle(
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                lineHeightStyle = LineHeightStyle(
+                    alignment = LineHeightStyle.Alignment.Center,
+                    trim = LineHeightStyle.Trim.Both,
+                ),
+            ),
             // The word overlaps the pad row, so it is shifted and must not add its own height.
             modifier = Modifier.layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)

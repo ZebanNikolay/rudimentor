@@ -9,7 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -116,14 +115,25 @@ fun Pad(
         RoundedCornerShape(percent = (RudiDimens.PAD_CORNER_FRACTION * 100).toInt())
     }
 
+    // A lit pad is a key with the lamp switched on: flat brick fill and an even halo
+    // around the whole outline, never a directional drop shadow.
     val glow: Modifier = if (lit && !muted) {
-        Modifier.shadow(
-            elevation = if (tone == PadTone.Accent) 18.dp else 14.dp,
-            shape = composeShape,
-            clip = false,
-            ambientColor = RudiColors.BrickLit,
-            spotColor = RudiColors.BrickLit,
-        )
+        val strength = if (tone == PadTone.Accent) 0.75f else 0.5f
+        Modifier.drawBehind {
+            val side = this.size.minDimension
+            val radius = side * 1.25f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    0f to RudiColors.BrickLit.copy(alpha = strength),
+                    0.42f to RudiColors.BrickLit.copy(alpha = strength * 0.7f),
+                    1f to Color.Transparent,
+                    center = this.center,
+                    radius = radius,
+                ),
+                radius = radius,
+                center = this.center,
+            )
+        }
     } else {
         Modifier
     }
@@ -171,8 +181,9 @@ fun Pad(
                 drawRoundRect(color = body, cornerRadius = corner)
             }
 
-            // Inner shadow from the top edge — the "recessed key" cue.
-            if (!muted) {
+            // Inner shadow along the whole outline — the "recessed key" cue.
+            // A lit pad has no inner shadow at all: it reads as a flat glowing surface.
+            if (!muted && !lit) {
                 val outline = Path().apply {
                     addRoundRect(
                         RoundRect(
@@ -184,13 +195,30 @@ fun Pad(
                         ),
                     )
                 }
+                // Concentric fading strokes stand in for a blurred inset shadow: the
+                // darkening hugs the whole contour and is a touch heavier at the top.
+                val depth = side * 0.14f
+                val steps = 10
+                val step = depth / steps
+                val topBias = side * 0.035f
+                val maxAlpha = if (light) 0.16f else 0.5f
                 clipPath(outline) {
-                    drawRect(
-                        brush = Brush.verticalGradient(
-                            0f to Color.Black.copy(alpha = if (lit) 0.22f else 0.45f),
-                            0.32f to Color.Transparent,
-                        ),
-                    )
+                    for (i in 0 until steps) {
+                        val t = i / steps.toFloat()
+                        val inset = i * step
+                        val alpha = maxAlpha * (1f - t) * (1f - t)
+                        val innerRadius = (radius - inset).coerceAtLeast(0f)
+                        drawRoundRect(
+                            color = Color.Black.copy(alpha = alpha),
+                            topLeft = Offset(inset, inset + topBias),
+                            size = Size(
+                                boxSize.width - inset * 2f,
+                                boxSize.height - inset * 2f,
+                            ),
+                            cornerRadius = CornerRadius(innerRadius, innerRadius),
+                            style = Stroke(width = step * 1.6f),
+                        )
+                    }
                 }
             }
 

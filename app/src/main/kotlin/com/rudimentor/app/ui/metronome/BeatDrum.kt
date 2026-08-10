@@ -1,11 +1,15 @@
 package com.rudimentor.app.ui.metronome
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +58,9 @@ import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiMotion
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 /**
  * The looping drum of beat rows. One row is shown alone; with two or more rows the
@@ -91,27 +98,34 @@ fun BeatDrum(
     }
 
     val density = LocalDensity.current
-    val swipeThresholdPx = with(density) { SWIPE_THRESHOLD.toPx() }
     val slotHeightPx = with(density) { RudiDimens.DrumSlotHeight.toPx() }
+    val scope = rememberCoroutineScope()
 
-    // A virtual index keeps the rotation going in the swipe direction across the loop seam.
-    var virtualRow by remember { mutableFloatStateOf(activeRow.toFloat()) }
+    // The barrel position is a continuous virtual row index, so it can cross the loop
+    // seam in either direction and follow the finger between two rows.
+    val position = remember { Animatable(activeRow.toFloat()) }
+    var dragging by remember { mutableStateOf(false) }
+
     LaunchedEffect(activeRow, grid.rowCount) {
-        val current = virtualRow.roundToInt()
+        if (dragging) return@LaunchedEffect
+        val current = position.value.roundToInt()
         val forward = (activeRow - current).mod(grid.rowCount)
         val delta = if (forward * 2 > grid.rowCount) forward - grid.rowCount else forward
-        virtualRow = (current + delta).toFloat()
+        val target = (current + delta).toFloat()
+        if (target != position.value) {
+            position.animateTo(
+                targetValue = target,
+                animationSpec = tween(
+                    durationMillis = RudiMotion.spinMillis(bpm),
+                    easing = DrumEasing,
+                ),
+            )
+        }
     }
-    val animatedRow by animateFloatAsState(
-        targetValue = virtualRow,
-        animationSpec = tween(
-            durationMillis = RudiMotion.spinMillis(bpm),
-            easing = DrumEasing,
-        ),
-        label = "drum",
-    )
 
-    var dragged by remember { mutableFloatStateOf(0f) }
+    val dragState = rememberDraggableState { delta ->
+        scope.launch { position.snapTo(position.value - delta / slotHeightPx) }
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -130,19 +144,29 @@ fun BeatDrum(
                     blendMode = BlendMode.DstIn,
                 )
             }
-            .pointerInput(grid.rowCount) {
-                detectVerticalDragGestures(
-                    onDragEnd = { dragged = 0f },
-                    onDragCancel = { dragged = 0f },
-                ) { _, dragAmount ->
-                    dragged += dragAmount
-                    if (abs(dragged) >= swipeThresholdPx) {
-                        val step = if (dragged < 0) 1 else -1
-                        onSelectRow((virtualRow.roundToInt() + step).mod(grid.rowCount))
-                        dragged = 0f
-                    }
-                }
-            },
+            .draggable(
+                state = dragState,
+                orientation = Orientation.Vertical,
+                onDragStarted = { dragging = true },
+                onDragStopped = { velocity ->
+                    // Flick projection plus a spring settle: the barrel keeps turning a
+                    // little past the finger and then locks onto the nearest row.
+                    val flick = (-velocity / slotHeightPx) * FLICK_PROJECTION
+                    val target = (position.value + flick)
+                        .coerceIn(position.value - 1f, position.value + 1f)
+                        .roundToInt()
+                    position.animateTo(
+                        targetValue = target.toFloat(),
+                        animationSpec = spring(
+                            dampingRatio = 0.85f,
+                            stiffness = Spring.StiffnessMediumLow,
+                        ),
+                        initialVelocity = -velocity / slotHeightPx,
+                    )
+                    dragging = false
+                    onSelectRow(target.mod(grid.rowCount))
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         // Guide lines mark the editable slot in the middle of the barrel.
@@ -166,11 +190,12 @@ fun BeatDrum(
                 },
         )
 
-        val centre = animatedRow.roundToInt()
-        for (offset in -1..1) {
-            val virtualIndex = centre + offset
+        val current = position.value
+        val base = floor(current).toInt()
+        for (virtualIndex in (base - 1)..(base + 2)) {
             val rowIndex = virtualIndex.mod(grid.rowCount)
-            val distance = virtualIndex - animatedRow
+            val distance = virtualIndex - current
+            if (abs(distance) > 1.75f) continue
             val magnitude = abs(distance).coerceAtMost(2f)
             val alpha = when {
                 magnitude <= 1f -> 1f - magnitude * (1f - RudiMotion.NEIGHBOUR_ALPHA)
@@ -178,7 +203,7 @@ fun BeatDrum(
             }
             if (alpha <= 0.01f) continue
             val scale = 1f - (1f - RudiMotion.NEIGHBOUR_SCALE) * magnitude.coerceAtMost(1f)
-            val isCentre = offset == 0
+            val isCentre = magnitude < 0.5f
 
             Row(
                 modifier = Modifier
@@ -293,4 +318,6 @@ private fun BeatRowPads(
 private val DrumEasing = CubicBezierEasing(0.3f, 0.7f, 0.3f, 1f)
 private const val VISIBLE_SLOTS = 3
 private const val FADE_STOP = 0.22f
-private val SWIPE_THRESHOLD = 28.dp
+
+/** Seconds of projected travel used to turn a flick into at most one extra row. */
+private const val FLICK_PROJECTION = 0.12f

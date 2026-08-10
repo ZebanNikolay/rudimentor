@@ -82,7 +82,7 @@ object RudiDimens {
 
     val CardCorner: Dp = 18.dp
     val SheetCorner: Dp = 20.dp
-    val StepperButtonCorner: Dp = 10.dp
+    val StepperButtonCorner: Dp = 8.dp
 
     val LabelTracking = 0.18f.sp
 }
