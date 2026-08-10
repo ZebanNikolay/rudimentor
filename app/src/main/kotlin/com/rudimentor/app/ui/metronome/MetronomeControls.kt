@@ -21,23 +21,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.rudimentor.app.R
 import com.rudimentor.app.ui.component.SquareIconButton
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
 // BackButton and TransportButton now live in ui/component; TempoKey and
-// StepperButton are thin wrappers over SquareIconButton.
-
-/** What a stepper changes: the beats in the current row, or the rows of the drum. */
-enum class Dimension {
-    Beats,
-    Rows,
-}
+// StepperButton are thin wrappers over SquareIconButton. The `Dimension` enum
+// lives in its own file so it can be referenced from callers without pulling
+// in the whole controls module.
 
 /**
  * Icon-only dimension stepper: vertical strokes stand for beats, horizontal lines for rows.
@@ -52,7 +50,9 @@ fun DimensionStepper(
     onIncrease: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val label = if (dimension == Dimension.Beats) "beats in row" else "rows"
+    val label = stringResource(
+        if (dimension == Dimension.Beats) R.string.dimension_beats else R.string.dimension_rows,
+    )
     val shape = RoundedCornerShape(13.dp)
     Row(
         modifier = modifier
@@ -68,7 +68,7 @@ fun DimensionStepper(
             sign = -1,
             enabled = canDecrease,
             onClick = onDecrease,
-            description = "One less $label",
+            description = stringResource(R.string.stepper_less, label),
         )
         Text(
             text = value.toString(),
@@ -81,7 +81,7 @@ fun DimensionStepper(
             sign = 1,
             enabled = canIncrease,
             onClick = onIncrease,
-            description = "One more $label",
+            description = stringResource(R.string.stepper_more, label),
         )
     }
 }
@@ -156,7 +156,7 @@ fun TempoControl(
             sign = -1,
             enabled = canDecrease,
             onClick = onDecrease,
-            description = "Slower tempo",
+            description = stringResource(R.string.transport_slower),
         )
         Column(
             modifier = Modifier.width(128.dp),
@@ -168,13 +168,17 @@ fun TempoControl(
                 color = RudiColors.Text,
             )
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = "BPM", style = RudiTextStyles.Rubric, color = RudiColors.Muted)
+            Text(
+                text = stringResource(R.string.metronome_bpm_label),
+                style = RudiTextStyles.Rubric,
+                color = RudiColors.Muted,
+            )
         }
         TempoKey(
             sign = 1,
             enabled = canIncrease,
             onClick = onIncrease,
-            description = "Faster tempo",
+            description = stringResource(R.string.transport_faster),
         )
     }
 }
@@ -233,6 +237,7 @@ fun SettingsHandle(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val openSettingsCd = stringResource(R.string.metronome_open_settings)
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -242,7 +247,7 @@ fun SettingsHandle(
                 onClick = onClick,
             )
             .padding(top = 8.dp, bottom = 14.dp)
-            .semantics { contentDescription = "Open settings" },
+            .semantics { contentDescription = openSettingsCd },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Canvas(modifier = Modifier.width(18.dp).height(8.dp)) {
@@ -265,7 +270,7 @@ fun SettingsHandle(
         }
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = "SETTINGS",
+            text = stringResource(R.string.metronome_settings_title),
             style = RudiTextStyles.Rubric,
             color = RudiColors.Muted,
         )

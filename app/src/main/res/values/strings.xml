@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RudiMentor</string>
+
+    <!-- Main menu tiles -->
+    <string name="menu_metronome">Metronome</string>
+    <string name="menu_metronome_letter">M</string>
+    <string name="menu_levels">Levels</string>
+    <string name="menu_levels_letter">L</string>
+
+    <!-- Metronome screen chrome -->
+    <string name="metronome_title">METRONOME</string>
+    <string name="metronome_bpm_label">BPM</string>
+    <string name="metronome_no_audio_output">No audio output</string>
+    <string name="metronome_settings_title">SETTINGS</string>
+    <string name="metronome_open_settings">Open settings</string>
+    <string name="metronome_show_hand_letters">R / L letters</string>
+    <string name="metronome_show_hand_letters_cd">Show right and left hand letters</string>
+
+    <!-- Transport & tempo controls -->
+    <string name="transport_slower">Slower tempo</string>
+    <string name="transport_faster">Faster tempo</string>
+
+    <!-- Dimension stepper -->
+    <string name="dimension_beats">beats in row</string>
+    <string name="dimension_rows">rows</string>
+    <string name="stepper_less">One less %1$s</string>
+    <string name="stepper_more">One more %1$s</string>
+
+    <!-- Toolbar & transport -->
+    <string name="toolbar_back">Back</string>
+    <string name="transport_start">Start</string>
+    <string name="transport_stop">Stop</string>
+</resources>

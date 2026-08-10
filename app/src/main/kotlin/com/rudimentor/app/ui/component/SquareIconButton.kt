@@ -18,10 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.rudimentor.app.R
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
@@ -77,7 +79,7 @@ fun BackButton(
 ) {
     SquareIconButton(
         onClick = onClick,
-        contentDescription = "Back",
+        contentDescription = stringResource(R.string.toolbar_back),
         modifier = modifier,
         size = 32.dp,
         corner = RudiDimens.StepperButtonCorner,

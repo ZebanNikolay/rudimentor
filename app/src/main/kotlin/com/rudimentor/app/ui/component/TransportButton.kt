@@ -11,6 +11,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.rudimentor.app.R
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
@@ -38,6 +40,7 @@ fun TransportButton(
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(26.dp)
+    val cd = stringResource(if (playing) R.string.transport_stop else R.string.transport_start)
     Box(
         modifier = modifier
             .size(TRANSPORT_SIZE)
@@ -78,7 +81,7 @@ fun TransportButton(
                 interactionSource = null,
                 onClick = onClick,
             )
-            .semantics { contentDescription = if (playing) "Stop" else "Start" },
+            .semantics { contentDescription = cd },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(32.dp)) {

@@ -10,108 +10,74 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.rudimentor.app.BuildInfo
+import com.rudimentor.app.R
 import com.rudimentor.app.audio.BeatGrid
 import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
-import com.rudimentor.app.audio.Metronome
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.TransportButton
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
-import kotlinx.coroutines.delay
+import com.rudimentor.app.ui.util.formatElapsed
 
+/**
+ * The metronome screen.
+ *
+ * Owns very little state directly. Transport (running, tick, elapsed, error)
+ * lives in [MetronomePlaybackState]; every mutation to [AppSettings] is
+ * delegated to [MetronomeActions]. What stays here is layout, back-handling,
+ * and the `showSettings` toggle for the bottom sheet.
+ */
 @Composable
 fun MetronomeScreen(
     settings: AppSettings,
     buildInfo: BuildInfo,
-    onCycleBeat: (Int, Int) -> Unit,
-    onToggleHand: (Int, Int) -> Unit,
-    onAddBeat: (Int) -> Unit,
-    onRemoveBeat: (Int) -> Unit,
-    onAddRow: () -> Unit,
-    onRemoveRow: () -> Unit,
-    onSelectRow: (Int) -> Unit,
-    onBpmDelta: (Int) -> Unit,
-    onShowLettersChange: (Boolean) -> Unit,
+    actions: MetronomeActions,
     onBack: () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-    val metronome = remember(scope) { Metronome(scope) }
-    var running by remember { mutableStateOf(false) }
-    var tick by remember { mutableLongStateOf(0L) }
-    var elapsedSeconds by remember { mutableIntStateOf(0) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val playback = rememberMetronomePlaybackState()
+    val snapshot = playback.snapshot
+    playback.SyncWithSettings(bpm = settings.bpm, grid = settings.grid)
+
     var showSettings by remember { mutableStateOf(false) }
 
     val grid = settings.grid
-    val position = if (running && tick > 0) grid.locate((tick - 1).toInt()) else null
+    val position = if (snapshot.running && snapshot.tick > 0) {
+        grid.locate((snapshot.tick - 1).toInt())
+    } else {
+        null
+    }
     val visibleRow = position?.row ?: settings.safeActiveRow
 
-    fun stop() {
-        metronome.stop()
-        running = false
-        tick = 0
-        elapsedSeconds = 0
-    }
-
     BackHandler {
-        stop()
+        playback.stop()
         onBack()
-    }
-    DisposableEffect(metronome) {
-        onDispose { metronome.stop() }
-    }
-    LaunchedEffect(metronome) {
-        metronome.ticks.collect { tick = it }
-    }
-    LaunchedEffect(grid) {
-        metronome.setGrid(grid)
-    }
-    LaunchedEffect(settings.bpm) {
-        metronome.setBpm(settings.bpm)
-    }
-    LaunchedEffect(running) {
-        if (!running) return@LaunchedEffect
-        while (true) {
-            delay(1_000)
-            elapsedSeconds += 1
-        }
     }
 
     if (showSettings) {
         SettingsSheet(
             showHandLetters = settings.showHandLetters,
             buildInfo = buildInfo,
-            onShowHandLettersChange = onShowLettersChange,
+            onShowHandLettersChange = actions.showLettersChange,
             onDismiss = { showSettings = false },
         )
     }
+
+    val missingAudioError = stringResource(R.string.metronome_no_audio_output)
 
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
         Column(
@@ -122,16 +88,16 @@ fun MetronomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             AppToolbar(
-                title = "METRONOME",
+                title = stringResource(R.string.metronome_title),
                 onBack = {
-                    stop()
+                    playback.stop()
                     onBack()
                 },
                 rightContent = {
                     Text(
-                        text = formatElapsed(elapsedSeconds),
+                        text = formatElapsed(snapshot.elapsedSeconds),
                         style = RudiTextStyles.Timer,
-                        color = if (running) RudiColors.Text else RudiColors.Muted,
+                        color = if (snapshot.running) RudiColors.Text else RudiColors.Muted,
                     )
                 },
             )
@@ -152,10 +118,10 @@ fun MetronomeScreen(
                     playingBeat = position?.beat,
                     // Editing stays live during playback: hearing the change is the point.
                     editable = true,
-                    rowSwipeEnabled = !running,
-                    onSelectRow = onSelectRow,
-                    onCycleBeat = onCycleBeat,
-                    onToggleHand = onToggleHand,
+                    rowSwipeEnabled = !snapshot.running,
+                    onSelectRow = actions.selectRow,
+                    onCycleBeat = actions.cycleBeat,
+                    onToggleHand = actions.toggleHand,
                 )
             }
 
@@ -165,24 +131,24 @@ fun MetronomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // The stepper always describes the row in the focus slot, so its value
-                // follows the drum instead of a stale stored index.
+                // The stepper always describes the row in the focus slot, so its
+                // value follows the drum instead of a stale stored index.
                 val activeLength = grid.rows[visibleRow].size
                 DimensionStepper(
                     dimension = Dimension.Beats,
                     value = activeLength,
                     canDecrease = activeLength > BeatRow.MIN_BEATS,
                     canIncrease = activeLength < BeatRow.MAX_BEATS,
-                    onDecrease = { onRemoveBeat(visibleRow) },
-                    onIncrease = { onAddBeat(visibleRow) },
+                    onDecrease = { actions.removeBeat(visibleRow) },
+                    onIncrease = { actions.addBeat(visibleRow) },
                 )
                 DimensionStepper(
                     dimension = Dimension.Rows,
                     value = grid.rowCount,
                     canDecrease = grid.rowCount > BeatGrid.MIN_ROWS,
                     canIncrease = grid.rowCount < BeatGrid.MAX_ROWS,
-                    onDecrease = onRemoveRow,
-                    onIncrease = onAddRow,
+                    onDecrease = actions.removeRow,
+                    onIncrease = actions.addRow,
                 )
             }
 
@@ -191,12 +157,12 @@ fun MetronomeScreen(
                 bpm = settings.bpm,
                 canDecrease = Bpm.canDecrease(settings.bpm),
                 canIncrease = Bpm.canIncrease(settings.bpm),
-                onDecrease = { onBpmDelta(-Bpm.STEP) },
-                onIncrease = { onBpmDelta(Bpm.STEP) },
+                onDecrease = { actions.bpmDelta(-Bpm.STEP) },
+                onIncrease = { actions.bpmDelta(Bpm.STEP) },
             )
 
             Spacer(modifier = Modifier.height(18.dp))
-            errorMessage?.let { message ->
+            snapshot.errorMessage?.let { message ->
                 Text(
                     text = message,
                     style = RudiTextStyles.Rubric,
@@ -206,89 +172,24 @@ fun MetronomeScreen(
                 )
             }
             TransportButton(
-                playing = running,
+                playing = snapshot.running,
                 onClick = {
-                    if (running) {
-                        stop()
+                    if (snapshot.running) {
+                        playback.stop()
                     } else {
-                        metronome.setBpm(settings.bpm)
-                        metronome.setGrid(grid)
-                        running = metronome.start()
-                        errorMessage = if (running) null else "No audio output"
+                        playback.start(
+                            bpm = settings.bpm,
+                            grid = grid,
+                            missingAudioError = missingAudioError,
+                        )
                     }
                 },
             )
 
-            // The control cluster belongs with the drum, not with the settings handle:
-            // the leftover height is split so it floats between the two.
+            // The control cluster belongs with the drum, not with the settings
+            // handle: the leftover height is split so it floats between the two.
             Spacer(modifier = Modifier.weight(0.55f))
             SettingsHandle(onClick = { showSettings = true })
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsSheet(
-    showHandLetters: Boolean,
-    buildInfo: BuildInfo,
-    onShowHandLettersChange: (Boolean) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = RudiColors.SurfaceAlt,
-        scrimColor = RudiColors.Scrim,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 28.dp),
-        ) {
-            Text(text = "SETTINGS", style = RudiTextStyles.Rubric, color = RudiColors.Muted)
-            Spacer(modifier = Modifier.height(18.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "R / L letters",
-                    color = RudiColors.Text,
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(
-                    checked = showHandLetters,
-                    onCheckedChange = onShowHandLettersChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = RudiColors.Text,
-                        checkedTrackColor = RudiColors.Brick,
-                        checkedBorderColor = RudiColors.BrickLit,
-                        uncheckedThumbColor = RudiColors.Muted,
-                        uncheckedTrackColor = RudiColors.Surface,
-                        uncheckedBorderColor = RudiColors.Line,
-                    ),
-                    modifier = Modifier.semantics {
-                        contentDescription = "Show right and left hand letters"
-                    },
-                )
-            }
-            Spacer(modifier = Modifier.height(18.dp))
-            HorizontalDivider(color = RudiColors.Line)
-            Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = buildInfo.displayLabel,
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.Muted,
-            )
-        }
-    }
-}
-
-private fun formatElapsed(totalSeconds: Int): String {
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "%02d:%02d".format(minutes, seconds)
 }

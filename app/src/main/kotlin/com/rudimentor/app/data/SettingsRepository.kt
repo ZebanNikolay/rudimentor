@@ -53,10 +53,11 @@ class DataStoreSettingsRepository(
     }
 
     private fun MutablePreferences.write(settings: AppSettings) {
-        this[Keys.Grid] = settings.grid.serialize()
-        this[Keys.Bpm] = Bpm.clamp(settings.bpm)
-        this[Keys.ActiveRow] = settings.safeActiveRow
-        this[Keys.ShowHandLetters] = settings.showHandLetters
+        val safe = settings.sanitized()
+        this[Keys.Grid] = safe.grid.serialize()
+        this[Keys.Bpm] = safe.bpm
+        this[Keys.ActiveRow] = safe.activeRow
+        this[Keys.ShowHandLetters] = safe.showHandLetters
     }
 
     private object Keys {

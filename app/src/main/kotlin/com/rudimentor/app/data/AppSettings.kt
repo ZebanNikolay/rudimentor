@@ -14,6 +14,15 @@ data class AppSettings(
     val showHandLetters: Boolean = true,
 ) {
     val safeActiveRow: Int = activeRow.coerceIn(0, grid.rowCount - 1)
+
+    /**
+     * Return a copy with every value forced into the domain-allowed range.
+     * Called before writing to storage so a bad in-memory value never persists.
+     */
+    fun sanitized(): AppSettings = copy(
+        bpm = Bpm.clamp(bpm),
+        activeRow = safeActiveRow,
+    )
 }
 
 /**
