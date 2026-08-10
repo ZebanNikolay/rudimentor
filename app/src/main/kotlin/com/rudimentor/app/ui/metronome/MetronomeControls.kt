@@ -62,7 +62,7 @@ fun DimensionStepper(
         modifier = modifier
             .background(color = RudiColors.Surface, shape = shape)
             .border(width = RudiDimens.PadBorder, color = RudiColors.Line, shape = shape)
-            .padding(start = 9.dp, end = 4.dp, top = 3.dp, bottom = 3.dp),
+            .padding(start = 18.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -262,7 +262,7 @@ fun TransportButton(
                     val glowRadius = size.minDimension * 0.95f
                     drawCircle(
                         brush = Brush.radialGradient(
-                            0f to RudiColors.BrickLit.copy(alpha = 0.45f),
+                            0f to RudiColors.BrickLit.copy(alpha = 0.11f),
                             1f to Color.Transparent,
                             center = center,
                             radius = glowRadius,

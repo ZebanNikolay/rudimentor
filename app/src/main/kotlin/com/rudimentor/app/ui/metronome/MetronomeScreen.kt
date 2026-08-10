@@ -215,7 +215,9 @@ fun MetronomeScreen(
                 },
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            // The control cluster belongs with the drum, not with the settings handle:
+            // the leftover height is split so it floats between the two.
+            Spacer(modifier = Modifier.weight(0.55f))
             SettingsHandle(onClick = { showSettings = true })
         }
     }
