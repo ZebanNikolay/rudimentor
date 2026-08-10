@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import com.rudimentor.app.BuildConfig
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.ui.component.Pad
@@ -34,6 +35,7 @@ import com.rudimentor.app.ui.component.PadShape
 import com.rudimentor.app.ui.component.PadTone
 import com.rudimentor.app.ui.component.RudiMentorLogo
 import com.rudimentor.app.ui.metronome.MetronomeScreen
+import com.rudimentor.app.ui.miclab.MicLabScreen
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
@@ -41,6 +43,7 @@ import com.rudimentor.app.ui.theme.RudiTextStyles
 private enum class Screen {
     Menu,
     Metronome,
+    MicLab,
 }
 
 @Composable
@@ -65,6 +68,11 @@ fun RudiMentorApp(
             Screen.Menu -> MainMenu(
                 buildInfo = buildInfo,
                 onOpenMetronome = { screenName = Screen.Metronome.name },
+                onOpenMicLab = { screenName = Screen.MicLab.name },
+            )
+            Screen.MicLab -> MicLabScreen(
+                buildInfo = buildInfo,
+                onBack = { screenName = Screen.Menu.name },
             )
             Screen.Metronome -> MetronomeScreen(
                 settings = settings,
@@ -88,6 +96,7 @@ fun RudiMentorApp(
 private fun MainMenu(
     buildInfo: BuildInfo,
     onOpenMetronome: () -> Unit,
+    onOpenMicLab: () -> Unit,
 ) {
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
         Column(
@@ -112,6 +121,15 @@ private fun MainMenu(
                 enabled = false,
                 onClick = {},
             )
+            if (BuildConfig.DEBUG) {
+                Spacer(modifier = Modifier.height(12.dp))
+                MenuCard(
+                    title = "Mic Lab · dev",
+                    letter = "D",
+                    enabled = true,
+                    onClick = onOpenMicLab,
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
             HorizontalDivider(color = RudiColors.Line)

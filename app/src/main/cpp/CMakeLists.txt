@@ -5,6 +5,8 @@ find_package(oboe REQUIRED CONFIG)
 
 add_library(rudimentor_audio SHARED
     MetronomeEngine.cpp
+    MicLabEngine.cpp
+    OnsetDetector.cpp
     native-lib.cpp
 )
 
