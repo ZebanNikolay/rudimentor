@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.ripple
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -132,9 +134,16 @@ private fun StepperButton(
         modifier = Modifier
             .size(27.dp)
             .alpha(if (enabled) 1f else 0.35f)
+            // Clip before clickable so the ripple follows the rounded shape.
+            .clip(shape)
             .background(color = RudiColors.Bg, shape = shape)
             .border(width = RudiDimens.PadBorder, color = RudiColors.Line, shape = shape)
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(
+                enabled = enabled,
+                indication = ripple(color = RudiColors.Text),
+                interactionSource = null,
+                onClick = onClick,
+            )
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
@@ -215,9 +224,15 @@ private fun TempoKey(
         modifier = Modifier
             .size(52.dp)
             .alpha(if (enabled) 1f else 0.35f)
+            .clip(shape)
             .background(color = RudiColors.Surface, shape = shape)
             .border(width = RudiDimens.PadBorder, color = RudiColors.Line, shape = shape)
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(
+                enabled = enabled,
+                indication = ripple(color = RudiColors.Text),
+                interactionSource = null,
+                onClick = onClick,
+            )
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
@@ -278,6 +293,7 @@ fun TransportButton(
                     cornerRadius = CornerRadius(radius, radius),
                 )
             }
+            .clip(shape)
             .background(
                 color = if (playing) RudiColors.Brick else RudiColors.Surface,
                 shape = shape,
@@ -287,7 +303,11 @@ fun TransportButton(
                 color = if (playing) RudiColors.BrickLit else RudiColors.Line,
                 shape = shape,
             )
-            .clickable(onClick = onClick)
+            .clickable(
+                indication = ripple(color = RudiColors.Text),
+                interactionSource = null,
+                onClick = onClick,
+            )
             .semantics { contentDescription = if (playing) "Stop" else "Start" },
         contentAlignment = Alignment.Center,
     ) {
@@ -329,7 +349,11 @@ fun SettingsHandle(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(
+                indication = ripple(color = RudiColors.Text),
+                interactionSource = null,
+                onClick = onClick,
+            )
             .padding(top = 8.dp, bottom = 14.dp)
             .semantics { contentDescription = "Open settings" },
         horizontalAlignment = Alignment.CenterHorizontally,
