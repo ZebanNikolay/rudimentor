@@ -4,10 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.material3.ripple
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,24 +15,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.rudimentor.app.ui.component.SquareIconButton
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
+
+// BackButton и TransportButton теперь живут в ui/component; TempoKey и StepperButton —
+// обёртки над SquareIconButton.
 
 /** What a stepper changes: the beats in the current row, or the rows of the drum. */
 enum class Dimension {
@@ -58,8 +54,6 @@ fun DimensionStepper(
 ) {
     val label = if (dimension == Dimension.Beats) "beats in row" else "rows"
     val shape = RoundedCornerShape(13.dp)
-    // One compact housing: the glyph sits at the left edge, the keys and the number live
-    // inside it, and the whole pill is laid out as a single centred block.
     Row(
         modifier = modifier
             .background(color = RudiColors.Surface, shape = shape)
@@ -122,6 +116,7 @@ private fun DimensionGlyph(dimension: Dimension) {
     }
 }
 
+/** Small square ± key inside the stepper pill (27 dp, radius StepperButtonCorner, Bg fill). */
 @Composable
 private fun StepperButton(
     sign: Int,
@@ -129,43 +124,16 @@ private fun StepperButton(
     onClick: () -> Unit,
     description: String,
 ) {
-    val shape = RoundedCornerShape(RudiDimens.StepperButtonCorner)
-    Box(
-        modifier = Modifier
-            .size(27.dp)
-            .alpha(if (enabled) 1f else 0.35f)
-            // Clip before clickable so the ripple follows the rounded shape.
-            .clip(shape)
-            .background(color = RudiColors.Bg, shape = shape)
-            .border(width = RudiDimens.PadBorder, color = RudiColors.Line, shape = shape)
-            .clickable(
-                enabled = enabled,
-                indication = ripple(color = RudiColors.Text),
-                interactionSource = null,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
+    SquareIconButton(
+        onClick = onClick,
+        contentDescription = description,
+        size = 27.dp,
+        corner = RudiDimens.StepperButtonCorner,
+        background = RudiColors.Bg,
+        border = RudiColors.Line,
+        enabled = enabled,
     ) {
-        Canvas(modifier = Modifier.size(12.dp)) {
-            val stroke = 1.8.dp.toPx()
-            drawLine(
-                color = RudiColors.Text,
-                start = Offset(0f, size.height / 2f),
-                end = Offset(size.width, size.height / 2f),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            if (sign > 0) {
-                drawLine(
-                    color = RudiColors.Text,
-                    start = Offset(size.width / 2f, 0f),
-                    end = Offset(size.width / 2f, size.height),
-                    strokeWidth = stroke,
-                    cap = StrokeCap.Round,
-                )
-            }
-        }
+        PlusMinusGlyph(sign = sign, glyphSize = 12.dp, stroke = 1.8.dp)
     }
 }
 
@@ -179,7 +147,6 @@ fun TempoControl(
     onIncrease: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Keys hug the number instead of being pushed to the screen edges.
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -212,6 +179,7 @@ fun TempoControl(
     }
 }
 
+/** Large square ± key next to the BPM number (52 dp, radius 14, Surface fill). */
 @Composable
 private fun TempoKey(
     sign: Int,
@@ -219,163 +187,40 @@ private fun TempoKey(
     onClick: () -> Unit,
     description: String,
 ) {
-    val shape = RoundedCornerShape(14.dp)
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .alpha(if (enabled) 1f else 0.35f)
-            .clip(shape)
-            .background(color = RudiColors.Surface, shape = shape)
-            .border(width = RudiDimens.PadBorder, color = RudiColors.Line, shape = shape)
-            .clickable(
-                enabled = enabled,
-                indication = ripple(color = RudiColors.Text),
-                interactionSource = null,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
+    SquareIconButton(
+        onClick = onClick,
+        contentDescription = description,
+        size = 52.dp,
+        corner = 14.dp,
+        background = RudiColors.Surface,
+        border = RudiColors.Line,
+        enabled = enabled,
     ) {
-        Canvas(modifier = Modifier.size(20.dp)) {
-            val stroke = 2.dp.toPx()
-            drawLine(
-                color = RudiColors.Text,
-                start = Offset(0f, size.height / 2f),
-                end = Offset(size.width, size.height / 2f),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            if (sign > 0) {
-                drawLine(
-                    color = RudiColors.Text,
-                    start = Offset(size.width / 2f, 0f),
-                    end = Offset(size.width / 2f, size.height),
-                    strokeWidth = stroke,
-                    cap = StrokeCap.Round,
-                )
-            }
-        }
+        PlusMinusGlyph(sign = sign, glyphSize = 20.dp, stroke = 2.dp)
     }
 }
 
-/** The transport key: a large pad that lights up brick while the metronome runs. */
 @Composable
-fun TransportButton(
-    playing: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun PlusMinusGlyph(
+    sign: Int,
+    glyphSize: androidx.compose.ui.unit.Dp,
+    stroke: androidx.compose.ui.unit.Dp,
 ) {
-    val shape = RoundedCornerShape(26.dp)
-    Box(
-        modifier = modifier
-            .size(TRANSPORT_SIZE)
-            .drawBehind {
-                // The physical key ledge: a solid 4 dp plate under the button, plus an
-                // even halo while running.
-                val radius = 26.dp.toPx()
-                if (playing) {
-                    val glowRadius = size.minDimension * 0.95f
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            0f to RudiColors.BrickLit.copy(alpha = 0.11f),
-                            1f to Color.Transparent,
-                            center = center,
-                            radius = glowRadius,
-                        ),
-                        radius = glowRadius,
-                        center = center,
-                    )
-                }
-                drawRoundRect(
-                    color = if (playing) TransportLedgePlaying else TransportLedge,
-                    topLeft = Offset(0f, 4.dp.toPx()),
-                    size = size,
-                    cornerRadius = CornerRadius(radius, radius),
-                )
-            }
-            .clip(shape)
-            .background(
-                color = if (playing) RudiColors.Brick else RudiColors.Surface,
-                shape = shape,
-            )
-            .border(
-                width = RudiDimens.PadBorder,
-                color = if (playing) RudiColors.BrickLit else RudiColors.Line,
-                shape = shape,
-            )
-            .clickable(
-                indication = ripple(color = RudiColors.Text),
-                interactionSource = null,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = if (playing) "Stop" else "Start" },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.size(32.dp)) {
-            val tint = RudiColors.Text
-            if (playing) {
-                val inset = size.width * 0.12f
-                drawRoundRect(
-                    color = tint,
-                    topLeft = Offset(inset, inset),
-                    size = androidx.compose.ui.geometry.Size(
-                        size.width - inset * 2,
-                        size.height - inset * 2,
-                    ),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(
-                        3.dp.toPx(),
-                        3.dp.toPx(),
-                    ),
-                )
-            } else {
-                val triangle = Path().apply {
-                    moveTo(size.width * 0.18f, 0f)
-                    lineTo(size.width * 0.95f, size.height / 2f)
-                    lineTo(size.width * 0.18f, size.height)
-                    close()
-                }
-                drawPath(path = triangle, color = tint)
-            }
-        }
-    }
-}
-
-/** Toolbar key that leaves the metronome: a chevron in the same pad language. */
-@Composable
-fun BackButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(RudiDimens.StepperButtonCorner)
-    Box(
-        modifier = modifier
-            .size(32.dp)
-            .clip(shape)
-            .background(color = RudiColors.SurfaceAlt, shape = shape)
-            .border(width = RudiDimens.PadBorder, color = RudiColors.Line, shape = shape)
-            .clickable(
-                indication = ripple(color = RudiColors.Text),
-                interactionSource = null,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = "Back" },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.width(8.dp).height(14.dp)) {
-            val stroke = 1.8.dp.toPx()
-            val inset = stroke / 2f
+    Canvas(modifier = Modifier.size(glyphSize)) {
+        val strokePx = stroke.toPx()
+        drawLine(
+            color = RudiColors.Text,
+            start = Offset(0f, size.height / 2f),
+            end = Offset(size.width, size.height / 2f),
+            strokeWidth = strokePx,
+            cap = StrokeCap.Round,
+        )
+        if (sign > 0) {
             drawLine(
                 color = RudiColors.Text,
-                start = Offset(size.width - inset, inset),
-                end = Offset(inset, size.height / 2f),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                color = RudiColors.Text,
-                start = Offset(inset, size.height / 2f),
-                end = Offset(size.width - inset, size.height - inset),
-                strokeWidth = stroke,
+                start = Offset(size.width / 2f, 0f),
+                end = Offset(size.width / 2f, size.height),
+                strokeWidth = strokePx,
                 cap = StrokeCap.Round,
             )
         }
@@ -426,8 +271,3 @@ fun SettingsHandle(
         )
     }
 }
-
-/** Transport key metrics and the ledge colours that give it its physical depth. */
-private val TRANSPORT_SIZE = 92.dp
-private val TransportLedge = Color(0xFF0A0A0A)
-private val TransportLedgePlaying = Color(0xFF6B1414)
