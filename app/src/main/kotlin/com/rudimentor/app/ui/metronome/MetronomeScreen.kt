@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,6 +54,14 @@ fun MetronomeScreen(
     val playback = rememberMetronomePlaybackState()
     val snapshot = playback.snapshot
     playback.SyncWithSettings(bpm = settings.bpm, grid = settings.grid)
+
+    // Keep the screen awake while the metronome is running; drop the flag when
+    // playback stops and when the composable leaves the tree. Decision 46.
+    val view = LocalView.current
+    DisposableEffect(snapshot.running) {
+        if (snapshot.running) view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
 
     var showSettings by remember { mutableStateOf(false) }
 
