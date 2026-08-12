@@ -36,6 +36,7 @@ bool MicLabEngine::start() {
 
     outputFrames_ = 0;
     inputFrames_.store(0, std::memory_order_release);
+    inputFrameZero_.store(-1, std::memory_order_release);
     nextTickFrame_ = static_cast<double>(sampleRate_) * 0.30;  // brief warm-up
     step_ = 0;
     clickFrame_ = kClickFrames;
@@ -114,11 +115,19 @@ int MicLabEngine::drainHits(HitEvent *outHits, int maxHits) {
         return 0;
     }
     const float latencyFrames = inputLatencyFrames_.load(std::memory_order_acquire);
+    const int64_t frameZero = inputFrameZero_.load(std::memory_order_acquire);
     int copied = 0;
     uint32_t read = hitsRead_.load(std::memory_order_relaxed);
     const uint32_t write = hitsWrite_.load(std::memory_order_acquire);
     while (read != write && copied < maxHits) {
         HitEvent event = hits_[read % kEventCapacity];
+        // Re-anchor to the output stream's t=0 before applying any
+        // user-facing latency compensation, so the slider only has to
+        // correct for genuine acoustic/round-trip latency, not for the
+        // input-vs-output stream-start skew.
+        if (frameZero >= 0) {
+            event.frame -= frameZero;
+        }
         event.frame -= static_cast<int64_t>(latencyFrames);
         outHits[copied++] = event;
         ++read;
@@ -193,6 +202,26 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
     // start ~simultaneously (input opened first), so the offset between them
     // is bounded by round-trip latency. That offset is what `setInputLatency`
     // compensates.
+    // On the very first output callback, snapshot how far the input frame
+    // counter has already advanced. This captures the stream-start skew
+    // exactly once per start(), independent of how long the output stream
+    // takes to spin up.
+    if (outputFrames_ == 0 && inputFrameZero_.load(std::memory_order_acquire) < 0) {
+        const int64_t skewFrames = inputFrames_.load(std::memory_order_acquire);
+        inputFrameZero_.store(skewFrames, std::memory_order_release);
+        // Diagnostic only: this is the stream-*start* skew (how far the input
+        // counter had already advanced before the output stream's first
+        // callback), not the full loopback round-trip latency. If a
+        // self-loopback test still reports a large mean offset after this
+        // value is subtracted, the residual is genuine output+input hardware
+        // latency, not counter skew, and needs a different fix (device
+        // timestamps or a nonzero default on the latency slider).
+        __android_log_print(ANDROID_LOG_INFO, kLogTag,
+                            "stream-start skew: %lld frames (%.1f ms)",
+                            static_cast<long long>(skewFrames),
+                            static_cast<double>(skewFrames) * 1000.0 / sampleRate_);
+    }
+
     auto *output = static_cast<float *>(audioData);
     const int32_t channelCount = audioStream->getChannelCount();
     const bool audible = clickAudible_.load(std::memory_order_acquire);
