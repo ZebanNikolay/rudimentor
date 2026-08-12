@@ -37,6 +37,15 @@ public:
         // resolvable, and a single stick strike never fires twice.
         int refractoryFrames = 1920;     // 40 ms @ 48 kHz
 
+        // After a peak commits and the refractory window elapses, the
+        // envelope must decay back below `settleFactor * peakEnvelope`
+        // before a new rising edge is allowed to start a new onset. Without
+        // this, the slowly-decaying resonance tail of a single hit (release
+        // is much slower than the adaptive threshold's median window) keeps
+        // re-triggering the peak picker every time the tail wiggles upward,
+        // turning one physical strike into many onsets.
+        float settleFactor = 0.35f;
+
         // Highpass cutoff time constant (samples). Larger = lower cutoff.
         float highpassCoeff = 0.997f;    // ~25 Hz @ 48 kHz
     };
@@ -94,6 +103,8 @@ private:
     float peakThreshold_ = 0.0f;
     int64_t peakFrame_ = 0;
     bool rising_ = false;
+    bool settled_ = true;
+    float settleThreshold_ = 0.0f;
 
     std::atomic<float> lastEnvelope_{0.0f};
     std::atomic<float> lastThreshold_{0.0f};
