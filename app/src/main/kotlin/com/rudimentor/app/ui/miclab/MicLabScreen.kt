@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +57,7 @@ import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -91,7 +93,7 @@ fun MicLabScreen(
     ) { granted -> micGranted = granted }
 
     val hits = remember { mutableStateListOf<MicLab.MicLabEvent.Hit>() }
-    val ticks = remember { mutableStateListOf<MicLab.MicLabEvent.Tick>() }
+    val ticks = remember { mutableStateListOf<TimedTick>() }
 
     LaunchedEffect(micGranted) {
         if (micGranted) {
@@ -110,7 +112,7 @@ fun MicLabScreen(
                     if (hits.size > MAX_HITS) hits.removeAt(0)
                 }
                 is MicLab.MicLabEvent.Tick -> {
-                    ticks.add(event)
+                    ticks.add(TimedTick(event, System.currentTimeMillis()))
                     if (ticks.size > MAX_TICKS) ticks.removeAt(0)
                 }
             }
@@ -162,7 +164,11 @@ fun MicLabScreen(
                 title = "Metronome",
                 subtitle = "${status.bpm} BPM",
             )
-            TickTrack(ticks = ticks, tickCount = status.tickCount)
+            TickTrack(
+                ticks = ticks,
+                tickCount = status.tickCount,
+                periodMs = 60_000f / status.bpm.toFloat().coerceAtLeast(1f),
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -252,47 +258,52 @@ private fun TrackHeader(title: String, subtitle: String) {
 
 private const val TRACK_WINDOW_MS = 800f
 
+/** A metronome tick paired with the wall-clock time the UI received it. */
+private data class TimedTick(val tick: MicLab.MicLabEvent.Tick, val arrivalMs: Long)
+
 @Composable
 private fun TickTrack(
-    ticks: List<MicLab.MicLabEvent.Tick>,
+    ticks: List<TimedTick>,
     tickCount: Long,
+    periodMs: Float,
 ) {
-    // Ticks are drawn as evenly spaced markers to communicate the timeline
-    // itself; the freshest tick has full opacity and older ones fade.
-    val shown = ticks.takeLast(6)
-    Box(
+    // Real time axis: each tick appears at the right edge the instant it
+    // fires and slides toward the left as the beat elapses, reaching the
+    // left edge right when the next tick is due. `nowMs` is refreshed on a
+    // timer so the markers actually move instead of sitting in fixed,
+    // evenly-spaced slots that carry no timing information.
+    var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            nowMs = System.currentTimeMillis()
+            delay(33L)
+        }
+    }
+    val shown = ticks.takeLast(4)
+    val safePeriodMs = if (periodMs > 0f) periodMs else 1000f
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(RudiColors.SurfaceAlt)
             .border(1.dp, RudiColors.Line, RoundedCornerShape(14.dp)),
-        contentAlignment = Alignment.CenterStart,
     ) {
-        // Center anchor line matches the hit track for visual continuity.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(RudiColors.Line),
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            shown.forEachIndexed { index, _ ->
-                val alpha = (index + 1).toFloat() / shown.size
-                Box(
-                    Modifier
-                        .width(10.dp)
-                        .height(28.dp)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(RudiColors.BrickLit.copy(alpha = alpha)),
-                )
-            }
+        val dotWidth = 10.dp
+        val travel = maxWidth - dotWidth
+        shown.forEach { timed ->
+            val elapsedMs = (nowMs - timed.arrivalMs).toFloat().coerceAtLeast(0f)
+            val fraction = (elapsedMs / safePeriodMs).coerceIn(0f, 1f)
+            val alpha = 1f - fraction * 0.75f
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = travel * (1f - fraction))
+                    .width(dotWidth)
+                    .height(28.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(RudiColors.BrickLit.copy(alpha = alpha)),
+            )
         }
         Text(
             text = "#${tickCount}",
@@ -313,7 +324,7 @@ private fun HitTrack(hits: List<MicLab.MicLabEvent.Hit>) {
         targetValue = newestOffset.coerceIn(-TRACK_WINDOW_MS, TRACK_WINDOW_MS),
         label = "hitOffset",
     )
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .height(76.dp)
@@ -337,10 +348,17 @@ private fun HitTrack(hits: List<MicLab.MicLabEvent.Hit>) {
                 .background(RudiColors.PadLetterAccent),
         )
 
-        // History dots along the track for context.
+        // History dots along the track for context. Position is a fraction
+        // of the track's ACTUAL width (BoxWithConstraints' maxWidth), not a
+        // fixed dp constant — otherwise the dot can never travel past a
+        // small fixed band near the left edge and can never reach the
+        // center anchor line above, no matter how accurate the real timing
+        // is.
         val fullWidthFraction = { ms: Float ->
             0.5f + (ms.coerceIn(-TRACK_WINDOW_MS, TRACK_WINDOW_MS) / (TRACK_WINDOW_MS * 2f))
         }
+        val dotWidth = 10.dp
+        val travel = maxWidth - dotWidth
         Box(modifier = Modifier.fillMaxSize()) {
             recent.forEachIndexed { index, hit ->
                 val fraction = fullWidthFraction(hit.offsetMs)
@@ -349,9 +367,9 @@ private fun HitTrack(hits: List<MicLab.MicLabEvent.Hit>) {
                 Box(
                     Modifier
                         .align(Alignment.CenterStart)
-                        .padding(start = (fraction * 100).dp)
-                        .width(10.dp)
-                        .height(10.dp)
+                        .padding(start = travel * fraction)
+                        .width(dotWidth)
+                        .height(dotWidth)
                         .clip(CircleShape)
                         .background(color),
                 )
@@ -362,12 +380,14 @@ private fun HitTrack(hits: List<MicLab.MicLabEvent.Hit>) {
         if (recent.isNotEmpty()) {
             val fraction = fullWidthFraction(animated)
             val color = colorForOffset(newestOffset)
+            val bigDotWidth = 20.dp
+            val bigTravel = maxWidth - bigDotWidth
             Box(
                 Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = (fraction * 100).dp)
-                    .width(20.dp)
-                    .height(20.dp)
+                    .padding(start = bigTravel * fraction)
+                    .width(bigDotWidth)
+                    .height(bigDotWidth)
                     .clip(CircleShape)
                     .background(color)
                     .border(2.dp, RudiColors.Text, CircleShape),
@@ -479,6 +499,14 @@ private fun ControlsCard(
                     uncheckedTrackColor = RudiColors.Surface,
                     uncheckedBorderColor = RudiColors.Line,
                 ),
+            )
+        }
+        if (status.clickAudible) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Headphones recommended \u2014 without them the mic hears its own click and scores it as a hit.",
+                color = RudiColors.Muted,
+                style = MaterialTheme.typography.bodySmall,
             )
         }
         Spacer(Modifier.height(6.dp))
