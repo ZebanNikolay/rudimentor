@@ -53,7 +53,9 @@ class MicLab(
         val envelope: Float = 0f,
         val threshold: Float = 0f,
         val peak: Float = 0f,
-        val clickAudible: Boolean = true,
+        // Off by default: without headphones the mic hears its own click
+        // and scores it as a hit (see MicLabEngine's clickAudible_ comment).
+        val clickAudible: Boolean = false,
         val sensitivity: Float = DEFAULT_SENSITIVITY,
         val inputLatencyMs: Float = DEFAULT_LATENCY_MS,
         val hitCount: Int = 0,
