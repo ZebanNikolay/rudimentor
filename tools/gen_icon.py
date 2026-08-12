@@ -16,14 +16,15 @@ from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 
-FONT = "app/src/main/res/font/jetbrains_mono_bold.ttf"
+FONT = "jetbrains_mono_bold.ttf"
 # Virtual slot the letter and the dot are measured from. The pad is no longer
 # drawn as a separate shape -- the adaptive background provides the red.
 SLOT = 52.0
 CENTER = 54.0
-LETTER_CAP_RATIO = 0.31  # cap height relative to SLOT (≈0.42 em font size)
-FOREGROUND = "app/src/main/res/drawable/ic_launcher_foreground.xml"
-MONOCHROME = "app/src/main/res/drawable/ic_launcher_monochrome.xml"
+LETTER_CAP_RATIO = 0.403  # cap height relative to SLOT (+30% vs previous 0.31)
+DOT_RATIO = 0.24  # LED diameter relative to SLOT (2x previous 0.12)
+FOREGROUND = "ic_launcher_foreground.xml"
+MONOCHROME = "ic_launcher_monochrome.xml"
 
 HEADER = (
     '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -57,7 +58,7 @@ def led_path() -> str:
     """Little LED dot in the upper-right of the same virtual SLOT the letter uses."""
     left = CENTER - SLOT / 2
     right = CENTER + SLOT / 2
-    diameter = SLOT * 0.12
+    diameter = SLOT * DOT_RATIO
     radius = diameter / 2
     cx = right - SLOT * 0.13 - radius
     cy = left + SLOT * 0.11 + radius
@@ -92,7 +93,7 @@ def main() -> None:
         fh.write(foreground)
     with open(MONOCHROME, "w") as fh:
         fh.write(monochrome)
-    print(f"letter cap {SLOT * LETTER_CAP_RATIO:.2f}dp · LED radius {SLOT * 0.06:.2f}dp")
+    print(f"letter cap {SLOT * LETTER_CAP_RATIO:.2f}dp · LED radius {SLOT * DOT_RATIO / 2:.2f}dp")
 
 
 if __name__ == "__main__":
