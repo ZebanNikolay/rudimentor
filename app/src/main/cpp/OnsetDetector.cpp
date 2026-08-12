@@ -14,6 +14,8 @@ void OnsetDetector::reset(int32_t /*sampleRate*/) {
     peakThreshold_ = 0.0f;
     peakFrame_ = 0;
     rising_ = false;
+    settled_ = true;
+    settleThreshold_ = 0.0f;
     medianHead_ = 0;
     medianSize_ = 0;
     std::memset(medianRing_, 0, sizeof(medianRing_));
@@ -95,6 +97,24 @@ int OnsetDetector::process(const float *samples, int32_t numFrames, int64_t star
             continue;
         }
 
+        // The adaptive threshold (median of the last ~10 ms) collapses back
+        // toward the noise floor much faster than the envelope decays after
+        // a hit (release is deliberately slow so transients stay visible).
+        // If we let a new rising edge arm as soon as refractory_ hits 0, any
+        // wiggle in that still-elevated decay tail re-triggers immediately,
+        // turning one physical strike into a burst of onsets. So: after
+        // refractory_ elapses, require the envelope to actually settle back
+        // under `settleFactor * peakEnvelope` before we start watching for a
+        // new rise at all.
+        if (!settled_) {
+            if (envelope_ <= settleThreshold_) {
+                settled_ = true;
+            } else {
+                prevEnvelope_ = envelope_;
+                continue;
+            }
+        }
+
         // Peak picking: detect a local maximum of the envelope that also
         // crossed the adaptive threshold. We watch for a rising edge over
         // `threshold`, track the local max, and commit when the envelope
@@ -117,6 +137,8 @@ int OnsetDetector::process(const float *samples, int32_t numFrames, int64_t star
                 }
                 rising_ = false;
                 refractory_ = params_.refractoryFrames;
+                settled_ = false;
+                settleThreshold_ = peakEnvelope_ * params_.settleFactor;
             }
         }
 
