@@ -153,9 +153,11 @@ class MicLab(
 
         val snapshot = native.snapshot()
         val framesPerMs = snapshot.sampleRate / 1000f
+        val bpm = _status.value.bpm
+        val framesPerBeat = if (bpm > 0) snapshot.sampleRate * 60.0 / bpm else 0.0
         if (framesPerMs > 0f) {
             for (hit in hitScratch) {
-                val nearest = nearestTick(hit.frame)
+                val nearest = nearestTick(hit.frame, framesPerBeat)
                 val nearestFrame = nearest?.frame ?: hit.frame
                 val nearestIndex = nearest?.index ?: -1L
                 val deltaFrames = (hit.frame - nearestFrame).toFloat()
@@ -208,7 +210,17 @@ class MicLab(
         }
     }
 
-    private fun nearestTick(frame: Long): NativeMicLab.TickEvent? {
+    // Real ticks only become known to Kotlin once the native engine has
+    // already fired them (the output callback publishes a tick only after
+    // its frame counter passes nextTickFrame_). So a hit that lands before
+    // the *upcoming* beat has no real tick to be compared against yet -
+    // it can only ever be measured against the previous, already-fired
+    // tick, which makes every early hit look "late by almost a full beat"
+    // instead of "early". To fix that we also synthesize a projected next
+    // tick (lastTick.frame + framesPerBeat, stepped forward if more than
+    // one beat has elapsed, e.g. after a pause) and let it compete as a
+    // candidate alongside the real, already-seen ticks.
+    private fun nearestTick(frame: Long, framesPerBeat: Double): NativeMicLab.TickEvent? {
         if (pendingTicks.isEmpty()) return null
         var best: NativeMicLab.TickEvent = pendingTicks.first()
         var bestDelta = abs(frame - best.frame)
@@ -217,6 +229,21 @@ class MicLab(
             if (delta < bestDelta) {
                 bestDelta = delta
                 best = t
+            }
+        }
+        if (framesPerBeat > 0.0) {
+            val last = pendingTicks.last()
+            var projectedFrame = last.frame + framesPerBeat
+            var projectedIndex = last.index + 1
+            var guard = 0
+            while (projectedFrame < frame - framesPerBeat / 2.0 && guard < 64) {
+                projectedFrame += framesPerBeat
+                projectedIndex += 1
+                guard++
+            }
+            val delta = abs(frame - projectedFrame.toLong())
+            if (delta < bestDelta) {
+                best = NativeMicLab.TickEvent(frame = projectedFrame.toLong(), index = projectedIndex)
             }
         }
         return best
