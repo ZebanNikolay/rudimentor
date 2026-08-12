@@ -16,6 +16,7 @@ void OnsetDetector::reset(int32_t /*sampleRate*/) {
     rising_ = false;
     settled_ = true;
     settleThreshold_ = 0.0f;
+    postHitFloor_ = 0.0f;
     medianHead_ = 0;
     medianSize_ = 0;
     std::memset(medianRing_, 0, sizeof(medianRing_));
@@ -89,6 +90,12 @@ int OnsetDetector::process(const float *samples, int32_t numFrames, int64_t star
             envelope_ += params_.releaseCoeff * (rectified - envelope_);
         }
 
+        // Decay the post-hit floor toward zero at the envelope's own release
+        // rate, independent of the fast-collapsing median threshold. Runs
+        // unconditionally (including during refractory) so it is always
+        // current when we reach the peak-pick step below.
+        postHitFloor_ += params_.releaseCoeff * (0.0f - postHitFloor_);
+
         const int64_t frame = startFrame + i;
 
         if (refractory_ > 0) {
@@ -119,11 +126,12 @@ int OnsetDetector::process(const float *samples, int32_t numFrames, int64_t star
         // crossed the adaptive threshold. We watch for a rising edge over
         // `threshold`, track the local max, and commit when the envelope
         // turns back down.
+        const float effectiveThreshold = std::max(threshold, postHitFloor_);
         if (!rising_) {
-            if (envelope_ > threshold && envelope_ > prevEnvelope_) {
+            if (envelope_ > effectiveThreshold && envelope_ > prevEnvelope_) {
                 rising_ = true;
                 peakEnvelope_ = envelope_;
-                peakThreshold_ = threshold;
+                peakThreshold_ = effectiveThreshold;
                 peakFrame_ = frame;
             }
         } else {
@@ -139,6 +147,7 @@ int OnsetDetector::process(const float *samples, int32_t numFrames, int64_t star
                 refractory_ = params_.refractoryFrames;
                 settled_ = false;
                 settleThreshold_ = peakEnvelope_ * params_.settleFactor;
+                postHitFloor_ = peakEnvelope_ * params_.postHitFloorFactor;
             }
         }
 
