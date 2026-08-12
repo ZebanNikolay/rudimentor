@@ -101,6 +101,14 @@ private:
     int32_t sampleRate_ = 48000;
     int64_t outputFrames_ = 0;
     std::atomic<int64_t> inputFrames_{0};
+    // Captured on the output stream's first callback: the input frame
+    // counter's value at that instant. Because the input stream is started
+    // slightly before the output stream (see start()), inputFrames_ has
+    // already advanced by the time outputFrames_ begins at 0. Subtracting
+    // this snapshot re-anchors both counters to the same t=0, removing the
+    // systematic stream-start offset from every reported hit. -1 means
+    // "not yet captured".
+    std::atomic<int64_t> inputFrameZero_{-1};
     double nextTickFrame_ = 0.0;
     int64_t step_ = 0;
     int clickFrame_ = kClickFrames;
