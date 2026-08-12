@@ -89,7 +89,12 @@ private:
     std::shared_ptr<oboe::AudioStream> inputStream_;
 
     std::atomic<int> bpm_{60};
-    std::atomic<bool> clickAudible_{true};
+    // Off by default: without headphones, an audible click leaks from the
+    // speaker back into the mic and the detector scores that echo as a hit
+    // (usually landing in the "red"/off bucket, since `inputLatencyFrames_`
+    // is uncompensated by default). There is no self-echo exclusion yet, so
+    // keep this off for real scoring runs unless the tester is on headphones.
+    std::atomic<bool> clickAudible_{false};
     std::atomic<bool> running_{false};
     std::atomic<float> inputLatencyFrames_{0.0f};
 
