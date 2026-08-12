@@ -261,7 +261,13 @@ class MicLab(
         const val MAX_BPM = 240
         const val DEFAULT_BPM = 60
         const val DEFAULT_SENSITIVITY = 0.35f
-        const val DEFAULT_LATENCY_MS = 0f
+        // Residual output+input round-trip latency after the start-skew fix
+        // (decision 52). Measured via self-loopback (speaker click -> mic),
+        // which times Lout+Lin -- the same two delays a real stick hit synced
+        // to the audible click goes through, so the same offset applies to
+        // real playing too. Still device-specific; the calibration-wizard
+        // TODO remains the proper per-device fix.
+        const val DEFAULT_LATENCY_MS = 24f
 
         private const val POLL_INTERVAL_MS = 8L
         private const val TICK_HISTORY = 64
