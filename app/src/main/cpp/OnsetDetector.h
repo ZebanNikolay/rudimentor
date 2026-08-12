@@ -46,6 +46,22 @@ public:
         // turning one physical strike into many onsets.
         float settleFactor = 0.35f;
 
+        // The settle gate above only watches `envelope_`, but the adaptive
+        // median threshold collapses back toward the noise floor on almost
+        // the same timescale as the envelope's own release (median window
+        // is ~10 ms; envelope release reaches settleFactor of peak in a
+        // similar span). So right when `settled_` flips back to true, the
+        // real threshold has often already collapsed too, and any small
+        // wiggle in the still-decaying resonance tail clears it and
+        // re-triggers. `postHitFloor` is a second, independently-decaying
+        // floor seeded from the peak at commit time and released at the
+        // same slow `releaseCoeff` as the envelope itself (not the fast
+        // median), so it stays well above ambient for as long as a
+        // genuine decay tail would, regardless of how fast the median
+        // threshold snaps back. A real new hit's fast attack easily clears
+        // it; a decay-tail wiggle does not.
+        float postHitFloorFactor = 0.5f;
+
         // Highpass cutoff time constant (samples). Larger = lower cutoff.
         float highpassCoeff = 0.997f;    // ~25 Hz @ 48 kHz
     };
@@ -105,6 +121,7 @@ private:
     bool rising_ = false;
     bool settled_ = true;
     float settleThreshold_ = 0.0f;
+    float postHitFloor_ = 0.0f;
 
     std::atomic<float> lastEnvelope_{0.0f};
     std::atomic<float> lastThreshold_{0.0f};
