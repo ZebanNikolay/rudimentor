@@ -298,9 +298,16 @@ private fun TickTrack(
             delay(16L)
         }
     }
-    val lastTick = ticks.lastOrNull()
     val safePeriodMs = if (periodMs > 0f) periodMs else 1000f
     val travelDurationMs = safePeriodMs * TRAVEL_DURATION_FACTOR
+    // Render every tick still inside its own travel window, not just the
+    // newest one. A tick reaches the hit-line exactly when the *next* tick
+    // fires, so keying the marker off `ticks.lastOrNull()` alone made it
+    // jump straight back to the right edge the instant it touched the
+    // line -- it never visibly continued past it. Rendering all recent
+    // ticks lets the old marker keep travelling left and fading out while
+    // the new one is born on the right, so the crossing is visible.
+    val activeTicks = ticks.filter { (nowMs - it.arrivalMs) < travelDurationMs }
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -323,12 +330,13 @@ private fun TickTrack(
                 .background(RudiColors.PadLetterAccent),
         )
 
-        if (lastTick != null) {
-            val elapsedMs = (nowMs - lastTick.arrivalMs).toFloat().coerceAtLeast(0f)
+        activeTicks.forEach { tick ->
+            val elapsedMs = (nowMs - tick.arrivalMs).toFloat().coerceAtLeast(0f)
             val fraction = (1f - elapsedMs / travelDurationMs).coerceIn(0f, 1f)
-            // Fade the marker out once it has passed the hit-line (fraction
-            // below HIT_LINE_FRACTION means it overshot, e.g. right after a
-            // tempo change); fully visible everywhere else on its approach.
+            // Stay fully visible on the approach; fade only over the second
+            // half of the journey, i.e. after crossing the hit-line, so the
+            // marker visibly continues past it instead of disappearing right
+            // at the line.
             val alpha = if (fraction >= HIT_LINE_FRACTION) {
                 1f
             } else {
