@@ -261,26 +261,46 @@ private const val TRACK_WINDOW_MS = 800f
 /** A metronome tick paired with the wall-clock time the UI received it. */
 private data class TimedTick(val tick: MicLab.MicLabEvent.Tick, val arrivalMs: Long)
 
+// Where the fixed hit-line sits, as a fraction of the track's travel
+// distance from the left edge. The marker is timed so it crosses this
+// line at the exact instant the next beat fires, giving the player a
+// fixed visual target to anticipate instead of having to react to a
+// sound that has already happened.
+private const val HIT_LINE_FRACTION = 1f / 3f
+
+// The marker is born at the right edge exactly when a tick fires and
+// must reach HIT_LINE_FRACTION exactly one period later, i.e. at the
+// *next* tick. Solving `fraction(periodMs) == HIT_LINE_FRACTION` for a
+// marker that starts at fraction=1 and moves at constant speed gives a
+// total travel time of periodMs / (1 - HIT_LINE_FRACTION):
+//   fraction(t) = 1 - t / travelDurationMs
+//   1 - HIT_LINE_FRACTION = periodMs / travelDurationMs
+//   travelDurationMs = periodMs / (1 - HIT_LINE_FRACTION) = 1.5 * periodMs
+private const val TRAVEL_DURATION_FACTOR = 1f / (1f - HIT_LINE_FRACTION)
+
 @Composable
 private fun TickTrack(
     ticks: List<TimedTick>,
     tickCount: Long,
     periodMs: Float,
 ) {
-    // Real time axis: each tick appears at the right edge the instant it
-    // fires and slides toward the left as the beat elapses, reaching the
-    // left edge right when the next tick is due. `nowMs` is refreshed on a
-    // timer so the markers actually move instead of sitting in fixed,
-    // evenly-spaced slots that carry no timing information.
+    // Anticipatory timeline: the marker is born at the right edge the
+    // instant a tick fires and travels left at constant speed, crossing
+    // the fixed hit-line exactly when the *next* tick is due. That lets
+    // the player watch the marker approach the line and strike right as
+    // it crosses, instead of reacting after the click sound has already
+    // played. `nowMs` is refreshed on a timer so the marker actually
+    // animates instead of jumping between fixed slots.
     var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
             nowMs = System.currentTimeMillis()
-            delay(33L)
+            delay(16L)
         }
     }
-    val shown = ticks.takeLast(4)
+    val lastTick = ticks.lastOrNull()
     val safePeriodMs = if (periodMs > 0f) periodMs else 1000f
+    val travelDurationMs = safePeriodMs * TRAVEL_DURATION_FACTOR
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -291,14 +311,33 @@ private fun TickTrack(
     ) {
         val dotWidth = 10.dp
         val travel = maxWidth - dotWidth
-        shown.forEach { timed ->
-            val elapsedMs = (nowMs - timed.arrivalMs).toFloat().coerceAtLeast(0f)
-            val fraction = (elapsedMs / safePeriodMs).coerceIn(0f, 1f)
-            val alpha = 1f - fraction * 0.75f
+
+        // Fixed hit-line: the target the marker must cross exactly on the
+        // beat.
+        Box(
+            Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = travel * HIT_LINE_FRACTION)
+                .width(2.dp)
+                .height(44.dp)
+                .background(RudiColors.PadLetterAccent),
+        )
+
+        if (lastTick != null) {
+            val elapsedMs = (nowMs - lastTick.arrivalMs).toFloat().coerceAtLeast(0f)
+            val fraction = (1f - elapsedMs / travelDurationMs).coerceIn(0f, 1f)
+            // Fade the marker out once it has passed the hit-line (fraction
+            // below HIT_LINE_FRACTION means it overshot, e.g. right after a
+            // tempo change); fully visible everywhere else on its approach.
+            val alpha = if (fraction >= HIT_LINE_FRACTION) {
+                1f
+            } else {
+                (fraction / HIT_LINE_FRACTION).coerceIn(0f, 1f)
+            }
             Box(
                 Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = travel * (1f - fraction))
+                    .padding(start = travel * fraction)
                     .width(dotWidth)
                     .height(28.dp)
                     .clip(RoundedCornerShape(3.dp))
