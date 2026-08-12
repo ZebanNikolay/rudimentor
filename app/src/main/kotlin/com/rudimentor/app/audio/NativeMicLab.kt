@@ -16,6 +16,9 @@ class NativeMicLab {
         init {
             System.loadLibrary("rudimentor_audio")
         }
+
+        private const val HIT_DRAIN_CAPACITY = 32
+        private const val TICK_DRAIN_CAPACITY = 32
     }
 
     /** Snapshot of the running engine. Fields are decoded from a native int array. */
@@ -108,8 +111,4 @@ class NativeMicLab {
     private external fun nativeDrainHits(out: LongArray): Int
     private external fun nativeDrainTicks(out: LongArray): Int
 
-    private companion object {
-        const val HIT_DRAIN_CAPACITY = 32
-        const val TICK_DRAIN_CAPACITY = 32
-    }
 }

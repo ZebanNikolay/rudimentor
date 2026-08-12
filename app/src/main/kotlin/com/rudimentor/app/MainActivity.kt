@@ -9,13 +9,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rudimentor.app.data.DataStoreSettingsRepository
+import com.rudimentor.app.data.levels.AssetLevelCatalogLoader
+import com.rudimentor.app.data.levels.DataStoreLevelProgressRepository
 import com.rudimentor.app.ui.RudiMentorApp
 import com.rudimentor.app.ui.metronome.MetronomeActions
 import com.rudimentor.app.ui.theme.RudiMentorTheme
 
 class MainActivity : ComponentActivity() {
+    private val levelCatalog by lazy { AssetLevelCatalogLoader(assets).load() }
+
     private val viewModel: AppViewModel by viewModels {
-        AppViewModel.factory(DataStoreSettingsRepository(applicationContext))
+        AppViewModel.factory(
+            repository = DataStoreSettingsRepository(applicationContext),
+            progressRepository = DataStoreLevelProgressRepository(applicationContext, levelCatalog),
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,6 +30,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val settings by viewModel.settings.collectAsStateWithLifecycle()
+            val learningProgress by viewModel.learningProgress.collectAsStateWithLifecycle()
             // The action holder is stable for the lifetime of the view model,
             // so composables that only close over `actions` skip recomposition
             // when unrelated settings change.
@@ -46,7 +54,10 @@ class MainActivity : ComponentActivity() {
                         versionCode = BuildConfig.VERSION_CODE,
                     ),
                     settings = settings,
+                    levelCatalog = levelCatalog,
+                    learningProgress = learningProgress,
                     actions = actions,
+                    onConfigureLevel = viewModel::configureLevel,
                 )
             }
         }

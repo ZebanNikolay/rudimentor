@@ -6,12 +6,18 @@ Pick a level (rudiment pattern + tempo), practice along with the metronome while
 
 ## Current MVP
 
-- **Metronome** — a low-latency metronome with a 30–240 BPM range, ±10/±20 controls, and an editable 4–8 beat pattern
+- **Metronome** — a low-latency metronome with a 40–250 BPM range, tempo controls, and an editable multi-row pattern
 - **Pattern accents** — in abstract mode, tap any beat to switch between a stronger accented click and the regular click
 - **Custom sticking** — in R/L mode, tap each beat independently to build any right/left sequence
 - **Prototype Lab** — compare ten numbered, source-backed interactive beat indicators and choose the persisted style used by Metronome
 - **Developer palettes** — switch among P1–P6 Material 3 role schemes generated from published color seeds
-- **Levels** — R/L sticking patterns with a running cursor, repetition counter, and locally stored progress
+- **Levels** — a three-column learning map, level details, rank targets, and direct hand-off to the metronome
+
+The current curriculum is temporary and lives in `app/src/main/assets/levels.json`. The versioned JSON is immutable content: it defines level type, modifiers, role, map column, prerequisites, temporal pattern steps, and four per-level rank targets. Approved learning material can replace this sample catalog without changing either Levels screen. Center-column levels are required; both side columns are optional.
+
+User progress is a separate `level_progress` DataStore. The current build seeds it with placeholder completions, stars, scores, and a streak so the map can be evaluated before scoring is implemented; future results can be persisted without modifying the curriculum asset. Practice, Groove, Stage, and Rockstar BPM/repetition targets belong to each exercise rather than to a global tier.
+
+A pattern step owns a set of hands and one accent/sound decision. Unison is therefore represented as one temporal position with `hands: ["R", "L"]`, never as consecutive R/L beats. The existing metronome `BeatGrid` still supports one hand per position, so Unison levels are fully previewable but their practice button stays disabled until the audio/grid model is extended.
 
 ## Tech
 

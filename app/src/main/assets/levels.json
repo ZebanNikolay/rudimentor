@@ -1,0 +1,2132 @@
+{
+  "schemaVersion": 2,
+  "tiers": [
+    {
+      "id": "I",
+      "name": "Foundation",
+      "levels": [
+        {
+          "id": "I-01",
+          "row": 0,
+          "column": "center",
+          "role": "lesson",
+          "type": "steady",
+          "modifiers": [],
+          "title": "Single strokes",
+          "description": "Keep both hands even and relaxed through one bar of eighth notes.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 50,
+              "repetitions": 12
+            },
+            {
+              "rank": "groove",
+              "bpm": 75,
+              "repetitions": 16
+            },
+            {
+              "rank": "stage",
+              "bpm": 105,
+              "repetitions": 20
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 135,
+              "repetitions": 24
+            }
+          ],
+          "prerequisiteIds": []
+        },
+        {
+          "id": "I-02",
+          "row": 1,
+          "column": "left",
+          "role": "lesson",
+          "type": "isolation",
+          "modifiers": [
+            "weak"
+          ],
+          "title": "Left-hand control",
+          "description": "Let the left hand lead while the right hand stays soft.",
+          "pattern": [
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "left",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 10
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 14
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 18
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 22
+            }
+          ],
+          "prerequisiteIds": [
+            "I-01"
+          ]
+        },
+        {
+          "id": "I-03",
+          "row": 1,
+          "column": "center",
+          "role": "lesson",
+          "type": "unison",
+          "modifiers": [],
+          "title": "Hands together",
+          "description": "Land both hands at the same instant and listen for one clean sound.",
+          "pattern": [
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 12
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 16
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 20
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 24
+            }
+          ],
+          "prerequisiteIds": [
+            "I-01"
+          ]
+        },
+        {
+          "id": "I-04",
+          "row": 1,
+          "column": "right",
+          "role": "lesson",
+          "type": "transition",
+          "modifiers": [],
+          "title": "Moving the lead",
+          "description": "Move the lead smoothly from right to left every four notes.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 10
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 14
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 18
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 22
+            }
+          ],
+          "prerequisiteIds": [
+            "I-01"
+          ]
+        },
+        {
+          "id": "I-05",
+          "row": 2,
+          "column": "center",
+          "role": "lesson",
+          "type": "subdivision_switch",
+          "modifiers": [],
+          "title": "Eighths to sixteenths",
+          "description": "Keep the pulse steady while the note spacing becomes twice as dense.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 12
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 16
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 20
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 24
+            }
+          ],
+          "prerequisiteIds": [
+            "I-03"
+          ]
+        },
+        {
+          "id": "I-06",
+          "row": 2,
+          "column": "right",
+          "role": "lesson",
+          "type": "tempo_ramp",
+          "modifiers": [
+            "endurance"
+          ],
+          "title": "Long acceleration",
+          "description": "Build speed in small steps while preserving the same motion.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 24
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 28
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 32
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 36
+            }
+          ],
+          "prerequisiteIds": [
+            "I-05"
+          ]
+        },
+        {
+          "id": "I-07",
+          "row": 3,
+          "column": "left",
+          "role": "lesson",
+          "type": "dynamics",
+          "modifiers": [
+            "weak"
+          ],
+          "title": "Quiet left accents",
+          "description": "Bring out the left-hand accents without raising the surrounding notes.",
+          "pattern": [
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "left",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 12
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 16
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 20
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 24
+            }
+          ],
+          "prerequisiteIds": [
+            "I-05"
+          ]
+        },
+        {
+          "id": "I-08",
+          "row": 3,
+          "column": "center",
+          "role": "lesson",
+          "type": "steady",
+          "modifiers": [
+            "endurance"
+          ],
+          "title": "One-minute flow",
+          "description": "Stay loose and even through a longer uninterrupted phrase.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 50,
+              "repetitions": 20
+            },
+            {
+              "rank": "groove",
+              "bpm": 75,
+              "repetitions": 24
+            },
+            {
+              "rank": "stage",
+              "bpm": 105,
+              "repetitions": 28
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 135,
+              "repetitions": 32
+            }
+          ],
+          "prerequisiteIds": [
+            "I-05"
+          ]
+        },
+        {
+          "id": "I-09",
+          "row": 3,
+          "column": "right",
+          "role": "lesson",
+          "type": "isolation",
+          "modifiers": [],
+          "title": "Right-hand doubles",
+          "description": "Make the second right-hand stroke match the first one.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 50,
+              "repetitions": 12
+            },
+            {
+              "rank": "groove",
+              "bpm": 75,
+              "repetitions": 16
+            },
+            {
+              "rank": "stage",
+              "bpm": 105,
+              "repetitions": 20
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 135,
+              "repetitions": 24
+            }
+          ],
+          "prerequisiteIds": [
+            "I-05"
+          ]
+        },
+        {
+          "id": "I-10",
+          "row": 4,
+          "column": "center",
+          "role": "checkpoint",
+          "type": "steady",
+          "modifiers": [],
+          "title": "Block 1 cleared",
+          "description": "A short checkpoint combining the first block of skills.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 16
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 20
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 24
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 28
+            }
+          ],
+          "prerequisiteIds": [
+            "I-08"
+          ]
+        },
+        {
+          "id": "I-11",
+          "row": 5,
+          "column": "center",
+          "role": "lesson",
+          "type": "unison",
+          "modifiers": [],
+          "title": "Unison pulse",
+          "description": "Keep eight simultaneous two-hand hits centered on the pulse.",
+          "pattern": [
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 20
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 24
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 28
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 32
+            }
+          ],
+          "prerequisiteIds": [
+            "I-10"
+          ]
+        },
+        {
+          "id": "I-12",
+          "row": 6,
+          "column": "left",
+          "role": "lesson",
+          "type": "transition",
+          "modifiers": [
+            "endurance"
+          ],
+          "title": "Reverse paradiddle loop",
+          "description": "Start with the left hand and keep the reverse sticking relaxed.",
+          "pattern": [
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "left",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 24
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 28
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 32
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 36
+            }
+          ],
+          "prerequisiteIds": [
+            "I-11"
+          ]
+        },
+        {
+          "id": "I-13",
+          "row": 6,
+          "column": "center",
+          "role": "lesson",
+          "type": "subdivision_switch",
+          "modifiers": [],
+          "title": "Paradiddle pulse switch",
+          "description": "Move between eighth notes and sixteenths without changing the pulse.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 50,
+              "repetitions": 20
+            },
+            {
+              "rank": "groove",
+              "bpm": 75,
+              "repetitions": 24
+            },
+            {
+              "rank": "stage",
+              "bpm": 105,
+              "repetitions": 28
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 135,
+              "repetitions": 32
+            }
+          ],
+          "prerequisiteIds": [
+            "I-11"
+          ]
+        },
+        {
+          "id": "I-14",
+          "row": 6,
+          "column": "right",
+          "role": "lesson",
+          "type": "tempo_ramp",
+          "modifiers": [
+            "weak"
+          ],
+          "title": "Left-hand speed ladder",
+          "description": "Increase tempo while keeping the left-hand doubles full and even.",
+          "pattern": [
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "left",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 16
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 20
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 24
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 28
+            }
+          ],
+          "prerequisiteIds": [
+            "I-11"
+          ]
+        },
+        {
+          "id": "I-15",
+          "row": 7,
+          "column": "center",
+          "role": "lesson",
+          "type": "dynamics",
+          "modifiers": [],
+          "title": "Moving accents",
+          "description": "Shift the accent through the sticking while every tap stays even.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 16
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 20
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 24
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 28
+            }
+          ],
+          "prerequisiteIds": [
+            "I-13"
+          ]
+        },
+        {
+          "id": "I-16",
+          "row": 8,
+          "column": "center",
+          "role": "lesson",
+          "type": "steady",
+          "modifiers": [],
+          "title": "Continuous paradiddles",
+          "description": "Connect phrases with no gap and no extra accent at the seam.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 24
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 28
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 32
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 36
+            }
+          ],
+          "prerequisiteIds": [
+            "I-15"
+          ]
+        },
+        {
+          "id": "I-17",
+          "row": 8,
+          "column": "right",
+          "role": "lesson",
+          "type": "isolation",
+          "modifiers": [
+            "endurance"
+          ],
+          "title": "Double-stroke stamina",
+          "description": "Repeat the double-stroke cells without letting the second notes fade.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 32
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 36
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 40
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 44
+            }
+          ],
+          "prerequisiteIds": [
+            "I-15"
+          ]
+        },
+        {
+          "id": "I-18",
+          "row": 9,
+          "column": "center",
+          "role": "checkpoint",
+          "type": "transition",
+          "modifiers": [],
+          "title": "Block 2 cleared",
+          "description": "Checkpoint for transitions, subdivisions, and moving accents.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 50,
+              "repetitions": 20
+            },
+            {
+              "rank": "groove",
+              "bpm": 75,
+              "repetitions": 24
+            },
+            {
+              "rank": "stage",
+              "bpm": 105,
+              "repetitions": 28
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 135,
+              "repetitions": 32
+            }
+          ],
+          "prerequisiteIds": [
+            "I-16"
+          ]
+        },
+        {
+          "id": "I-19",
+          "row": 10,
+          "column": "left",
+          "role": "lesson",
+          "type": "unison",
+          "modifiers": [
+            "weak"
+          ],
+          "title": "Quiet unison control",
+          "description": "Keep both hands synchronized while playing at a controlled low dynamic.",
+          "pattern": [
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R",
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "left",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 12
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 16
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 20
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 24
+            }
+          ],
+          "prerequisiteIds": [
+            "I-18"
+          ]
+        },
+        {
+          "id": "I-20",
+          "row": 10,
+          "column": "center",
+          "role": "lesson",
+          "type": "transition",
+          "modifiers": [],
+          "title": "Paradiddle inversion",
+          "description": "Change the double placement without losing the underlying pulse.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 16
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 20
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 24
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 28
+            }
+          ],
+          "prerequisiteIds": [
+            "I-18"
+          ]
+        },
+        {
+          "id": "I-21",
+          "row": 11,
+          "column": "center",
+          "role": "lesson",
+          "type": "subdivision_switch",
+          "modifiers": [
+            "endurance"
+          ],
+          "title": "Three-speed grid",
+          "description": "Cycle through three subdivisions and keep the quarter-note anchor.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 24
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 28
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 32
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 36
+            }
+          ],
+          "prerequisiteIds": [
+            "I-20"
+          ]
+        },
+        {
+          "id": "I-22",
+          "row": 11,
+          "column": "right",
+          "role": "lesson",
+          "type": "tempo_ramp",
+          "modifiers": [],
+          "title": "Controlled top speed",
+          "description": "Climb only while every note stays centered on the click.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 60,
+              "repetitions": 16
+            },
+            {
+              "rank": "groove",
+              "bpm": 85,
+              "repetitions": 20
+            },
+            {
+              "rank": "stage",
+              "bpm": 115,
+              "repetitions": 24
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 145,
+              "repetitions": 28
+            }
+          ],
+          "prerequisiteIds": [
+            "I-20"
+          ]
+        },
+        {
+          "id": "I-23",
+          "row": 12,
+          "column": "center",
+          "role": "lesson",
+          "type": "dynamics",
+          "modifiers": [],
+          "title": "Full dynamic arc",
+          "description": "Grow from quiet to strong and return without changing tempo.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 50,
+              "repetitions": 20
+            },
+            {
+              "rank": "groove",
+              "bpm": 75,
+              "repetitions": 24
+            },
+            {
+              "rank": "stage",
+              "bpm": 105,
+              "repetitions": 28
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 135,
+              "repetitions": 32
+            }
+          ],
+          "prerequisiteIds": [
+            "I-21"
+          ]
+        },
+        {
+          "id": "I-24",
+          "row": 13,
+          "column": "center",
+          "role": "checkpoint",
+          "type": "dynamics",
+          "modifiers": [
+            "endurance"
+          ],
+          "title": "Foundation complete",
+          "description": "Final checkpoint for the temporary Foundation curriculum.",
+          "pattern": [
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": true
+            },
+            {
+              "hands": [
+                "R"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            },
+            {
+              "hands": [
+                "L"
+              ],
+              "accent": false
+            }
+          ],
+          "leadHand": "right",
+          "rankTargets": [
+            {
+              "rank": "practice",
+              "bpm": 55,
+              "repetitions": 32
+            },
+            {
+              "rank": "groove",
+              "bpm": 80,
+              "repetitions": 36
+            },
+            {
+              "rank": "stage",
+              "bpm": 110,
+              "repetitions": 40
+            },
+            {
+              "rank": "rockstar",
+              "bpm": 140,
+              "repetitions": 44
+            }
+          ],
+          "prerequisiteIds": [
+            "I-23"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "II",
+      "name": "Control",
+      "levels": []
+    },
+    {
+      "id": "III",
+      "name": "Fluency",
+      "levels": []
+    },
+    {
+      "id": "IV",
+      "name": "Speed",
+      "levels": []
+    }
+  ]
+}

@@ -8,6 +8,42 @@
     <string name="menu_levels">Levels</string>
     <string name="menu_levels_letter">L</string>
 
+    <!-- Levels map -->
+    <string name="levels_title">LEVELS</string>
+    <string name="levels_streak">streak %1$d</string>
+    <string name="levels_map_columns">Center required · sides optional</string>
+    <string name="levels_right_lead">R lead</string>
+    <string name="levels_left_lead">L lead</string>
+    <string name="levels_next_level">Next level</string>
+    <string name="levels_tier_locked">Tier locked</string>
+    <string name="levels_tier_complete">Tier complete</string>
+    <string name="levels_required_path_complete">Required path complete</string>
+    <string name="levels_complete_previous">Complete tier %1$s first</string>
+    <string name="levels_open_next">Open next level</string>
+    <string name="levels_locked_title">%1$s is locked</string>
+    <string name="levels_locked_body">Complete the required center path in the previous tier to continue.</string>
+
+    <!-- Level detail -->
+    <string name="level_detail_title">LEVEL %1$s</string>
+    <string name="level_detail_rank_meta">%1$s · %2$d</string>
+    <string name="level_detail_bpm">BPM</string>
+    <string name="level_detail_slower">Decrease custom tempo</string>
+    <string name="level_detail_faster">Increase custom tempo</string>
+    <string name="level_detail_custom_value">%1$d bpm · step 5</string>
+    <string name="level_detail_custom_hint">your tempo</string>
+    <string name="level_detail_best_bpm">best BPM</string>
+    <string name="level_detail_best_score">best score</string>
+    <string name="level_detail_score_value">%1$d pts</string>
+    <string name="level_detail_no_score">—</string>
+    <string name="level_detail_mode">Mode</string>
+    <string name="level_detail_start">Start level practice</string>
+    <string name="level_detail_unison_pending">Unison playback is not available in BeatGrid yet</string>
+    <string name="level_detail_unison_body">This level uses one shared sound for simultaneous R + L hits. Preview is available now; practice will unlock when BeatGrid supports two hands at one position.</string>
+    <plurals name="level_detail_repetitions">
+        <item quantity="one">%1$d repetition without pause</item>
+        <item quantity="other">%1$d repetitions without pause</item>
+    </plurals>
+
     <!-- Metronome screen chrome -->
     <string name="metronome_title">METRONOME</string>
     <string name="metronome_bpm_label">BPM</string>

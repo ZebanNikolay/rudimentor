@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -124,7 +123,7 @@ fun BeatDrum(
         scope.launch { position.snapTo(position.value - delta / slotHeightPx) }
     }
 
-    BoxWithConstraints(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(RudiDimens.DrumSlotHeight * DrumTuning.VISIBLE_SLOTS)

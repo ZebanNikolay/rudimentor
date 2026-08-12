@@ -53,8 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.audio.MicLab
-import com.rudimentor.app.ui.component.RudiMentorLogo
-import com.rudimentor.app.ui.component.BackButton
+import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import kotlin.math.abs
@@ -135,33 +134,20 @@ fun MicLabScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    BackButton(
-                        onClick = {
-                            micLab.stop()
-                            onBack()
-                        },
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
+            AppToolbar(
+                title = "MIC LAB",
+                onBack = {
+                    micLab.stop()
+                    onBack()
+                },
+                rightContent = {
                     Text(
-                        text = "MIC LAB",
+                        text = "DEV",
                         style = RudiTextStyles.Rubric,
-                        color = RudiColors.Muted,
+                        color = RudiColors.BrickLit,
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    RudiMentorLogo(padSize = 9.dp)
-                }
-                Text(
-                    text = "DEV",
-                    style = RudiTextStyles.Rubric,
-                    color = RudiColors.BrickLit,
-                )
-            }
+                },
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 

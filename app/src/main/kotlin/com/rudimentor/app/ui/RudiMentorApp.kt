@@ -21,8 +21,13 @@ import com.rudimentor.app.BuildConfig
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.levels.Level
+import com.rudimentor.app.data.levels.LevelCatalog
+import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.ui.component.MenuCard
 import com.rudimentor.app.ui.component.RudiMentorLogo
+import com.rudimentor.app.ui.levels.LevelDetailScreen
+import com.rudimentor.app.ui.levels.LevelsScreen
 import com.rudimentor.app.ui.metronome.MetronomeActions
 import com.rudimentor.app.ui.metronome.MetronomeScreen
 import com.rudimentor.app.ui.miclab.MicLabScreen
@@ -32,6 +37,8 @@ import com.rudimentor.app.ui.theme.RudiTextStyles
 /** Top-level destinations. Added to as new sections come online. */
 private enum class Screen {
     Menu,
+    Levels,
+    LevelDetail,
     Metronome,
     MicLab,
 }
@@ -40,23 +47,63 @@ private enum class Screen {
 fun RudiMentorApp(
     buildInfo: BuildInfo,
     settings: AppSettings,
+    levelCatalog: LevelCatalog,
+    learningProgress: LearningProgress,
     actions: MetronomeActions,
+    onConfigureLevel: (Level, Int) -> Unit,
 ) {
     var screenName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
+    var selectedLevelId by rememberSaveable { mutableStateOf<String?>(null) }
+    var metronomeBackTargetName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
 
     AnimatedContent(targetState = screen, label = "screen") { currentScreen ->
         when (currentScreen) {
             Screen.Menu -> MainMenu(
                 buildInfo = buildInfo,
-                onOpenMetronome = { screenName = Screen.Metronome.name },
+                onOpenMetronome = {
+                    metronomeBackTargetName = Screen.Menu.name
+                    screenName = Screen.Metronome.name
+                },
+                onOpenLevels = { screenName = Screen.Levels.name },
                 onOpenMicLab = { screenName = Screen.MicLab.name },
             )
+            Screen.Levels -> LevelsScreen(
+                catalog = levelCatalog,
+                progress = learningProgress,
+                onBack = { screenName = Screen.Menu.name },
+                onOpenLevel = { levelId ->
+                    selectedLevelId = levelId
+                    screenName = Screen.LevelDetail.name
+                },
+            )
+            Screen.LevelDetail -> {
+                val level = selectedLevelId?.let(levelCatalog::level)
+                if (level == null) {
+                    LevelsScreen(
+                        catalog = levelCatalog,
+                        progress = learningProgress,
+                        onBack = { screenName = Screen.Menu.name },
+                        onOpenLevel = { levelId -> selectedLevelId = levelId },
+                    )
+                } else {
+                    LevelDetailScreen(
+                        level = level,
+                        progress = learningProgress.forLevel(level.id),
+                        onBack = { screenName = Screen.Levels.name },
+                        onStartPractice = { selectedLevel, bpm ->
+                            onConfigureLevel(selectedLevel, bpm)
+                            metronomeBackTargetName = Screen.LevelDetail.name
+                            screenName = Screen.Metronome.name
+                        },
+                    )
+                }
+            }
             Screen.Metronome -> MetronomeScreen(
                 settings = settings,
                 buildInfo = buildInfo,
                 actions = actions,
-                onBack = { screenName = Screen.Menu.name },
+                onBack = { screenName = metronomeBackTargetName },
             )
             Screen.MicLab -> MicLabScreen(
                 buildInfo = buildInfo,
@@ -70,6 +117,7 @@ fun RudiMentorApp(
 private fun MainMenu(
     buildInfo: BuildInfo,
     onOpenMetronome: () -> Unit,
+    onOpenLevels: () -> Unit,
     onOpenMicLab: () -> Unit,
 ) {
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
@@ -92,8 +140,8 @@ private fun MainMenu(
             MenuCard(
                 title = stringResource(R.string.menu_levels),
                 letter = stringResource(R.string.menu_levels_letter),
-                enabled = false,
-                onClick = {},
+                enabled = true,
+                onClick = onOpenLevels,
             )
             if (BuildConfig.DEBUG) {
                 Spacer(modifier = Modifier.height(12.dp))

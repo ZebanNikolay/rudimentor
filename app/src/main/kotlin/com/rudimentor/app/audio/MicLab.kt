@@ -48,6 +48,7 @@ class MicLab(
     data class Status(
         val running: Boolean = false,
         val sampleRate: Int = 0,
+        val tickCount: Long = 0,
         val bpm: Int = DEFAULT_BPM,
         val envelope: Float = 0f,
         val threshold: Float = 0f,
@@ -188,6 +189,7 @@ class MicLab(
         _status.value = _status.value.copy(
             running = snapshot.running,
             sampleRate = snapshot.sampleRate,
+            tickCount = snapshot.tickCount,
             envelope = snapshot.envelope,
             threshold = snapshot.threshold,
             peak = snapshot.peak,

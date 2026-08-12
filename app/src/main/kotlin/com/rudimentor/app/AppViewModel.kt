@@ -8,6 +8,10 @@ import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.SettingsRepository
+import com.rudimentor.app.data.levels.Level
+import com.rudimentor.app.data.levels.LearningProgress
+import com.rudimentor.app.data.levels.LevelProgressRepository
+import com.rudimentor.app.data.levels.toPracticeGrid
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -15,11 +19,18 @@ import kotlinx.coroutines.launch
 
 class AppViewModel(
     private val repository: SettingsRepository,
+    progressRepository: LevelProgressRepository,
 ) : ViewModel() {
     val settings: StateFlow<AppSettings> = repository.settings.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = AppSettings(),
+    )
+
+    val learningProgress: StateFlow<LearningProgress> = progressRepository.progress.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = LearningProgress.placeholder(),
     )
 
     fun setBpm(bpm: Int) = update { copy(bpm = Bpm.clamp(bpm)) }
@@ -50,6 +61,15 @@ class AppViewModel(
 
     fun setShowHandLetters(show: Boolean) = update { copy(showHandLetters = show) }
 
+    fun configureLevel(level: Level, bpm: Int) = update {
+        copy(
+            grid = level.toPracticeGrid(),
+            bpm = Bpm.clamp(bpm),
+            activeRow = 0,
+            showHandLetters = true,
+        )
+    }
+
     private fun AppSettings.setRowCountInternal(count: Int): AppSettings {
         val target = count.coerceIn(BeatGrid.MIN_ROWS, BeatGrid.MAX_ROWS)
         val resized = grid.withRowCount(target)
@@ -67,11 +87,14 @@ class AppViewModel(
     }
 
     companion object {
-        fun factory(repository: SettingsRepository): ViewModelProvider.Factory =
+        fun factory(
+            repository: SettingsRepository,
+            progressRepository: LevelProgressRepository,
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    AppViewModel(repository) as T
+                    AppViewModel(repository, progressRepository) as T
             }
     }
 }

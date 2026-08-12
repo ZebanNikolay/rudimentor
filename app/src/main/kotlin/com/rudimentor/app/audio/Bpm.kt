@@ -2,7 +2,7 @@ package com.rudimentor.app.audio
 
 object Bpm {
     const val MIN = 40
-    const val MAX = 240
+    const val MAX = 250
     const val DEFAULT = 100
 
     /** The ± buttons move in tens; a practice pad does not need finer steps. */
