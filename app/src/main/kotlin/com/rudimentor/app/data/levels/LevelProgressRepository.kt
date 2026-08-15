@@ -31,7 +31,7 @@ class DataStoreLevelProgressRepository(
     catalog: LevelCatalog,
     private val initialProgress: LearningProgress = LearningProgress.placeholder(),
 ) : LevelProgressRepository {
-    private val levelIds = catalog.tiers.flatMap(LevelTier::levels).map(Level::id).toSet()
+    private val levelIds = catalog.levels.map(Level::id).toSet()
 
     override val progress: Flow<LearningProgress> = context.levelProgressDataStore.data
         .catch { exception ->

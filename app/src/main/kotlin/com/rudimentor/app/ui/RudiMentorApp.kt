@@ -89,6 +89,7 @@ fun RudiMentorApp(
                 } else {
                     LevelDetailScreen(
                         level = level,
+                        family = levelCatalog.family,
                         progress = learningProgress.forLevel(level.id),
                         onBack = { screenName = Screen.Levels.name },
                         onStartPractice = { selectedLevel, bpm ->

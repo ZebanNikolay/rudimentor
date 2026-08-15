@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,54 +22,42 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
+import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelCatalog
 import com.rudimentor.app.data.levels.LevelColumn
 import com.rudimentor.app.data.levels.LevelNodeState
-import com.rudimentor.app.data.levels.LevelRole
-import com.rudimentor.app.data.levels.LevelTier
-import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.Pad
 import com.rudimentor.app.ui.component.PadShape
 import com.rudimentor.app.ui.component.PadTone
-import com.rudimentor.app.ui.theme.JetBrainsMono
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
-import kotlin.math.roundToInt
 
+/**
+ * The map of one family package. The catalog holds a single family, so the screen shows its
+ * map directly instead of a tier switcher.
+ */
 @Composable
 fun LevelsScreen(
     catalog: LevelCatalog,
@@ -78,9 +65,6 @@ fun LevelsScreen(
     onBack: () -> Unit,
     onOpenLevel: (String) -> Unit,
 ) {
-    var selectedTierIndex by rememberSaveable { mutableIntStateOf(0) }
-    val selectedTier = catalog.tiers[selectedTierIndex.coerceIn(catalog.tiers.indices)]
-    val selectedTierUnlocked = progress.isTierUnlocked(catalog, selectedTierIndex)
     BackHandler(onBack = onBack)
 
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
@@ -91,7 +75,7 @@ fun LevelsScreen(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
             AppToolbar(
-                title = stringResource(R.string.levels_title),
+                title = catalog.family.name.uppercase(),
                 onBack = onBack,
                 rightContent = {
                     Text(
@@ -102,38 +86,19 @@ fun LevelsScreen(
                 },
             )
             Spacer(modifier = Modifier.height(14.dp))
-            TierSelector(
-                tiers = catalog.tiers,
-                selectedIndex = selectedTierIndex,
-                unlockedIndices = catalog.tiers.indices.filterTo(mutableSetOf()) {
-                    progress.isTierUnlocked(catalog, it)
-                },
-                onSelect = { selectedTierIndex = it },
-            )
-            Spacer(modifier = Modifier.height(10.dp))
             MapLegend()
             Spacer(modifier = Modifier.height(4.dp))
 
-            if (selectedTier.levels.isEmpty()) {
-                LockedTier(
-                    tier = selectedTier,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                )
-            } else {
-                LevelMap(
-                    tier = selectedTier,
-                    progress = progress,
-                    tierUnlocked = selectedTierUnlocked,
-                    onOpenLevel = onOpenLevel,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                )
-            }
+            LevelMap(
+                catalog = catalog,
+                progress = progress,
+                onOpenLevel = onOpenLevel,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            )
 
-            val currentLevel = progress.currentLevel(selectedTier, selectedTierUnlocked)
+            val currentLevel = progress.currentLevel(catalog)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -143,11 +108,7 @@ fun LevelsScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(
-                            when {
-                                currentLevel != null -> R.string.levels_next_level
-                                selectedTierUnlocked && selectedTier.levels.isNotEmpty() -> R.string.levels_tier_complete
-                                else -> R.string.levels_tier_locked
-                            },
+                            if (currentLevel != null) R.string.levels_next_level else R.string.levels_family_complete,
                         ).uppercase(),
                         style = RudiTextStyles.RowNumber,
                         color = RudiColors.Muted,
@@ -155,15 +116,8 @@ fun LevelsScreen(
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = currentLevel?.let { "${it.id} · ${it.pattern.joinToString("") { step -> step.label }}" }
-                            ?: if (selectedTierUnlocked && selectedTier.levels.isNotEmpty()) {
-                                stringResource(R.string.levels_required_path_complete)
-                            } else {
-                                stringResource(
-                                    R.string.levels_complete_previous,
-                                    previousTierId(catalog, selectedTierIndex),
-                                )
-                            },
+                        text = currentLevel?.headline(catalog.family)
+                            ?: stringResource(R.string.levels_required_path_complete),
                         style = RudiTextStyles.Timer,
                         color = if (currentLevel == null) RudiColors.RowNumber else RudiColors.Text,
                     )
@@ -172,68 +126,6 @@ fun LevelsScreen(
                     onClick = { currentLevel?.let { onOpenLevel(it.id) } },
                     contentDescription = stringResource(R.string.levels_open_next),
                     active = currentLevel != null,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TierSelector(
-    tiers: List<LevelTier>,
-    selectedIndex: Int,
-    unlockedIndices: Set<Int>,
-    onSelect: (Int) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        tiers.forEachIndexed { index, tier ->
-            val selected = index == selectedIndex
-            val unlocked = index in unlockedIndices
-            val shape = RoundedCornerShape(12.dp)
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
-                    .background(
-                        color = if (selected) RudiColors.Brick.copy(alpha = 0.13f) else RudiColors.Surface,
-                        shape = shape,
-                    )
-                    .drawBehind {
-                        drawRoundRect(
-                            color = when {
-                                selected -> RudiColors.Brick
-                                unlocked -> RudiColors.Line
-                                else -> RudiColors.PadMuteBorder
-                            },
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()),
-                            style = Stroke(
-                                width = 1.dp.toPx(),
-                                pathEffect = if (unlocked || selected) null else {
-                                    PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))
-                                },
-                            ),
-                        )
-                    }
-                    .clickable { onSelect(index) }
-                    .semantics {
-                        role = Role.Tab
-                        contentDescription = "Tier ${tier.id}, ${tier.name}"
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = tier.id,
-                    color = when {
-                        selected -> RudiColors.BrickLit
-                        unlocked -> RudiColors.Text
-                        else -> RudiColors.RowNumber
-                    },
-                    fontFamily = JetBrainsMono,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
                 )
             }
         }
@@ -274,51 +166,17 @@ private fun LegendHand(shape: PadShape, label: String) {
 }
 
 @Composable
-private fun LockedTier(
-    tier: LevelTier,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.alpha(0.7f),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Pad(
-            size = 54.dp,
-            shape = PadShape.Square,
-            tone = PadTone.Mute,
-            letter = tier.id,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.levels_locked_title, tier.name),
-            style = MaterialTheme.typography.titleMedium,
-            color = RudiColors.Text,
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = stringResource(R.string.levels_locked_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = RudiColors.Muted,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
 private fun LevelMap(
-    tier: LevelTier,
+    catalog: LevelCatalog,
     progress: LearningProgress,
-    tierUnlocked: Boolean,
     onOpenLevel: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
-    val maxRow = tier.levels.maxOf(Level::row)
-    val mapHeight = MAP_VERTICAL_PADDING * 2 + MAP_ROW_HEIGHT * (maxRow + 1)
-    val currentRow = progress.currentLevel(tier, tierUnlocked)?.row ?: 0
-    LaunchedEffect(scrollState.maxValue, scrollState.viewportSize, tier.id) {
+    val mapHeight = MAP_VERTICAL_PADDING * 2 + MAP_ROW_HEIGHT * (catalog.lastRow + 1)
+    val currentRow = progress.currentLevel(catalog)?.row ?: 0
+    LaunchedEffect(scrollState.maxValue, scrollState.viewportSize, catalog.family.id) {
         if (scrollState.maxValue == 0) return@LaunchedEffect
         val currentY = with(density) {
             (mapHeight - MAP_VERTICAL_PADDING - MAP_ROW_HEIGHT * currentRow - NODE_SIZE).roundToPx()
@@ -346,7 +204,7 @@ private fun LevelMap(
                 .verticalScroll(scrollState),
         ) {
             val centerX = maxWidth / 2
-            val levelsByRow = remember(tier) { tier.levels.groupBy(Level::row) }
+            val levelsByRow = remember(catalog) { catalog.levels.groupBy(Level::row) }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -354,23 +212,20 @@ private fun LevelMap(
                     .drawBehind {
                         val centerPx = size.width / 2f
                         val nodePx = NODE_SIZE.toPx()
-                        val gateHeightPx = GATE_HEIGHT.toPx()
                         val rowPx = MAP_ROW_HEIGHT.toPx()
                         val bottomPx = MAP_VERTICAL_PADDING.toPx()
-                        val centerLevels = tier.levels
+                        val centerLevels = catalog.levels
                             .filter { it.column == LevelColumn.Center }
                             .sortedBy(Level::row)
 
                         centerLevels.zipWithNext().forEach { (lower, upper) ->
-                            val lowerHeight = if (lower.role == LevelRole.Checkpoint) gateHeightPx else nodePx
-                            val upperHeight = if (upper.role == LevelRole.Checkpoint) gateHeightPx else nodePx
-                            val lowerTop = size.height - bottomPx - lower.row * rowPx - lowerHeight
-                            val upperTop = size.height - bottomPx - upper.row * rowPx - upperHeight
-                            val passed = progress.stateOf(lower, tier, tierUnlocked) == LevelNodeState.Completed
+                            val lowerTop = size.height - bottomPx - lower.row * rowPx - nodePx
+                            val upperTop = size.height - bottomPx - upper.row * rowPx - nodePx
+                            val passed = progress.stateOf(lower, catalog) == LevelNodeState.Completed
                             drawLine(
                                 color = if (passed) RudiColors.Brick else RudiColors.Line,
                                 start = Offset(centerPx, lowerTop),
-                                end = Offset(centerPx, upperTop + upperHeight),
+                                end = Offset(centerPx, upperTop + nodePx),
                                 strokeWidth = (if (passed) 2.dp else 1.5.dp).toPx(),
                             )
                             drawCircle(
@@ -387,7 +242,7 @@ private fun LevelMap(
                                 val y = size.height - bottomPx - row * rowPx - nodePx / 2f
                                 val startX = centerPx + direction * nodePx / 2f
                                 val endX = centerPx + direction * (MAP_COLUMN_WIDTH.toPx() - nodePx / 2f)
-                                val passed = progress.stateOf(center, tier, tierUnlocked) == LevelNodeState.Completed
+                                val passed = progress.stateOf(center, catalog) == LevelNodeState.Completed
                                 drawLine(
                                     color = if (passed) RudiColors.Brick else RudiColors.Line,
                                     start = Offset(startX, y),
@@ -401,18 +256,16 @@ private fun LevelMap(
                         }
                     },
             ) {
-                tier.levels.forEach { level ->
-                    val nodeWidth = if (level.role == LevelRole.Checkpoint) GATE_WIDTH else NODE_SIZE
-                    val nodeHeight = if (level.role == LevelRole.Checkpoint) GATE_HEIGHT else NODE_SIZE
+                catalog.levels.forEach { level ->
                     val x = centerX + when (level.column) {
                         LevelColumn.Left -> -MAP_COLUMN_WIDTH
                         LevelColumn.Center -> 0.dp
                         LevelColumn.Right -> MAP_COLUMN_WIDTH
-                    } - nodeWidth / 2
-                    val y = mapHeight - MAP_VERTICAL_PADDING - MAP_ROW_HEIGHT * level.row - nodeHeight
+                    } - NODE_SIZE / 2
+                    val y = mapHeight - MAP_VERTICAL_PADDING - MAP_ROW_HEIGHT * level.row - NODE_SIZE
                     LevelMapNode(
                         level = level,
-                        state = progress.stateOf(level, tier, tierUnlocked),
+                        state = progress.stateOf(level, catalog),
                         onClick = { onOpenLevel(level.id) },
                         modifier = Modifier.absoluteOffset(x = x, y = y),
                     )
@@ -440,48 +293,7 @@ private fun LevelMapNode(
         ),
         label = "currentLevelGlow",
     )
-    val description = "${level.id}, ${level.title}, ${state.name.lowercase()}"
-
-    if (level.role == LevelRole.Checkpoint) {
-        val shape = RoundedCornerShape(14.dp)
-        Box(
-            modifier = modifier
-                .size(GATE_WIDTH, GATE_HEIGHT)
-                .background(
-                    if (state == LevelNodeState.Completed) RudiColors.Brick else RudiColors.Surface,
-                    shape,
-                )
-                .drawBehind {
-                    drawRoundRect(
-                        color = when (state) {
-                            LevelNodeState.Completed -> RudiColors.BrickLit
-                            LevelNodeState.Current, LevelNodeState.Available -> RudiColors.Brick
-                            LevelNodeState.Locked -> RudiColors.PadMuteBorder
-                        },
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()),
-                        style = Stroke(
-                            width = 1.dp.toPx(),
-                            pathEffect = if (state == LevelNodeState.Locked) {
-                                PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))
-                            } else {
-                                null
-                            },
-                        ),
-                    )
-                }
-                .clickable(enabled = enabled, onClick = onClick)
-                .semantics { contentDescription = description },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = level.title.uppercase(),
-                style = RudiTextStyles.RowNumber,
-                color = if (state == LevelNodeState.Completed) RudiColors.Text else RudiColors.Muted,
-                letterSpacing = 0.8.sp,
-            )
-        }
-        return
-    }
+    val description = "${level.displayNumber}, ${level.mapCaption()}, ${state.name.lowercase()}"
 
     Box(
         modifier = modifier
@@ -522,12 +334,7 @@ private fun LevelMapNode(
     }
 }
 
-private fun previousTierId(catalog: LevelCatalog, selectedIndex: Int): String =
-    catalog.tiers[(selectedIndex - 1).coerceAtLeast(0)].id
-
 private val NODE_SIZE = 46.dp
-private val GATE_WIDTH = 152.dp
-private val GATE_HEIGHT = 38.dp
 private val MAP_ROW_HEIGHT = 78.dp
 private val MAP_COLUMN_WIDTH = 74.dp
 private val MAP_VERTICAL_PADDING = 30.dp

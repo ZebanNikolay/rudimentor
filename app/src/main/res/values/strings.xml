@@ -9,19 +9,14 @@
     <string name="menu_levels_letter">L</string>
 
     <!-- Levels map -->
-    <string name="levels_title">LEVELS</string>
     <string name="levels_streak">streak %1$d</string>
     <string name="levels_map_columns">Center required · sides optional</string>
     <string name="levels_right_lead">R lead</string>
     <string name="levels_left_lead">L lead</string>
     <string name="levels_next_level">Next level</string>
-    <string name="levels_tier_locked">Tier locked</string>
-    <string name="levels_tier_complete">Tier complete</string>
+    <string name="levels_family_complete">Family complete</string>
     <string name="levels_required_path_complete">Required path complete</string>
-    <string name="levels_complete_previous">Complete tier %1$s first</string>
     <string name="levels_open_next">Open next level</string>
-    <string name="levels_locked_title">%1$s is locked</string>
-    <string name="levels_locked_body">Complete the required center path in the previous tier to continue.</string>
 
     <!-- Level detail -->
     <string name="level_detail_title">LEVEL %1$s</string>
@@ -39,10 +34,7 @@
     <string name="level_detail_start">Start level practice</string>
     <string name="level_detail_unison_pending">Unison playback is not available in BeatGrid yet</string>
     <string name="level_detail_unison_body">This level uses one shared sound for simultaneous R + L hits. Preview is available now; practice will unlock when BeatGrid supports two hands at one position.</string>
-    <plurals name="level_detail_repetitions">
-        <item quantity="one">%1$d repetition without pause</item>
-        <item quantity="other">%1$d repetitions without pause</item>
-    </plurals>
+    <string name="level_detail_execution">%1$d beats · %2$d hits per beat</string>
 
     <!-- Metronome screen chrome -->
     <string name="metronome_title">METRONOME</string>

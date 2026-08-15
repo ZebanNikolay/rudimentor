@@ -1,0 +1,649 @@
+{
+  "schemaVersion": 1,
+  "family": {
+    "id": "singles",
+    "name": "Single Strokes",
+    "description": "Build control, evenness, and speed with alternating single strokes."
+  },
+  "lessons": [
+    {
+      "id": "singles.ST-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 70,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 70,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 70,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 80,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 80,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 80,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-04",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-05",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 100,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 100,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 100,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-06",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 110,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 110,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 110,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-07",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 120,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 120,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-08",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 130,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 130,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 130,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-09",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 140,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 140,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 140,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-10",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 150,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 150,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 150,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-11",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 160,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 160,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 160,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-12",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 170,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 170,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 170,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "singles.ST-13",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 180,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 180,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 180,
+          "hitsPerBeat": 4
+        }
+      }
+    }
+  ],
+  "map": {
+    "nodes": [
+      {
+        "lessonId": "singles.ST-01",
+        "column": "center",
+        "prerequisites": []
+      },
+      {
+        "lessonId": "singles.ST-02",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-01"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-03",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-02"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-04",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-03"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-05",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-04"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-06",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-05"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-07",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-06"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-08",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-07"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-09",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-08"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-10",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-09"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-11",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-10"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-12",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-11"
+        ]
+      },
+      {
+        "lessonId": "singles.ST-13",
+        "column": "center",
+        "prerequisites": [
+          "singles.ST-12"
+        ]
+      }
+    ]
+  }
+}

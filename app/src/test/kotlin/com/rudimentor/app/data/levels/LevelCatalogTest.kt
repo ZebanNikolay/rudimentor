@@ -1,6 +1,5 @@
 package com.rudimentor.app.data.levels
 
-import com.rudimentor.app.audio.BeatState
 import com.rudimentor.app.audio.Hand
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -10,153 +9,143 @@ import org.junit.Test
 
 class LevelCatalogTest {
     @Test
+    fun `rows follow the prerequisite chain`() {
+        val catalog = catalog(
+            lessons = listOf(lesson("f.ST-01"), lesson("f.ST-02"), lesson("f.ST-03")),
+            nodes = listOf(
+                node("f.ST-01"),
+                node("f.ST-02", prerequisites = setOf("f.ST-01")),
+                node("f.ST-03", prerequisites = setOf("f.ST-02")),
+            ),
+        )
+
+        assertEquals(listOf(0, 1, 2), catalog.levels.map(Level::row))
+        assertEquals(2, catalog.lastRow)
+    }
+
+    @Test
     fun `progress unlocks the required path while optional columns stay independent`() {
-        val first = level(id = "I-01", row = 0)
-        val optional = level(
-            id = "I-02",
-            row = 1,
-            column = LevelColumn.Left,
-            prerequisites = setOf(first.id),
+        val catalog = catalog(
+            lessons = listOf(lesson("f.ST-01"), lesson("f.ST-02"), lesson("f.ST-03"), lesson("f.ST-04")),
+            nodes = listOf(
+                node("f.ST-01"),
+                node("f.ST-02", column = LevelColumn.Left, prerequisites = setOf("f.ST-01")),
+                node("f.ST-03", prerequisites = setOf("f.ST-01")),
+                node("f.ST-04", prerequisites = setOf("f.ST-03")),
+            ),
         )
-        val current = level(id = "I-03", row = 1, prerequisites = setOf(first.id))
-        val future = level(id = "I-04", row = 2, prerequisites = setOf(current.id))
-        val firstTier = LevelTier("I", "Foundation", listOf(first, optional, current, future))
-        val catalog = LevelCatalog(
-            LevelCatalog.CURRENT_SCHEMA_VERSION,
-            listOf(firstTier, LevelTier("II", "Control", emptyList())),
-        )
-        val progress = LearningProgress(
-            levels = mapOf(first.id to LevelProgress(completed = true)),
-        )
+        val first = catalog.level("f.ST-01")!!
+        val optional = catalog.level("f.ST-02")!!
+        val current = catalog.level("f.ST-03")!!
+        val future = catalog.level("f.ST-04")!!
+        val progress = LearningProgress(levels = mapOf(first.id to LevelProgress(completed = true)))
 
-        assertEquals(current, progress.currentLevel(firstTier, tierUnlocked = true))
-        assertEquals(LevelNodeState.Completed, progress.stateOf(first, firstTier, tierUnlocked = true))
-        assertEquals(LevelNodeState.Available, progress.stateOf(optional, firstTier, tierUnlocked = true))
-        assertEquals(LevelNodeState.Current, progress.stateOf(current, firstTier, tierUnlocked = true))
-        assertEquals(LevelNodeState.Locked, progress.stateOf(future, firstTier, tierUnlocked = true))
-        assertFalse(progress.isTierUnlocked(catalog, tierIndex = 1))
+        assertEquals(current, progress.currentLevel(catalog))
+        assertEquals(LevelNodeState.Completed, progress.stateOf(first, catalog))
+        assertEquals(LevelNodeState.Available, progress.stateOf(optional, catalog))
+        assertEquals(LevelNodeState.Current, progress.stateOf(current, catalog))
+        assertEquals(LevelNodeState.Locked, progress.stateOf(future, catalog))
+        assertFalse(progress.isFamilyComplete(catalog))
 
-        val requiredPathComplete = progress.copy(
+        val complete = progress.copy(
             levels = progress.levels +
                 (current.id to LevelProgress(completed = true)) +
                 (future.id to LevelProgress(completed = true)),
         )
-        assertTrue(requiredPathComplete.isTierUnlocked(catalog, tierIndex = 1))
+        assertTrue(complete.isFamilyComplete(catalog))
     }
 
     @Test
-    fun `catalog rejects invalid map and rank definitions`() {
-        val checkpoint = level(
-            id = "I-01",
-            row = 0,
-            column = LevelColumn.Left,
-            role = LevelRole.Checkpoint,
-        )
-        val center = level(id = "I-02", row = 0)
-        val catalog = LevelCatalog(
-            schemaVersion = LevelCatalog.CURRENT_SCHEMA_VERSION,
-            tiers = listOf(LevelTier("I", "Foundation", listOf(checkpoint, center))),
-        )
-
-        assertThrows(IllegalArgumentException::class.java) { catalog.validated() }
+    fun `catalog rejects a row without a required center level`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            catalog(
+                lessons = listOf(lesson("f.ST-01"), lesson("f.ST-02")),
+                nodes = listOf(node("f.ST-01", column = LevelColumn.Left), node("f.ST-02", column = LevelColumn.Right)),
+            )
+        }
     }
 
     @Test
-    fun `optional level may branch from center on the same row`() {
-        val previous = level(id = "I-01", row = 0)
-        val center = level(id = "I-02", row = 1, prerequisites = setOf(previous.id))
-        val optional = level(
-            id = "I-03",
-            row = 1,
-            column = LevelColumn.Right,
-            prerequisites = setOf(center.id),
-        )
-        val catalog = LevelCatalog(
-            schemaVersion = LevelCatalog.CURRENT_SCHEMA_VERSION,
-            tiers = listOf(LevelTier("I", "Foundation", listOf(previous, center, optional))),
-        )
-
-        catalog.validated()
+    fun `catalog rejects a lesson outside the family namespace`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            catalog(lessons = listOf(lesson("other.ST-01")), nodes = listOf(node("other.ST-01")))
+        }
     }
 
     @Test
-    fun `practice grid keeps single-hand steps and accents`() {
-        val level = level(
-            id = "I-01",
-            row = 0,
-            labels = "RLRRLRLL",
-            accents = setOf(0, 4),
-        )
+    fun `catalog rejects a prerequisite cycle`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            catalog(
+                lessons = listOf(lesson("f.ST-01"), lesson("f.ST-02")),
+                nodes = listOf(
+                    node("f.ST-01", prerequisites = setOf("f.ST-02")),
+                    node("f.ST-02", prerequisites = setOf("f.ST-01")),
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `practice grid keeps the hand order of the pattern`() {
+        val level = catalog(
+            lessons = listOf(lesson("f.ST-01", hands = "RLRRLRLL")),
+            nodes = listOf(node("f.ST-01")),
+        ).levels.single()
 
         val row = level.toPracticeGrid().rows.single()
 
         assertEquals("RLRRLRLL", row.beats.joinToString("") { it.hand.label })
-        assertEquals(
-            listOf(
-                BeatState.Accent,
-                BeatState.Normal,
-                BeatState.Normal,
-                BeatState.Normal,
-                BeatState.Accent,
-                BeatState.Normal,
-                BeatState.Normal,
-                BeatState.Normal,
-            ),
-            row.beats.map { it.state },
-        )
         assertEquals(Hand.Left, row.beats.last().hand)
     }
 
     @Test
     fun `unison is one unsupported BeatGrid position with both hands`() {
-        val unison = level(
-            id = "I-01",
-            row = 0,
-            type = LevelType.Unison,
-            pattern = listOf(PatternStep(setOf(PatternHand.Right, PatternHand.Left), accent = true)),
-        )
-        val catalog = LevelCatalog(
-            schemaVersion = LevelCatalog.CURRENT_SCHEMA_VERSION,
-            tiers = listOf(LevelTier("I", "Foundation", listOf(unison))),
-        )
-
-        catalog.validated()
+        val unison = catalog(
+            lessons = listOf(
+                lesson(
+                    id = "f.ST-01",
+                    type = LevelType.Unison,
+                    steps = listOf(PatternStep(setOf(PatternHand.Right, PatternHand.Left))),
+                ),
+            ),
+            nodes = listOf(node("f.ST-01")),
+        ).levels.single()
 
         assertFalse(unison.supportsBeatGrid)
         assertEquals("RL", unison.pattern.single().label)
         assertThrows(IllegalArgumentException::class.java) { unison.toPracticeGrid() }
     }
 
-    private fun level(
+    private fun catalog(lessons: List<Lesson>, nodes: List<MapNode>): LevelCatalog = LevelCatalog.build(
+        schemaVersion = LevelCatalog.CURRENT_SCHEMA_VERSION,
+        family = Family(id = "f", name = "Family", description = "Description."),
+        lessons = lessons,
+        nodes = nodes,
+    )
+
+    private fun lesson(
         id: String,
-        row: Int,
-        column: LevelColumn = LevelColumn.Center,
-        role: LevelRole = LevelRole.Lesson,
         type: LevelType = LevelType.Steady,
         modifiers: Set<LevelModifier> = emptySet(),
-        prerequisites: Set<String> = emptySet(),
-        labels: String = "RLRL",
-        accents: Set<Int> = emptySet(),
-        pattern: List<PatternStep> = labels.mapIndexed { index, label ->
-            PatternStep(
-                hands = setOf(PatternHand.fromStorageName(label.toString())),
-                accent = index in accents,
-            )
+        hands: String = "RL",
+        steps: List<PatternStep> = hands.map { label ->
+            PatternStep(hands = setOf(PatternHand.fromStorageName(label.toString())))
         },
-    ): Level = Level(
+    ): Lesson = Lesson(
         id = id,
-        row = row,
-        column = column,
-        role = role,
         type = type,
         modifiers = modifiers,
-        title = "Test level",
-        description = "Test description",
-        pattern = pattern,
-        leadHand = LeadHand.Right,
+        pattern = Pattern(mode = PatternMode.Repeat, steps = steps),
+        technique = Technique(strokeStyle = "full_rebound", dynamics = "even", accents = "none"),
+        execution = Execution(beatCount = 64),
         rankTargets = PracticeRank.entries.mapIndexed { index, rank ->
-            RankTarget(rank = rank, bpm = 60 + index * 20, repetitions = 10 + index * 2)
+            RankTarget(rank = rank, bpm = 90, hitsPerBeat = 1 shl index)
         },
-        prerequisiteIds = prerequisites,
     )
+
+    private fun node(
+        lessonId: String,
+        column: LevelColumn = LevelColumn.Center,
+        prerequisites: Set<String> = emptySet(),
+    ): MapNode = MapNode(lessonId = lessonId, column = column, prerequisites = prerequisites)
 }

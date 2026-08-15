@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.sp
 import com.rudimentor.app.data.levels.LeadHand
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelModifier
-import com.rudimentor.app.data.levels.LevelRole
 import com.rudimentor.app.data.levels.LevelType
 import com.rudimentor.app.data.levels.PatternHand
 import com.rudimentor.app.data.levels.PatternStep
@@ -87,7 +86,8 @@ internal fun PatternPreview(
 
 @Composable
 private fun PatternStepPad(step: PatternStep) {
-    val tone = if (step.accent) PadTone.Accent else PadTone.Normal
+    // The package marks accents per lesson, not per step, so every step renders unaccented.
+    val tone = PadTone.Normal
     if (step.hands.size == 1) {
         val hand = step.hands.single()
         Pad(
@@ -131,7 +131,7 @@ internal fun LevelTags(
     ) {
         LevelTag(level.type.displayName)
         level.modifiers.forEach { LevelTag(it.displayName) }
-        if (level.role == LevelRole.Checkpoint) LevelTag(level.role.displayName)
+        LevelTag(level.technique.strokeStyle.replace('_', ' '))
     }
 }
 
@@ -258,12 +258,6 @@ internal val LevelModifier.displayName: String
     get() = when (this) {
         LevelModifier.Weak -> "Weak"
         LevelModifier.Endurance -> "Endurance"
-    }
-
-internal val LevelRole.displayName: String
-    get() = when (this) {
-        LevelRole.Lesson -> "Lesson"
-        LevelRole.Checkpoint -> "Checkpoint"
     }
 
 internal val LeadHand.padShape: PadShape

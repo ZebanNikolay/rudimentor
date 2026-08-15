@@ -6,6 +6,12 @@ import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.BeatState
 import com.rudimentor.app.audio.Hand
 
+/**
+ * Maps the repeating pattern of a lesson onto a single BeatGrid row.
+ *
+ * The package describes accents per lesson (`technique.accents`) instead of per step, so
+ * every beat starts unaccented until the practice engine moves to the beat-based model.
+ */
 fun Level.toPracticeGrid(): BeatGrid {
     require(supportsBeatGrid) { "$id uses multi-hand steps that BeatGrid does not support yet" }
     return BeatGrid(
@@ -13,7 +19,7 @@ fun Level.toPracticeGrid(): BeatGrid {
             BeatRow(
                 beats = pattern.map { step ->
                     Beat(
-                        state = if (step.accent) BeatState.Accent else BeatState.Normal,
+                        state = BeatState.Normal,
                         hand = when (step.hands.single()) {
                             PatternHand.Right -> Hand.Right
                             PatternHand.Left -> Hand.Left

@@ -31,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -40,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
+import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelProgress
 import com.rudimentor.app.data.levels.PracticeRank
@@ -52,6 +52,7 @@ import com.rudimentor.app.ui.theme.RudiTextStyles
 @Composable
 fun LevelDetailScreen(
     level: Level,
+    family: Family,
     progress: LevelProgress,
     onBack: () -> Unit,
     onStartPractice: (Level, Int) -> Unit,
@@ -73,7 +74,7 @@ fun LevelDetailScreen(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
             AppToolbar(
-                title = stringResource(R.string.level_detail_title, level.id),
+                title = stringResource(R.string.level_detail_title, level.displayNumber),
                 onBack = onBack,
                 rightContent = {
                     Text(
@@ -93,13 +94,13 @@ fun LevelDetailScreen(
             ) {
                 Spacer(modifier = Modifier.height(22.dp))
                 Text(
-                    text = level.title,
+                    text = level.headline(family),
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp),
                     color = RudiColors.Text,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = level.description,
+                    text = level.blurb(family),
                     style = MaterialTheme.typography.bodyMedium,
                     color = RudiColors.Muted,
                 )
@@ -180,10 +181,10 @@ fun LevelDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = pluralStringResource(
-                            R.plurals.level_detail_repetitions,
-                            selectedTarget.repetitions,
-                            selectedTarget.repetitions,
+                        text = stringResource(
+                            R.string.level_detail_execution,
+                            level.beatCount,
+                            selectedTarget.hitsPerBeat,
                         ),
                         style = RudiTextStyles.Timer,
                         color = RudiColors.Text,
@@ -377,7 +378,6 @@ private enum class RankChoice(
     Practice("Practice", PracticeRank.Practice),
     Groove("Groove", PracticeRank.Groove),
     Stage("Stage", PracticeRank.Stage),
-    Rockstar("Rockstar", PracticeRank.Rockstar),
     Custom("Custom", null),
 }
 
