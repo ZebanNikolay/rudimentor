@@ -1,0 +1,6 @@
+# ninja log v5
+4	623	1787260766654400643	CMakeFiles/rudimentor_audio.dir/OnsetDetector.cpp.o	56c77d3533841682
+0	1126	1787260767154400643	CMakeFiles/rudimentor_audio.dir/MetronomeEngine.cpp.o	45434bb784e174b4
+4	1279	1787260767310400643	CMakeFiles/rudimentor_audio.dir/MicLabEngine.cpp.o	4744d0b461d411c1
+624	1538	1787260767566400643	CMakeFiles/rudimentor_audio.dir/native-lib.cpp.o	814f9660499b3dfa
+1538	1556	1787260767590400643	/home/user/workspace/repo/app/build/intermediates/cxx/Debug/723r674s/obj/arm64-v8a/librudimentor_audio.so	183afb26a0f61e6e

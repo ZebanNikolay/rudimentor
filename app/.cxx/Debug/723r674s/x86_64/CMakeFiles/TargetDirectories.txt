@@ -1,0 +1,3 @@
+/home/user/workspace/repo/app/.cxx/Debug/723r674s/x86_64/CMakeFiles/rudimentor_audio.dir
+/home/user/workspace/repo/app/.cxx/Debug/723r674s/x86_64/CMakeFiles/edit_cache.dir
+/home/user/workspace/repo/app/.cxx/Debug/723r674s/x86_64/CMakeFiles/rebuild_cache.dir

@@ -1,11 +1,11 @@
 package com.rudimentor.app.ui.practice
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -353,7 +353,7 @@ private fun ExitOverlay(onContinue: () -> Unit, onLeave: () -> Unit) {
  */
 @Composable
 internal fun PracticeStage(keepScreenOn: Boolean) {
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     DisposableEffect(activity, keepScreenOn) {
         val window = activity?.window
         val previousOrientation = activity?.requestedOrientation

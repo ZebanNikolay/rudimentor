@@ -1,0 +1,21 @@
+                        -H/home/user/workspace/repo/app/src/main/cpp
+-DCMAKE_SYSTEM_NAME=Android
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+-DCMAKE_SYSTEM_VERSION=27
+-DANDROID_PLATFORM=android-27
+-DANDROID_ABI=x86_64
+-DCMAKE_ANDROID_ARCH_ABI=x86_64
+-DANDROID_NDK=/home/user/sdk/android/ndk/28.2.13676358
+-DCMAKE_ANDROID_NDK=/home/user/sdk/android/ndk/28.2.13676358
+-DCMAKE_TOOLCHAIN_FILE=/home/user/sdk/android/ndk/28.2.13676358/build/cmake/android.toolchain.cmake
+-DCMAKE_MAKE_PROGRAM=/home/user/sdk/android/cmake/3.22.1/bin/ninja
+-DCMAKE_CXX_FLAGS=-std=c++17 -Wall -Wextra -Werror
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/home/user/workspace/repo/app/build/intermediates/cxx/Debug/723r674s/obj/x86_64
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/home/user/workspace/repo/app/build/intermediates/cxx/Debug/723r674s/obj/x86_64
+-DCMAKE_BUILD_TYPE=Debug
+-DCMAKE_FIND_ROOT_PATH=/home/user/workspace/repo/app/.cxx/Debug/723r674s/prefab/x86_64/prefab
+-B/home/user/workspace/repo/app/.cxx/Debug/723r674s/x86_64
+-GNinja
+-DANDROID_STL=c++_shared
+                        Build command args: []
+                        Version: 2

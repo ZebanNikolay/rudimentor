@@ -15,7 +15,6 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.rudimentor.app.data.levels.PatternHand
 import com.rudimentor.app.ui.component.PadTone
 import com.rudimentor.app.ui.component.drawPadFace
