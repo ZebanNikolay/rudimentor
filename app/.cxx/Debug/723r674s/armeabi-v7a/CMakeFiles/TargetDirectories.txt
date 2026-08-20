@@ -1,3 +1,0 @@
-/home/user/workspace/repo/app/.cxx/Debug/723r674s/armeabi-v7a/CMakeFiles/rudimentor_audio.dir
-/home/user/workspace/repo/app/.cxx/Debug/723r674s/armeabi-v7a/CMakeFiles/edit_cache.dir
-/home/user/workspace/repo/app/.cxx/Debug/723r674s/armeabi-v7a/CMakeFiles/rebuild_cache.dir
