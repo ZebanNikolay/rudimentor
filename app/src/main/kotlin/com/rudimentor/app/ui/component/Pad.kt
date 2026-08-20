@@ -14,26 +14,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.ui.theme.JetBrainsMono
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.text.font.FontWeight
 
 /** Pad shape encodes the hand: right is a rounded square, left is a circle. */
 enum class PadShape {
@@ -58,7 +49,9 @@ enum class PadVariant {
  * The single building block of the whole visual language: a drum-machine pad.
  *
  * The same composable renders metronome beats, the logo and the launcher icon,
- * so border weight, inner shadow and LED dot never drift apart.
+ * so border weight, inner shadow and LED dot never drift apart. The face itself
+ * is painted by [drawPadFace], which the practice track reuses inside its own
+ * Canvas.
  */
 @Composable
 fun Pad(
@@ -76,53 +69,11 @@ fun Pad(
     val light = variant == PadVariant.Light
     val round = shape == PadShape.Round
     val muted = tone == PadTone.Mute
-
-    val body: Color = when {
-        muted -> Color.Transparent
-        lit && tone == PadTone.Accent -> RudiColors.PadAccentLit
-        lit -> RudiColors.Brick
-        light -> RudiColors.LightPadBody
-        else -> RudiColors.Surface
-    }
-    val border: Color = when {
-        muted && lit -> RudiColors.PadMuteLitBorder
-        muted -> RudiColors.PadMuteBorder
-        lit -> RudiColors.BrickLit
-        tone == PadTone.Accent -> RudiColors.Brick
-        light -> RudiColors.LightPadLine
-        else -> RudiColors.Line
-    }
-    val led: Color = when {
-        muted -> RudiColors.PadLedMute
-        lit -> RudiColors.PadLedLit
-        tone == PadTone.Accent -> RudiColors.Brick
-        round -> RudiColors.PadLedRound
-        else -> RudiColors.PadLed
-    }
-    val letterColor: Color = when {
-        muted && lit -> RudiColors.PadMuteLitLetter
-        muted -> RudiColors.PadLetterMute
-        lit -> RudiColors.PadLetterLit
-        tone == PadTone.Accent -> RudiColors.PadLetterAccent
-        light -> RudiColors.LightPadLetter
-        else -> RudiColors.PadLetter
-    }
-    val padAlpha = when {
-        muted && lit -> 0.85f
-        muted -> 0.55f
-        else -> 1f
-    }
-
-    val composeShape: Shape = if (round) {
-        RoundedCornerShape(percent = 50)
-    } else {
-        RoundedCornerShape(percent = (RudiDimens.PAD_CORNER_FRACTION * 100).toInt())
-    }
+    val palette = padPalette(round = round, tone = tone, lit = lit, light = light)
 
     // A lit pad is a key with the lamp switched on: flat brick fill and an even halo
     // around the whole outline, never a directional drop shadow.
     val glow: Modifier = if (lit && !muted) {
-        // A quarter of the first pass: the lamp reads as lit, not as a flare.
         val strength = if (tone == PadTone.Accent) 0.19f else 0.125f
         Modifier.drawBehind {
             val side = this.size.minDimension
@@ -153,105 +104,28 @@ fun Pad(
         modifier = modifier
             .size(size)
             .then(glow)
-            .alpha(padAlpha)
+            .alpha(palette.alpha)
             // Press feedback is a small squeeze of the pad itself — no extra outline.
             .scale(pressScale),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(size)) {
-            val boxSize = this.size
-            val side = boxSize.minDimension
-            val radius = if (round) side / 2f else side * RudiDimens.PAD_CORNER_FRACTION
-            val corner = CornerRadius(radius, radius)
-            val strokeWidth = RudiDimens.PadBorder.toPx()
-
-            if (body != Color.Transparent) {
-                drawRoundRect(color = body, cornerRadius = corner)
-            }
-
-            // Inner shadow along the whole outline — the "recessed key" cue.
-            // A lit pad has no inner shadow at all: it reads as a flat glowing surface.
-            if (!muted && !lit) {
-                val outline = Path().apply {
-                    addRoundRect(
-                        RoundRect(
-                            left = 0f,
-                            top = 0f,
-                            right = boxSize.width,
-                            bottom = boxSize.height,
-                            cornerRadius = corner,
-                        ),
-                    )
-                }
-                // Concentric fading strokes stand in for a blurred inset shadow: the
-                // darkening hugs the whole contour and is a touch heavier at the top.
-                val depth = side * 0.14f
-                val steps = 10
-                val step = depth / steps
-                val topBias = side * 0.035f
-                // A third of the first pass: the recess is a hint, not a vignette.
-                val maxAlpha = if (light) 0.055f else 0.17f
-                clipPath(outline) {
-                    for (i in 0 until steps) {
-                        val t = i / steps.toFloat()
-                        val inset = i * step
-                        val alpha = maxAlpha * (1f - t) * (1f - t)
-                        val innerRadius = (radius - inset).coerceAtLeast(0f)
-                        drawRoundRect(
-                            color = Color.Black.copy(alpha = alpha),
-                            topLeft = Offset(inset, inset + topBias),
-                            size = Size(
-                                boxSize.width - inset * 2f,
-                                boxSize.height - inset * 2f,
-                            ),
-                            cornerRadius = CornerRadius(innerRadius, innerRadius),
-                            style = Stroke(width = step * 1.6f),
-                        )
-                    }
-                }
-            }
-
-            drawRoundRect(
-                color = border,
-                cornerRadius = corner,
-                style = Stroke(
-                    width = strokeWidth,
-                    pathEffect = if (muted) {
-                        PathEffect.dashPathEffect(
-                            floatArrayOf(side * 0.12f, side * 0.09f),
-                            0f,
-                        )
-                    } else {
-                        null
-                    },
-                ),
-            )
-
-            val ledRadius = side * RudiDimens.PAD_LED_FRACTION / 2f
-            val topFraction = if (round) {
-                RudiDimens.PAD_LED_TOP_ROUND
-            } else {
-                RudiDimens.PAD_LED_TOP_SQUARE
-            }
-            val rightFraction = if (round) {
-                RudiDimens.PAD_LED_RIGHT_ROUND
-            } else {
-                RudiDimens.PAD_LED_RIGHT_SQUARE
-            }
-            drawCircle(
-                color = led,
-                radius = maxOf(ledRadius, 1.5f),
-                center = Offset(
-                    x = boxSize.width - rightFraction * side - ledRadius,
-                    y = topFraction * side + ledRadius,
-                ),
+            drawPadFace(
+                topLeft = Offset.Zero,
+                side = this.size.minDimension,
+                round = round,
+                tone = tone,
+                palette = palette,
+                lit = lit,
+                strokeWidth = RudiDimens.PadBorder.toPx(),
+                light = light,
             )
         }
 
         if (showLetter && !letter.isNullOrEmpty()) {
             Text(
                 text = letter,
-                color = letterColor,
+                color = palette.letter,
                 fontFamily = JetBrainsMono,
                 fontWeight = FontWeight.Bold,
                 fontSize = maxOf(9f, size.value * letterFraction).sp,

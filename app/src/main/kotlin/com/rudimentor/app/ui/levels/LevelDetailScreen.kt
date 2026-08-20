@@ -55,7 +55,7 @@ fun LevelDetailScreen(
     family: Family,
     progress: LevelProgress,
     onBack: () -> Unit,
-    onStartPractice: (Level, Int) -> Unit,
+    onStartPractice: (Level, PracticeRank, Int) -> Unit,
 ) {
     var selectedRankName by rememberSaveable(level.id) { mutableStateOf(RankChoice.Practice.name) }
     var customBpm by rememberSaveable(level.id) {
@@ -191,7 +191,13 @@ fun LevelDetailScreen(
                     )
                 }
                 LevelPlayButton(
-                    onClick = { onStartPractice(level, bpm) },
+                    onClick = {
+                        onStartPractice(
+                            level,
+                            selectedRank.rank ?: PracticeRank.Practice,
+                            bpm,
+                        )
+                    },
                     contentDescription = stringResource(
                         if (level.supportsBeatGrid) {
                             R.string.level_detail_start

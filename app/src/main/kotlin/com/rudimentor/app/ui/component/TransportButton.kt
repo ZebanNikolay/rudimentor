@@ -22,32 +22,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.rudimentor.app.R
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /**
- * The large Play/Stop transport button: a 92 dp pad with a 4 dp monolithic
- * slab, ripple in the Text color, and a steady halo while the metronome is
- * running. The visual is unchanged -- extracted from
- * ui/metronome/MetronomeControls into a reusable component.
+ * The large Play/Stop transport button: a pad with a 4 dp monolithic slab,
+ * ripple in the Text color, and a steady halo while it is running. The visual is
+ * unchanged -- extracted from ui/metronome/MetronomeControls into a reusable
+ * component. [size] only scales it: the practice screen floats a smaller copy of
+ * the very same button in the corner, it never draws its own.
  */
 @Composable
 fun TransportButton(
     playing: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    buttonSize: Dp = TRANSPORT_SIZE,
 ) {
-    val shape = RoundedCornerShape(26.dp)
+    val corner = buttonSize * CORNER_RATIO
+    val shape = RoundedCornerShape(corner)
     val cd = stringResource(if (playing) R.string.transport_stop else R.string.transport_start)
     Box(
         modifier = modifier
-            .size(TRANSPORT_SIZE)
+            .size(buttonSize)
             .drawBehind {
-                val radius = 26.dp.toPx()
+                val radius = corner.toPx()
                 if (playing) {
-                    val glowRadius = size.minDimension * 0.95f
+                    val glowRadius = this.size.minDimension * 0.95f
                     drawCircle(
                         brush = Brush.radialGradient(
                             0f to RudiColors.BrickLit.copy(alpha = 0.11f),
@@ -84,21 +88,23 @@ fun TransportButton(
             .semantics { contentDescription = cd },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(modifier = Modifier.size(32.dp)) {
+        Canvas(modifier = Modifier.size(buttonSize * ICON_RATIO)) {
             val tint = RudiColors.Text
+            val iconWidth = this.size.width
+            val iconHeight = this.size.height
             if (playing) {
-                val inset = size.width * 0.12f
+                val inset = iconWidth * 0.12f
                 drawRoundRect(
                     color = tint,
                     topLeft = Offset(inset, inset),
-                    size = Size(size.width - inset * 2, size.height - inset * 2),
+                    size = Size(iconWidth - inset * 2, iconHeight - inset * 2),
                     cornerRadius = CornerRadius(3.dp.toPx(), 3.dp.toPx()),
                 )
             } else {
                 val triangle = Path().apply {
-                    moveTo(size.width * 0.18f, 0f)
-                    lineTo(size.width * 0.95f, size.height / 2f)
-                    lineTo(size.width * 0.18f, size.height)
+                    moveTo(iconWidth * 0.18f, 0f)
+                    lineTo(iconWidth * 0.95f, iconHeight / 2f)
+                    lineTo(iconWidth * 0.18f, iconHeight)
                     close()
                 }
                 drawPath(path = triangle, color = tint)
@@ -108,5 +114,7 @@ fun TransportButton(
 }
 
 private val TRANSPORT_SIZE = 92.dp
+private const val CORNER_RATIO = 0.28f
+private const val ICON_RATIO = 0.35f
 private val TransportLedge = Color(0xFF0A0A0A)
 private val TransportLedgePlaying = Color(0xFF6B1414)

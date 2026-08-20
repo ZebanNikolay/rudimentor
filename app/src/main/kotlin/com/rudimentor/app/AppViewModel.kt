@@ -11,6 +11,7 @@ import com.rudimentor.app.data.SettingsRepository
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.data.levels.LevelProgressRepository
+import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.toPracticeGrid
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
 
 class AppViewModel(
     private val repository: SettingsRepository,
-    progressRepository: LevelProgressRepository,
+    private val progressRepository: LevelProgressRepository,
 ) : ViewModel() {
     val settings: StateFlow<AppSettings> = repository.settings.stateIn(
         scope = viewModelScope,
@@ -68,6 +69,35 @@ class AppViewModel(
             activeRow = 0,
             showHandLetters = true,
         )
+    }
+
+    /**
+     * Stores the outcome of one practice attempt. Only improvements are kept: a worse
+     * run never takes stars or a personal best away, and a level once completed stays
+     * completed.
+     */
+    fun recordAttempt(
+        levelId: String,
+        rank: PracticeRank,
+        bpm: Int,
+        score: Int,
+        stars: Int,
+        passed: Boolean,
+    ) {
+        viewModelScope.launch {
+            val current = learningProgress.value.forLevel(levelId)
+            val bestStars = maxOf(current.stars(rank), if (passed) stars else 0)
+            progressRepository.saveLevel(
+                levelId = levelId,
+                progress = current.copy(
+                    completed = current.completed || passed,
+                    rankStars = current.rankStars + (rank to bestStars),
+                    bestBpm = maxOf(current.bestBpm ?: 0, if (passed) bpm else 0)
+                        .takeIf { it > 0 } ?: current.bestBpm,
+                    bestScore = maxOf(current.bestScore ?: 0, score),
+                ),
+            )
+        }
     }
 
     private fun AppSettings.setRowCountInternal(count: Int): AppSettings {

@@ -58,6 +58,16 @@ class MainActivity : ComponentActivity() {
                     learningProgress = learningProgress,
                     actions = actions,
                     onConfigureLevel = viewModel::configureLevel,
+                    onAttemptFinished = { level, rank, bpm, result ->
+                        viewModel.recordAttempt(
+                            levelId = level.id,
+                            rank = rank,
+                            bpm = bpm,
+                            score = result.score,
+                            stars = result.stars,
+                            passed = result.passed,
+                        )
+                    },
                 )
             }
         }

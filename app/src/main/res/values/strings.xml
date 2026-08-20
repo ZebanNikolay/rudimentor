@@ -59,4 +59,41 @@
     <string name="toolbar_back">Back</string>
     <string name="transport_start">Start</string>
     <string name="transport_stop">Stop</string>
+
+    <!-- Practice screen -->
+    <string name="practice_settings_title">SETTINGS</string>
+    <string name="practice_settings_tab_cd">Practice settings</string>
+    <string name="practice_settings_done">Done</string>
+    <string name="practice_click_label">Metronome click</string>
+    <string name="practice_click_warning">Use headphones: the microphone hears the speaker and counts the click as a hit.</string>
+    <string name="practice_latency_label">Input latency</string>
+    <string name="practice_latency_value">%1$d ms</string>
+    <string name="practice_bpm">%1$d BPM</string>
+    <string name="practice_hits_per_beat">×%1$d</string>
+    <string name="practice_combo">×%1$d · %2$d%%</string>
+    <string name="practice_mic_cd">Microphone level</string>
+    <string name="practice_permission_body">Practice needs the microphone to hear your strokes.</string>
+    <string name="practice_permission_button">Allow microphone</string>
+    <string name="practice_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
+    <string name="practice_exit_title">Leaving ends the attempt — the score will not be saved.</string>
+    <string name="practice_exit_continue">Continue</string>
+    <string name="practice_exit_leave">Leave</string>
+
+    <!-- Practice result screen -->
+    <string name="practice_result_passed">LEVEL PASSED</string>
+    <string name="practice_result_failed">NOT YET</string>
+    <string name="practice_result_score">Score</string>
+    <string name="practice_result_accuracy">Accuracy</string>
+    <string name="practice_result_max_combo">Max combo</string>
+    <string name="practice_result_misses">Misses</string>
+    <string name="practice_result_extras">Extra hits</string>
+    <string name="practice_result_mean">Mean offset</string>
+    <string name="practice_result_accuracy_value">%1$d%%</string>
+    <string name="practice_result_mean_value">%1$s</string>
+    <string name="practice_result_histogram_cd">Timing spread from −120 to +120 milliseconds</string>
+    <string name="practice_result_next">Next level</string>
+    <string name="practice_result_retry">Try again</string>
+    <string name="practice_result_map">To map</string>
+    <string name="practice_result_settings">Settings</string>
+    <string name="practice_result_stars_cd">%1$d of 3 stars</string>
 </resources>

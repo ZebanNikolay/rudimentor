@@ -11,8 +11,8 @@ val developmentKeyAlias = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY_AL
     .orElse("androiddebugkey")
 val developmentKeyPassword = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY_PASSWORD")
     .orElse(developmentKeystorePassword)
-val appVersionName = "0.1.0-dev.14"
-val appVersionCode = 14
+val appVersionName = "0.1.0-dev.15"
+val appVersionCode = 15
 
 base {
     archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")

@@ -42,6 +42,16 @@ object RudiColors {
     val ButtonShadowLit = Color(0xFF6B1414)
     val Scrim = Color(0x73000000)
 
+    /** Practice track (approved practice-screen concept, decisions 85-90). */
+    val TrackHitLine = Color(0xFF6F6F6C)
+    val TrackBarStrong = Color(0xFF2E2E2E)
+    val TrackBar = Color(0xFF232323)
+    val WindowPerfect = BrickLit
+    val WindowGood = Color(0xFFE0C948)
+    val WindowOk = Color(0xFFE38A2B)
+    val WindowMiss = Color(0xFF4A4A4A)
+    val TrackExtraHit = Color(0xFF6A6A68)
+
     /** Light-background logo variant, kept for external materials. */
     val LightBg = Color(0xFFF4F3EF)
     val LightWord = Color(0xFF1A1A19)
