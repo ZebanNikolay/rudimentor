@@ -3,7 +3,6 @@ package com.rudimentor.app.ui.metronome
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,16 +13,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.rudimentor.app.R
@@ -32,10 +32,10 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
-// BackButton and TransportButton now live in ui/component; TempoKey and
-// StepperButton are thin wrappers over SquareIconButton. The `Dimension` enum
-// lives in its own file so it can be referenced from callers without pulling
-// in the whole controls module.
+// BackButton, TransportButton and SettingsHandle now live in ui/component;
+// TempoKey and StepperButton are thin wrappers over SquareIconButton. The
+// `Dimension` enum lives in its own file so it can be referenced from callers
+// without pulling in the whole controls module.
 
 /**
  * Icon-only dimension stepper: vertical strokes stand for beats, horizontal lines for rows.
@@ -133,7 +133,7 @@ private fun StepperButton(
         border = RudiColors.Line,
         enabled = enabled,
     ) {
-        PlusMinusGlyph(sign = sign, glyphSize = 12.dp, stroke = 1.8.dp)
+        PlusMinusGlyph(sign = sign, glyphSize = 14.dp)
     }
 }
 
@@ -200,79 +200,17 @@ private fun TempoKey(
         border = RudiColors.Line,
         enabled = enabled,
     ) {
-        PlusMinusGlyph(sign = sign, glyphSize = 20.dp, stroke = 2.dp)
+        PlusMinusGlyph(sign = sign, glyphSize = 22.dp)
     }
 }
 
+/** The stock Material plus and minus, so the keys match the rest of the icons. */
 @Composable
-private fun PlusMinusGlyph(
-    sign: Int,
-    glyphSize: androidx.compose.ui.unit.Dp,
-    stroke: androidx.compose.ui.unit.Dp,
-) {
-    Canvas(modifier = Modifier.size(glyphSize)) {
-        val strokePx = stroke.toPx()
-        drawLine(
-            color = RudiColors.Text,
-            start = Offset(0f, size.height / 2f),
-            end = Offset(size.width, size.height / 2f),
-            strokeWidth = strokePx,
-            cap = StrokeCap.Round,
-        )
-        if (sign > 0) {
-            drawLine(
-                color = RudiColors.Text,
-                start = Offset(size.width / 2f, 0f),
-                end = Offset(size.width / 2f, size.height),
-                strokeWidth = strokePx,
-                cap = StrokeCap.Round,
-            )
-        }
-    }
-}
-
-/** The handle that pulls up the settings sheet. */
-@Composable
-fun SettingsHandle(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val openSettingsCd = stringResource(R.string.metronome_open_settings)
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(
-                indication = ripple(color = RudiColors.Text),
-                interactionSource = null,
-                onClick = onClick,
-            )
-            .padding(top = 8.dp, bottom = 14.dp)
-            .semantics { contentDescription = openSettingsCd },
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Canvas(modifier = Modifier.width(18.dp).height(8.dp)) {
-            val stroke = 1.8.dp.toPx()
-            val inset = stroke / 2f
-            drawLine(
-                color = RudiColors.Muted,
-                start = Offset(inset, size.height - inset),
-                end = Offset(size.width / 2f, inset),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                color = RudiColors.Muted,
-                start = Offset(size.width / 2f, inset),
-                end = Offset(size.width - inset, size.height - inset),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-        }
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = stringResource(R.string.metronome_settings_title),
-            style = RudiTextStyles.Rubric,
-            color = RudiColors.Muted,
-        )
-    }
+private fun PlusMinusGlyph(sign: Int, glyphSize: androidx.compose.ui.unit.Dp) {
+    Icon(
+        imageVector = if (sign > 0) Icons.Filled.Add else Icons.Filled.Remove,
+        contentDescription = null,
+        tint = RudiColors.Text,
+        modifier = Modifier.size(glyphSize),
+    )
 }

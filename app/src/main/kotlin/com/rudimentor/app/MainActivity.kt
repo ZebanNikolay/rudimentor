@@ -77,7 +77,8 @@ class MainActivity : ComponentActivity() {
                     levelCatalog = levelCatalog,
                     learningProgress = learningProgress,
                     actions = actions,
-                    onConfigureLevel = viewModel::configureLevel,
+                    onClickAudible = viewModel::setClickAudible,
+                    onInputLatencyMs = viewModel::setInputLatencyMs,
                     onAttemptFinished = { level, rank, bpm, result ->
                         viewModel.recordAttempt(
                             levelId = level.id,

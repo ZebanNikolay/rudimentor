@@ -1,25 +1,27 @@
 package com.rudimentor.app.ui.component
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -29,30 +31,47 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /**
- * The large Play/Stop transport button: a pad with a 4 dp monolithic slab,
- * ripple in the Text color, and a steady halo while it is running. The visual is
- * unchanged -- extracted from ui/metronome/MetronomeControls into a reusable
- * component. [buttonSize] only scales it: the practice screen floats a smaller copy
- * of the very same button in the corner, it never draws its own.
+ * The two sizes of the transport button. [Large] is the metronome's centre-piece;
+ * [Small] is the one every other screen uses -- the level card and the floating
+ * corner button of an attempt (decision 102).
+ */
+enum class TransportSize(val buttonSize: Dp) {
+    Large(92.dp),
+    Small(64.dp),
+}
+
+/**
+ * The Play/Stop transport button: a pad with a 4 dp monolithic slab, ripple in the
+ * Text color, and a steady halo while it is running. The glyphs are the stock
+ * Material icons, not hand-drawn paths (decision 102).
  *
- * [accentIdle] paints the idle button brick instead of Surface. The practice screen
- * uses it so Play reads as the call to action, like on the level map.
+ * There is exactly one such button in the app and exactly two sizes of it, so the
+ * metronome, the level card and the attempt cannot drift apart.
+ *
+ * [accentIdle] paints the idle button brick instead of Surface, so Play reads as
+ * the call to action.
  */
 @Composable
 fun TransportButton(
     playing: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    buttonSize: Dp = TRANSPORT_SIZE,
+    size: TransportSize = TransportSize.Large,
     accentIdle: Boolean = false,
+    enabled: Boolean = true,
+    contentDescription: String? = null,
 ) {
-    val accented = playing || accentIdle
+    val buttonSize = size.buttonSize
+    val accented = enabled && (playing || accentIdle)
     val corner = buttonSize * CORNER_RATIO
     val shape = RoundedCornerShape(corner)
-    val cd = stringResource(if (playing) R.string.transport_stop else R.string.transport_start)
+    val fallbackCd =
+        stringResource(if (playing) R.string.transport_stop else R.string.transport_start)
+    val cd = contentDescription ?: fallbackCd
     Box(
         modifier = modifier
             .size(buttonSize)
+            .alpha(if (enabled) 1f else 0.55f)
             .drawBehind {
                 val radius = corner.toPx()
                 if (playing) {
@@ -71,7 +90,7 @@ fun TransportButton(
                 drawRoundRect(
                     color = if (accented) TransportLedgePlaying else TransportLedge,
                     topLeft = Offset(0f, 4.dp.toPx()),
-                    size = size,
+                    size = this.size,
                     cornerRadius = CornerRadius(radius, radius),
                 )
             }
@@ -86,40 +105,24 @@ fun TransportButton(
                 shape = shape,
             )
             .clickable(
+                enabled = enabled,
                 indication = ripple(color = RudiColors.Text),
                 interactionSource = null,
                 onClick = onClick,
             )
-            .semantics { contentDescription = cd },
+            .semantics { this.contentDescription = cd },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(modifier = Modifier.size(buttonSize * ICON_RATIO)) {
-            val tint = RudiColors.Text
-            val iconWidth = this.size.width
-            val iconHeight = this.size.height
-            if (playing) {
-                val inset = iconWidth * 0.12f
-                drawRoundRect(
-                    color = tint,
-                    topLeft = Offset(inset, inset),
-                    size = Size(iconWidth - inset * 2, iconHeight - inset * 2),
-                    cornerRadius = CornerRadius(3.dp.toPx(), 3.dp.toPx()),
-                )
-            } else {
-                val triangle = Path().apply {
-                    moveTo(iconWidth * 0.18f, 0f)
-                    lineTo(iconWidth * 0.95f, iconHeight / 2f)
-                    lineTo(iconWidth * 0.18f, iconHeight)
-                    close()
-                }
-                drawPath(path = triangle, color = tint)
-            }
-        }
+        Icon(
+            imageVector = if (playing) Icons.Filled.Stop else Icons.Filled.PlayArrow,
+            contentDescription = null,
+            tint = if (enabled) RudiColors.Text else RudiColors.RowNumber,
+            modifier = Modifier.size(buttonSize * ICON_RATIO),
+        )
     }
 }
 
-private val TRANSPORT_SIZE = 92.dp
 private const val CORNER_RATIO = 0.28f
-private const val ICON_RATIO = 0.35f
+private const val ICON_RATIO = 0.46f
 private val TransportLedge = Color(0xFF0A0A0A)
 private val TransportLedgePlaying = Color(0xFF6B1414)

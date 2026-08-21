@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -29,6 +33,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
@@ -36,6 +41,7 @@ import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.RudiChip
+import com.rudimentor.app.ui.component.SideSettingsDrawer
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
@@ -46,6 +52,10 @@ import kotlin.math.roundToInt
  *
  * The pass bar is accuracy only for now (decision 89) -- the level tree does not
  * gate on score yet, so a clean run at a slow tempo still opens the next node.
+ *
+ * Settings are reachable here through the same drawer as during an attempt, so the
+ * latency can be trimmed right after seeing the timing spread that motivated it
+ * (decision 102).
  */
 @Composable
 fun PracticeResultScreen(
@@ -54,15 +64,59 @@ fun PracticeResultScreen(
     rank: PracticeRank,
     bpm: Int,
     result: PracticeResult,
+    buildInfo: BuildInfo,
+    clickAudible: Boolean,
+    onClickAudible: (Boolean) -> Unit,
+    latencyMs: Float,
+    onLatencyMs: (Float) -> Unit,
     onRetry: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
-    onOpenSettings: () -> Unit,
 ) {
+    var settingsOpen by remember { mutableStateOf(false) }
+
     // Without this the system back gesture closed the app from the result screen
     // instead of leaving the practice flow.
-    BackHandler(onBack = onToMap)
+    BackHandler { if (settingsOpen) settingsOpen = false else onToMap() }
 
+    SideSettingsDrawer(
+        open = settingsOpen,
+        onOpenChange = { settingsOpen = it },
+        panel = {
+            PracticeSettingsPanel(
+                clickAudible = clickAudible,
+                onClickAudible = onClickAudible,
+                latencyMs = latencyMs,
+                onLatencyMs = onLatencyMs,
+                buildInfo = buildInfo,
+                onDone = { settingsOpen = false },
+            )
+        },
+    ) {
+        ResultBody(
+            level = level,
+            family = family,
+            rank = rank,
+            bpm = bpm,
+            result = result,
+            onRetry = onRetry,
+            onNextLevel = onNextLevel,
+            onToMap = onToMap,
+        )
+    }
+}
+
+@Composable
+private fun ResultBody(
+    level: Level,
+    family: Family,
+    rank: PracticeRank,
+    bpm: Int,
+    result: PracticeResult,
+    onRetry: () -> Unit,
+    onNextLevel: (() -> Unit)?,
+    onToMap: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -170,11 +224,8 @@ fun PracticeResultScreen(
                 style = RudiButtonStyle.Secondary,
             )
             Spacer(modifier = Modifier.weight(1f))
-            RudiButton(
-                text = stringResource(R.string.practice_result_settings),
-                onClick = onOpenSettings,
-                style = RudiButtonStyle.Ghost,
-            )
+            // The drawer handle lives on the trailing edge: keep the row clear of it.
+            Spacer(modifier = Modifier.width(28.dp))
         }
     }
 }

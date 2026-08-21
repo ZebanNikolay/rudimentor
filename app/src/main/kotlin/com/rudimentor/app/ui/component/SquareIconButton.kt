@@ -1,23 +1,21 @@
 package com.rudimentor.app.ui.component
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -68,9 +66,9 @@ fun SquareIconButton(
 }
 
 /**
- * The back button: the same 32 dp square with an 8x14 chevron. Lives in the
- * shared component so that AppToolbar does not depend on the metronome
- * screen.
+ * The back button: the same 32 dp square with the stock Material arrow in it
+ * (decision 102). Lives in the shared component so that AppToolbar does not
+ * depend on the metronome screen.
  */
 @Composable
 fun BackButton(
@@ -86,23 +84,11 @@ fun BackButton(
         background = RudiColors.SurfaceAlt,
         border = RudiColors.Line,
     ) {
-        Canvas(modifier = Modifier.width(8.dp).height(14.dp)) {
-            val stroke = 1.8.dp.toPx()
-            val inset = stroke / 2f
-            drawLine(
-                color = RudiColors.Text,
-                start = Offset(size.width - inset, inset),
-                end = Offset(inset, size.height / 2f),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                color = RudiColors.Text,
-                start = Offset(inset, size.height / 2f),
-                end = Offset(size.width - inset, size.height - inset),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = null,
+            tint = RudiColors.Text,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
+import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.SettingsGap
@@ -49,7 +50,7 @@ fun PracticeSettingsPanel(
             label = stringResource(R.string.practice_latency_label),
             valueLabel = stringResource(R.string.practice_latency_value, latencyMs.roundToInt()),
             value = latencyMs,
-            valueRange = LATENCY_MIN..LATENCY_MAX,
+            valueRange = AppSettings.LATENCY_MIN_MS..AppSettings.LATENCY_MAX_MS,
             onValueChange = onLatencyMs,
         )
         SettingsGap()
@@ -61,6 +62,3 @@ fun PracticeSettingsPanel(
         )
     }
 }
-
-private const val LATENCY_MIN = 0f
-private const val LATENCY_MAX = 80f

@@ -63,7 +63,8 @@ fun RudiMentorApp(
     levelCatalog: LevelCatalog,
     learningProgress: LearningProgress,
     actions: MetronomeActions,
-    onConfigureLevel: (Level, Int) -> Unit,
+    onClickAudible: (Boolean) -> Unit,
+    onInputLatencyMs: (Float) -> Unit,
     onAttemptFinished: (Level, PracticeRank, Int, PracticeResult) -> Unit,
 ) {
     var screenName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
@@ -75,7 +76,6 @@ fun RudiMentorApp(
     // restored across process death, it is replayed instead.
     var practiceResult by remember { mutableStateOf<PracticeResult?>(null) }
     var practiceRunId by rememberSaveable { mutableIntStateOf(0) }
-    var practiceStartWithSettings by rememberSaveable { mutableStateOf(false) }
     val practiceRank = PracticeRank.entries.firstOrNull { it.name == practiceRankName }
         ?: PracticeRank.Practice
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
@@ -128,11 +128,12 @@ fun RudiMentorApp(
                         family = levelCatalog.family,
                         progress = learningProgress.forLevel(level.id),
                         onBack = { screenName = Screen.Levels.name },
-                        onStartPractice = { selectedLevel, rank, bpm ->
-                            onConfigureLevel(selectedLevel, bpm)
+                        // The level owns tempo and rank of the attempt only: the
+                        // metronome grid is the user's own and is never overwritten
+                        // by entering a level (decision 102).
+                        onStartPractice = { _, rank, bpm ->
                             practiceRankName = rank.name
                             practiceBpm = bpm
-                            practiceStartWithSettings = false
                             practiceRunId += 1
                             screenName = Screen.Practice.name
                         },
@@ -158,7 +159,10 @@ fun RudiMentorApp(
                             rank = practiceRank,
                             bpm = practiceBpm,
                             buildInfo = buildInfo,
-                            startWithSettings = practiceStartWithSettings,
+                            clickAudible = settings.clickAudible,
+                            onClickAudible = onClickAudible,
+                            latencyMs = settings.inputLatencyMs,
+                            onLatencyMs = onInputLatencyMs,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
                                 DevLog.log(
@@ -194,8 +198,12 @@ fun RudiMentorApp(
                         rank = practiceRank,
                         bpm = practiceBpm,
                         result = result,
+                        buildInfo = buildInfo,
+                        clickAudible = settings.clickAudible,
+                        onClickAudible = onClickAudible,
+                        latencyMs = settings.inputLatencyMs,
+                        onLatencyMs = onInputLatencyMs,
                         onRetry = {
-                            practiceStartWithSettings = false
                             practiceRunId += 1
                             screenName = Screen.Practice.name
                         },
@@ -206,11 +214,6 @@ fun RudiMentorApp(
                             }
                         },
                         onToMap = { screenName = Screen.Levels.name },
-                        onOpenSettings = {
-                            practiceStartWithSettings = true
-                            practiceRunId += 1
-                            screenName = Screen.Practice.name
-                        },
                     )
                 }
             }

@@ -44,6 +44,8 @@ import com.rudimentor.app.data.levels.PatternStep
 import com.rudimentor.app.ui.component.Pad
 import com.rudimentor.app.ui.component.PadShape
 import com.rudimentor.app.ui.component.PadTone
+import com.rudimentor.app.ui.component.TransportButton
+import com.rudimentor.app.ui.component.TransportSize
 import com.rudimentor.app.ui.theme.JetBrainsMono
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
@@ -153,67 +155,20 @@ internal fun LevelPlayButton(
     onClick: () -> Unit,
     contentDescription: String,
     modifier: Modifier = Modifier,
-    size: Dp = 64.dp,
     active: Boolean = true,
     showStop: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(20.dp)
-    Box(
-        modifier = modifier
-            .size(size)
-            .drawBehind {
-                if (active) {
-                    val glowRadius = this.size.minDimension * 0.85f
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            0f to RudiColors.BrickLit.copy(alpha = 0.22f),
-                            1f to androidx.compose.ui.graphics.Color.Transparent,
-                            center = center,
-                            radius = glowRadius,
-                        ),
-                        radius = glowRadius,
-                    )
-                    drawRoundRect(
-                        color = RudiColors.ButtonShadowLit,
-                        topLeft = Offset(0f, 4.dp.toPx()),
-                        size = this.size,
-                        cornerRadius = CornerRadius(20.dp.toPx()),
-                    )
-                }
-            }
-            .clip(shape)
-            .background(if (active) RudiColors.Brick else RudiColors.Surface, shape)
-            .border(1.dp, if (active) RudiColors.BrickLit else RudiColors.Line, shape)
-            .clickable(
-                enabled = active,
-                indication = ripple(color = RudiColors.Text),
-                interactionSource = null,
-                onClick = onClick,
-            )
-            .semantics { this.contentDescription = contentDescription },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.size(24.dp)) {
-            val canvasSize = this.size
-            if (showStop) {
-                val inset = canvasSize.width * 0.18f
-                drawRoundRect(
-                    color = RudiColors.Text,
-                    topLeft = Offset(inset, inset),
-                    size = Size(canvasSize.width - inset * 2, canvasSize.height - inset * 2),
-                    cornerRadius = CornerRadius(2.dp.toPx()),
-                )
-            } else {
-                val triangle = Path().apply {
-                    moveTo(canvasSize.width * 0.2f, 0f)
-                    lineTo(canvasSize.width, canvasSize.height / 2f)
-                    lineTo(canvasSize.width * 0.2f, canvasSize.height)
-                    close()
-                }
-                drawPath(triangle, color = if (active) RudiColors.Text else RudiColors.RowNumber)
-            }
-        }
-    }
+    // One transport button in the app, in its small size (decision 102): the level
+    // card used to draw its own copy and the two drifted apart.
+    TransportButton(
+        playing = showStop,
+        onClick = onClick,
+        modifier = modifier,
+        size = TransportSize.Small,
+        accentIdle = true,
+        enabled = active,
+        contentDescription = contentDescription,
+    )
 }
 
 @Composable

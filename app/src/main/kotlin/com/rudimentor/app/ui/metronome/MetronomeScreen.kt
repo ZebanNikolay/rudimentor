@@ -31,7 +31,10 @@ import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.ui.component.AppToolbar
+import com.rudimentor.app.ui.component.SettingsHandle
+import com.rudimentor.app.ui.component.SettingsHandleEdge
 import com.rudimentor.app.ui.component.TransportButton
+import com.rudimentor.app.ui.component.TransportSize
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.ui.util.OnBackgrounded
@@ -195,6 +198,8 @@ fun MetronomeScreen(
             }
             TransportButton(
                 playing = snapshot.running,
+                // The large size lives here and nowhere else (decision 102).
+                size = TransportSize.Large,
                 onClick = {
                     if (snapshot.running) {
                         playback.stop()
@@ -211,7 +216,10 @@ fun MetronomeScreen(
             // The control cluster belongs with the drum, not with the settings
             // handle: the leftover height is split so it floats between the two.
             Spacer(modifier = Modifier.weight(0.55f))
-            SettingsHandle(onClick = { showSettings = true })
+            SettingsHandle(
+                onClick = { showSettings = true },
+                edge = SettingsHandleEdge.Bottom,
+            )
         }
     }
 }

@@ -8,11 +8,9 @@ import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.SettingsRepository
-import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.data.levels.LevelProgressRepository
 import com.rudimentor.app.data.levels.PracticeRank
-import com.rudimentor.app.data.levels.toPracticeGrid
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -42,7 +40,15 @@ class AppViewModel(
         copy(activeRow = rowIndex.mod(grid.rowCount))
     }
 
-    fun addRow() = update { setRowCountInternal(grid.rowCount + 1) }
+    // A new row duplicates the last one: the user usually wants a variation of what they
+    // already have, not an empty row they must fill from scratch.
+    fun addRow() = update {
+        if (grid.rowCount >= BeatGrid.MAX_ROWS) {
+            this
+        } else {
+            copy(grid = grid.withRowAppended(), activeRow = grid.rowCount)
+        }
+    }
 
     fun removeRow() = update { setRowCountInternal(grid.rowCount - 1) }
 
@@ -62,12 +68,14 @@ class AppViewModel(
 
     fun setShowHandLetters(show: Boolean) = update { copy(showHandLetters = show) }
 
-    fun configureLevel(level: Level, bpm: Int) = update {
+    fun setClickAudible(audible: Boolean) = update { copy(clickAudible = audible) }
+
+    fun setInputLatencyMs(latencyMs: Float) = update {
         copy(
-            grid = level.toPracticeGrid(),
-            bpm = Bpm.clamp(bpm),
-            activeRow = 0,
-            showHandLetters = true,
+            inputLatencyMs = latencyMs.coerceIn(
+                AppSettings.LATENCY_MIN_MS,
+                AppSettings.LATENCY_MAX_MS,
+            ),
         )
     }
 

@@ -128,6 +128,15 @@ data class BeatGrid(
         )
     }
 
+    /**
+     * Appends a copy of the last row. Adding a row continues the pattern the user
+     * is building instead of dropping a default row on them (decision 102).
+     */
+    fun withRowAppended(): BeatGrid {
+        if (rowCount >= MAX_ROWS) return this
+        return BeatGrid(rows + rows.last())
+    }
+
     fun withRowLength(rowIndex: Int, length: Int): BeatGrid = mapRow(rowIndex) {
         it.resized(length)
     }

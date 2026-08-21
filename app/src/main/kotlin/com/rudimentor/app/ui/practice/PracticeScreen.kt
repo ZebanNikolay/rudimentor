@@ -50,6 +50,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.SideSettingsDrawer
 import com.rudimentor.app.ui.component.TransportButton
+import com.rudimentor.app.ui.component.TransportSize
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
@@ -57,6 +58,7 @@ import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
 import com.rudimentor.app.util.DevLog
 import kotlinx.coroutines.delay
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
@@ -66,6 +68,11 @@ import kotlin.math.roundToInt
  * The screen owns the attempt only. Progress is saved by the caller once the
  * result screen is done with it, so an attempt that is abandoned mid-way leaves no
  * trace (decision 88).
+ *
+ * Back, the settings drawer and leaving the app pause the attempt instead of
+ * dropping it: the engine has no pause of its own, so the run is stopped and the
+ * timeline is rewound to the start of the current bar, from where Play resumes
+ * (decision 102).
  */
 @Composable
 fun PracticeScreen(
@@ -74,7 +81,10 @@ fun PracticeScreen(
     rank: PracticeRank,
     bpm: Int,
     buildInfo: BuildInfo,
-    startWithSettings: Boolean = false,
+    clickAudible: Boolean,
+    onClickAudible: (Boolean) -> Unit,
+    latencyMs: Float,
+    onLatencyMs: (Float) -> Unit,
     onExit: () -> Unit,
     onFinished: (PracticeResult) -> Unit,
 ) {
@@ -108,11 +118,28 @@ fun PracticeScreen(
     var frame by remember(attempt) { mutableIntStateOf(0) }
     var envelope by remember { mutableFloatStateOf(0f) }
     var threshold by remember { mutableFloatStateOf(0f) }
-    var clickAudible by remember { mutableStateOf(false) }
-    var latencyMs by remember { mutableFloatStateOf(MicLab.DEFAULT_LATENCY_MS) }
-    var settingsOpen by remember { mutableStateOf(startWithSettings) }
+    // Where the engine clock zero sits on the attempt timeline. Non-zero after a
+    // pause: the engine always restarts from zero, so every polled position and hit
+    // is shifted by this offset.
+    var timeBaseMs by remember(attempt) { mutableFloatStateOf(0f) }
+    var settingsOpen by remember { mutableStateOf(false) }
     var confirmExit by remember { mutableStateOf(false) }
     var audioFailed by remember { mutableStateOf(false) }
+
+    // Rewinding to the start of the bar is safe: the attempt cursor only moves
+    // forward, so notes already judged are never judged twice.
+    fun pause() {
+        if (!running) return
+        val at = positionMs
+        session.stop()
+        running = false
+        timeBaseMs = (floor(at / beatMs) * beatMs).coerceAtLeast(0f)
+        positionMs = timeBaseMs
+        DevLog.log(
+            "practice",
+            "paused at ${at.roundToInt()} ms, resume from ${timeBaseMs.roundToInt()} ms",
+        )
+    }
 
     DisposableEffect(session) {
         onDispose { session.stop() }
@@ -120,15 +147,12 @@ fun PracticeScreen(
 
     // Leaving the app does not dispose the screen, so the engine has to be stopped
     // by hand: otherwise the microphone keeps recording in the background and the
-    // timeline keeps running, which scored silence as a wall of misses. An attempt
-    // interrupted this way is abandoned, like any other exit mid-way (decision 88).
+    // timeline keeps running, which scored silence as a wall of misses. The attempt
+    // is kept and paused, so coming back resumes it (decision 102).
     OnBackgrounded {
         if (running) {
-            val at = positionMs.roundToInt()
-            DevLog.log("practice", "backgrounded at $at ms, attempt dropped")
-            session.stop()
-            running = false
-            onExit()
+            DevLog.log("practice", "backgrounded at ${positionMs.roundToInt()} ms, paused")
+            pause()
         }
     }
 
@@ -162,13 +186,15 @@ fun PracticeScreen(
                             "latency slider ${latencyMs.roundToInt()} ms",
                     )
                 }
-                positionMs = poll.positionMs
+                val now = timeBaseMs + poll.positionMs
+                positionMs = now
                 poll.hits.forEach { hitMs ->
-                    if (hitMs >= firstJudgedMs) attempt.registerHit(hitMs)
+                    val at = timeBaseMs + hitMs
+                    if (at >= firstJudgedMs) attempt.registerHit(at)
                 }
-                attempt.expireMissedNotes(poll.positionMs)
+                attempt.expireMissedNotes(now)
                 frame += 1
-                if (poll.positionMs > lastNoteMs + PracticeScoring.OK_MS + TAIL_MS) {
+                if (now > lastNoteMs + PracticeScoring.OK_MS + TAIL_MS) {
                     session.stop()
                     running = false
                     onFinished(attempt.result())
@@ -185,6 +211,7 @@ fun PracticeScreen(
         if (settingsOpen) {
             settingsOpen = false
         } else if (running) {
+            pause()
             confirmExit = true
         } else {
             onExit()
@@ -192,19 +219,21 @@ fun PracticeScreen(
     }
 
     SideSettingsDrawer(
-        modifier = Modifier.stageSafePadding(),
         open = settingsOpen,
-        onOpenChange = { settingsOpen = it },
+        onOpenChange = {
+            if (it) pause()
+            settingsOpen = it
+        },
         panel = {
             PracticeSettingsPanel(
                 clickAudible = clickAudible,
                 onClickAudible = {
-                    clickAudible = it
+                    onClickAudible(it)
                     session.setClickAudible(it)
                 },
                 latencyMs = latencyMs,
                 onLatencyMs = {
-                    latencyMs = it
+                    onLatencyMs(it)
                     session.setInputLatencyMs(it)
                 },
                 buildInfo = buildInfo,
@@ -212,7 +241,7 @@ fun PracticeScreen(
             )
         },
     ) {
-        Box(modifier = Modifier.fillMaxSize().background(RudiColors.Bg)) {
+        Box(modifier = Modifier.fillMaxSize().background(RudiColors.Bg).stageSafePadding()) {
             if (!micGranted) {
                 PermissionGate(
                     onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
@@ -264,7 +293,7 @@ fun PracticeScreen(
                     PracticeMicMeter(envelope = envelope, threshold = threshold)
                     Spacer(modifier = Modifier.weight(1f))
                     // Reserve the corner the floating transport button sits in.
-                    Spacer(modifier = Modifier.width(TRANSPORT_SIZE))
+                    Spacer(modifier = Modifier.width(TRANSPORT_RESERVE))
                 }
             }
 
@@ -282,7 +311,7 @@ fun PracticeScreen(
 
             TransportButton(
                 playing = running,
-                buttonSize = TRANSPORT_SIZE,
+                size = TransportSize.Small,
                 // Brick in both states: on the level map the call to action is red,
                 // and a grey Play read as disabled on the device.
                 accentIdle = true,
@@ -304,7 +333,7 @@ fun PracticeScreen(
                 },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 6.dp, bottom = 2.dp),
+                    .padding(end = 18.dp, bottom = 14.dp),
             )
 
             if (confirmExit) {
@@ -394,4 +423,5 @@ private fun ExitOverlay(onContinue: () -> Unit, onLeave: () -> Unit) {
 /** Extra time after the last note before the attempt closes itself. */
 private const val TAIL_MS = 300f
 
-private val TRANSPORT_SIZE = 72.dp
+/** Corner kept free for the floating transport button: its size plus its margin. */
+private val TRANSPORT_RESERVE = 82.dp

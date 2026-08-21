@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -211,22 +214,14 @@ fun PracticeMicMeter(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Canvas(modifier = Modifier.size(width = 10.dp, height = 14.dp)) {
-            // A capsule with a stand: the smallest readable microphone glyph.
-            val capsuleWidth = size.width * 0.62f
-            drawRoundRect(
-                color = RudiColors.Muted,
-                topLeft = Offset((size.width - capsuleWidth) / 2f, 0f),
-                size = Size(capsuleWidth, size.height * 0.62f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(capsuleWidth / 2f),
-            )
-            drawLine(
-                color = RudiColors.Muted,
-                start = Offset(size.width / 2f, size.height * 0.62f),
-                end = Offset(size.width / 2f, size.height),
-                strokeWidth = 1.4.dp.toPx(),
-            )
-        }
+        // The stock Material microphone: the hand-drawn capsule read as a circle
+        // on a stick on the device (decision 102).
+        Icon(
+            imageVector = Icons.Filled.Mic,
+            contentDescription = null,
+            tint = if (envelope >= threshold) RudiColors.BrickLit else RudiColors.Muted,
+            modifier = Modifier.size(18.dp),
+        )
         Box(modifier = Modifier.size(width = 74.dp, height = 6.dp)) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRoundRect(

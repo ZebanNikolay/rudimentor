@@ -6,12 +6,22 @@ import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.BeatState
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.audio.Hand
+import com.rudimentor.app.audio.MicLab
 
+/**
+ * Everything the app remembers between runs: the metronome the user has built and
+ * the two practice settings.
+ *
+ * The metronome grid, its tempo and the selected row belong to the user alone --
+ * entering a level no longer overwrites them (decision 102).
+ */
 data class AppSettings(
     val grid: BeatGrid = BeatGrid.default(),
     val bpm: Int = Bpm.DEFAULT,
     val activeRow: Int = 0,
     val showHandLetters: Boolean = true,
+    val clickAudible: Boolean = false,
+    val inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
 ) {
     val safeActiveRow: Int = activeRow.coerceIn(0, grid.rowCount - 1)
 
@@ -22,7 +32,14 @@ data class AppSettings(
     fun sanitized(): AppSettings = copy(
         bpm = Bpm.clamp(bpm),
         activeRow = safeActiveRow,
+        inputLatencyMs = inputLatencyMs.coerceIn(LATENCY_MIN_MS, LATENCY_MAX_MS),
     )
+
+    companion object {
+        /** The slider range of the input-latency compensation, in milliseconds. */
+        const val LATENCY_MIN_MS = 0f
+        const val LATENCY_MAX_MS = 80f
+    }
 }
 
 /**
