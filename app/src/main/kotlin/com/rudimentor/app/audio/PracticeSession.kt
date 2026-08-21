@@ -123,7 +123,7 @@ class PracticeSession(
         // the anchor, and the hit frames after their re-anchoring -- are stamped on.
         // Reading the input counter here shifted the whole visual timeline by the
         // stream skew plus the input latency, so every late stroke read as a miss
-        // while the notes were drawn ahead of their own sound (decision 98).
+        // while the notes were drawn ahead of their own sound (decision 101).
         return Poll(
             anchored = true,
             positionMs = (snapshot.outputFrame - anchor) / framesPerMs,

@@ -223,7 +223,7 @@ fun PracticeScreen(
 
             Column(modifier = Modifier.fillMaxSize()) {
                 // Toolbar first, progress under it: on the device the progress line ran
-                // into the status bar when it sat on the very top edge (decision 98).
+                // into the status bar when it sat on the very top edge (decision 101).
                 PracticeHud(
                     rubric = "${family.name} · ${level.displayNumber}",
                     chips = listOf(

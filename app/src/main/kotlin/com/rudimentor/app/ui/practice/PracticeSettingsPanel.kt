@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
 
 /**
  * Contents of the side settings drawer: the shared [SettingsPanel] with the rows
- * the practice screen owns (decision 98).
+ * the practice screen owns (decision 101).
  *
  * The click is off by default and the headphone warning only shows when it is on:
  * with the speaker open the microphone hears the click and scores it as a stroke

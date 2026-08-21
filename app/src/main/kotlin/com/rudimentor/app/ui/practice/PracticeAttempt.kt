@@ -155,7 +155,7 @@ class PracticeAttempt(
             val note = notes[index]
             // The grace window keeps a hit that arrives in the next poll buffer from
             // losing its note to expiry: without it a late but valid stroke landed as
-            // an extra while the note itself dropped as a miss (decision 98).
+            // an extra while the note itself dropped as a miss (decision 101).
             if (positionMs <= note.timeMs + PracticeScoring.OK_MS +
                 PracticeScoring.EXPIRE_GRACE_MS
             ) {

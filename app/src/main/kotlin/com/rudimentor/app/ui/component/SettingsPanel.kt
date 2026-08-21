@@ -28,7 +28,7 @@ import com.rudimentor.app.ui.theme.RudiTextStyles
  * The metronome sheet is the reference: title, rows, divider, build label. The
  * practice screen shows the very same panel, only turned on its side by its host
  * (a bottom sheet in portrait, the side drawer in landscape), so the two screens
- * cannot drift apart any more (decision 98).
+ * cannot drift apart any more (decision 101).
  *
  * The panel only lays the rows out; the host provides the surface and the padding.
  */

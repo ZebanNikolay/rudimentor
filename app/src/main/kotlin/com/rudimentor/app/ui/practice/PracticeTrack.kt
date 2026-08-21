@@ -156,7 +156,7 @@ fun PracticeTrack(
         }
 
         // The verdict of the last judged note sits on the bottom edge under the hit
-        // line and fades out shortly after, as in the concept (decision 98).
+        // line and fades out shortly after, as in the concept (decision 101).
         val judged = attempt.lastJudged
         val verdict = verdictText(judged)
         val age = positionMs - attempt.lastJudgedAtMs

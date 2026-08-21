@@ -32,7 +32,7 @@ object PracticeScoring {
     /**
      * Extra time a note waits before it is written off as a miss. The poll loop and
      * the audio buffers report a hit up to a buffer late, and without this grace the
-     * note expired first and the stroke was counted as an extra (decision 98).
+     * note expired first and the stroke was counted as an extra (decision 101).
      */
     const val EXPIRE_GRACE_MS = 60f
 

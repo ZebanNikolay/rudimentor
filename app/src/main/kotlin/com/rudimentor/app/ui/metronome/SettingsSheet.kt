@@ -17,7 +17,7 @@ import com.rudimentor.app.ui.theme.RudiColors
 /**
  * Bottom sheet with the metronome's screen-level settings and a small build
  * label. The rows come from the shared [SettingsPanel] so the metronome and the
- * practice screen cannot drift apart (decision 98); only the host differs -- a
+ * practice screen cannot drift apart (decision 101); only the host differs -- a
  * bottom sheet here, the side drawer in landscape.
  */
 @OptIn(ExperimentalMaterial3Api::class)
