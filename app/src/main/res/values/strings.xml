@@ -75,6 +75,9 @@
     <string name="practice_permission_body">Practice needs the microphone to hear your strokes.</string>
     <string name="practice_permission_button">Allow microphone</string>
     <string name="practice_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
+    <string name="practice_paused_title">Paused</string>
+    <string name="practice_paused_hint">Play to resume from the last beat</string>
+    <string name="practice_count_in_cd">Count-in: %1$d</string>
     <string name="practice_exit_title">Leaving ends the attempt — the score will not be saved.</string>
     <string name="practice_exit_continue">Continue</string>
     <string name="practice_exit_leave">Leave</string>

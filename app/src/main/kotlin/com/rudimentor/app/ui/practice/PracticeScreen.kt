@@ -36,8 +36,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
@@ -54,10 +57,12 @@ import com.rudimentor.app.ui.component.TransportSize
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
+import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
 import com.rudimentor.app.util.DevLog
 import kotlinx.coroutines.delay
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
@@ -71,8 +76,9 @@ import kotlin.math.roundToInt
  *
  * Back, the settings drawer and leaving the app pause the attempt instead of
  * dropping it: the engine has no pause of its own, so the run is stopped and the
- * timeline is rewound to the start of the current bar, from where Play resumes
- * (decision 102).
+ * timeline is rewound to the start of the current beat, from where Play resumes
+ * (decision 102). Resuming plays a four-beat count-in first, so the stroke does
+ * not have to land on the very first tick after the tap (decision 103).
  */
 @Composable
 fun PracticeScreen(
@@ -122,6 +128,9 @@ fun PracticeScreen(
     // pause: the engine always restarts from zero, so every polled position and hit
     // is shifted by this offset.
     var timeBaseMs by remember(attempt) { mutableFloatStateOf(0f) }
+    // Engine time swallowed by the count-in of a resume, and what is left of it.
+    var resumeLeadMs by remember(attempt) { mutableFloatStateOf(0f) }
+    var leadRemainingMs by remember(attempt) { mutableFloatStateOf(0f) }
     var settingsOpen by remember { mutableStateOf(false) }
     var confirmExit by remember { mutableStateOf(false) }
     var audioFailed by remember { mutableStateOf(false) }
@@ -135,6 +144,7 @@ fun PracticeScreen(
         running = false
         timeBaseMs = (floor(at / beatMs) * beatMs).coerceAtLeast(0f)
         positionMs = timeBaseMs
+        leadRemainingMs = 0f
         DevLog.log(
             "practice",
             "paused at ${at.roundToInt()} ms, resume from ${timeBaseMs.roundToInt()} ms",
@@ -186,10 +196,20 @@ fun PracticeScreen(
                             "latency slider ${latencyMs.roundToInt()} ms",
                     )
                 }
-                val now = timeBaseMs + poll.positionMs
+                // The count-in of a resume is played along with, not judged: the
+                // timeline stands still and the strokes of these beats are dropped.
+                if (poll.positionMs < resumeLeadMs) {
+                    leadRemainingMs = resumeLeadMs - poll.positionMs
+                    positionMs = timeBaseMs
+                    frame += 1
+                    delay(PracticeSession.POLL_INTERVAL_MS)
+                    continue
+                }
+                leadRemainingMs = 0f
+                val now = timeBaseMs + poll.positionMs - resumeLeadMs
                 positionMs = now
                 poll.hits.forEach { hitMs ->
-                    val at = timeBaseMs + hitMs
+                    val at = timeBaseMs + hitMs - resumeLeadMs
                     if (at >= firstJudgedMs) attempt.registerHit(at)
                 }
                 attempt.expireMissedNotes(now)
@@ -321,6 +341,11 @@ fun PracticeScreen(
                         running = false
                         onFinished(attempt.result())
                     } else {
+                        // Only a resume gets the count-in: the start of an attempt
+                        // already has its own count-in notes (decision 87).
+                        val lead = if (timeBaseMs > 0f) beatMs * RESUME_COUNT_IN_BEATS else 0f
+                        resumeLeadMs = lead
+                        leadRemainingMs = lead
                         val started = session.start(
                             bpm = tempo,
                             clickAudible = clickAudible,
@@ -329,12 +354,21 @@ fun PracticeScreen(
                         if (!started) DevLog.error("practice", "audio engine refused to start")
                         audioFailed = !started
                         running = started
+                        if (!started) leadRemainingMs = 0f
                     }
                 },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 18.dp, bottom = 14.dp),
             )
+
+            // Both overlays only paint: taps fall through to the transport button,
+            // so Play stays reachable while the pause plate is up.
+            if (running && leadRemainingMs > 0f) {
+                CountInOverlay(beatsLeft = ceil(leadRemainingMs / beatMs).toInt())
+            } else if (!running && timeBaseMs > 0f && !confirmExit) {
+                PausedOverlay()
+            }
 
             if (confirmExit) {
                 ExitOverlay(
@@ -376,6 +410,50 @@ private fun PermissionGate(onRequest: () -> Unit, onBack: () -> Unit) {
                 style = RudiButtonStyle.Secondary,
             )
         }
+    }
+}
+
+/** The attempt is stopped and waiting for Play. Paints only, never takes taps. */
+@Composable
+private fun PausedOverlay() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            modifier = Modifier
+                .clip(RoundedCornerShape(RudiDimens.SheetCorner))
+                .background(RudiColors.Surface)
+                .border(1.dp, RudiColors.Line, RoundedCornerShape(RudiDimens.SheetCorner))
+                .padding(horizontal = 26.dp, vertical = 18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(R.string.practice_paused_title),
+                style = RudiTextStyles.Rubric,
+                color = RudiColors.BrickLit,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.practice_paused_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = RudiColors.Muted,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/** The beats counted off before a resumed attempt starts moving again. */
+@Composable
+private fun CountInOverlay(beatsLeft: Int) {
+    val cd = stringResource(R.string.practice_count_in_cd, beatsLeft)
+    Box(
+        modifier = Modifier.fillMaxSize().semantics { contentDescription = cd },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = beatsLeft.toString(),
+            style = RudiTextStyles.BpmValue.copy(fontSize = 76.sp, lineHeight = 80.sp),
+            color = RudiColors.BrickLit,
+        )
     }
 }
 
@@ -425,3 +503,6 @@ private const val TAIL_MS = 300f
 
 /** Corner kept free for the floating transport button: its size plus its margin. */
 private val TRANSPORT_RESERVE = 82.dp
+
+/** Beats counted off before a paused attempt starts moving again (decision 103). */
+private const val RESUME_COUNT_IN_BEATS = 4
