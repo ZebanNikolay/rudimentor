@@ -52,7 +52,11 @@ import com.rudimentor.app.ui.component.TransportButton
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
+import com.rudimentor.app.ui.util.OnBackgrounded
+import com.rudimentor.app.ui.util.OnForegrounded
+import com.rudimentor.app.util.DevLog
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 /**
  * The level attempt: a landscape track that scrolls the notes onto the hit line
@@ -110,6 +114,34 @@ fun PracticeScreen(
 
     DisposableEffect(session) {
         onDispose { session.stop() }
+    }
+
+    // Leaving the app does not dispose the screen, so the engine has to be stopped
+    // by hand: otherwise the microphone keeps recording in the background and the
+    // timeline keeps running, which scored silence as a wall of misses. An attempt
+    // interrupted this way is abandoned, like any other exit mid-way (decision 88).
+    OnBackgrounded {
+        if (running) {
+            val at = positionMs.roundToInt()
+            DevLog.log("practice", "backgrounded at $at ms, attempt dropped")
+            session.stop()
+            running = false
+            onExit()
+        }
+    }
+
+    // The permission may have been granted in system settings while we were away.
+    OnForegrounded {
+        micGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
+    LaunchedEffect(level.id, rank, tempo) {
+        DevLog.log(
+            "practice",
+            "open ${level.id} rank=${rank.name} bpm=$tempo notes=${notes.size} " +
+                "mic=$micGranted",
+        )
     }
 
     LaunchedEffect(running, attempt) {
@@ -251,6 +283,7 @@ fun PracticeScreen(
                             clickAudible = clickAudible,
                             inputLatencyMs = latencyMs,
                         )
+                        if (!started) DevLog.error("practice", "audio engine refused to start")
                         audioFailed = !started
                         running = started
                     }

@@ -1,5 +1,6 @@
 package com.rudimentor.app
 
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -16,6 +17,7 @@ import com.rudimentor.app.data.levels.DataStoreLevelProgressRepository
 import com.rudimentor.app.ui.RudiMentorApp
 import com.rudimentor.app.ui.metronome.MetronomeActions
 import com.rudimentor.app.ui.theme.RudiMentorTheme
+import com.rudimentor.app.util.DevLog
 
 class MainActivity : ComponentActivity() {
     private val levelCatalog by lazy { AssetLevelCatalogLoader(assets).load() }
@@ -29,6 +31,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DevLog.install(
+            context = applicationContext,
+            sessionLabel = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · " +
+                "${Build.MANUFACTURER} ${Build.MODEL} · API ${Build.VERSION.SDK_INT}",
+        )
+        // A non-null bundle means the activity was recreated. The practice flow is
+        // built on the assumption that it is not, so it is worth seeing in the log.
+        DevLog.log("activity", "onCreate restored=${savedInstanceState != null}")
         enableEdgeToEdge()
         // Draw into the cutout area: the landscape stage paints its own background
         // there and insets the content instead of leaving a black band.
@@ -81,5 +91,23 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    /**
+     * The manifest declares the configuration changes this activity handles, so
+     * flipping to landscape lands here instead of recreating the activity. Logged
+     * to make the difference visible in a field report.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val orientation = if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            "landscape"
+        } else {
+            "portrait"
+        }
+        DevLog.log(
+            "activity",
+            "config $orientation ${newConfig.screenWidthDp}x${newConfig.screenHeightDp} dp",
+        )
     }
 }

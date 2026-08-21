@@ -1,5 +1,6 @@
 package com.rudimentor.app.ui.practice
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +59,10 @@ fun PracticeResultScreen(
     onToMap: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
+    // Without this the system back gesture closed the app from the result screen
+    // instead of leaving the practice flow.
+    BackHandler(onBack = onToMap)
+
     Column(
         modifier = Modifier
             .fillMaxSize()

@@ -31,6 +31,7 @@ import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.ui.component.MenuCard
 import com.rudimentor.app.ui.component.RudiMentorLogo
+import com.rudimentor.app.ui.dev.DevScreen
 import com.rudimentor.app.ui.levels.LevelDetailScreen
 import com.rudimentor.app.ui.levels.LevelsScreen
 import com.rudimentor.app.ui.metronome.MetronomeActions
@@ -41,6 +42,7 @@ import com.rudimentor.app.ui.practice.PracticeResultScreen
 import com.rudimentor.app.ui.practice.PracticeScreen
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
+import com.rudimentor.app.util.DevLog
 
 /** Top-level destinations. Added to as new sections come online. */
 private enum class Screen {
@@ -50,6 +52,7 @@ private enum class Screen {
     Practice,
     PracticeResult,
     Metronome,
+    Dev,
     MicLab,
 }
 
@@ -77,6 +80,12 @@ fun RudiMentorApp(
         ?: PracticeRank.Practice
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
 
+    // The navigation trail is the first thing a field report needs: every screen
+    // change is in the log the developer screen can share.
+    LaunchedEffect(screen, selectedLevelId) {
+        DevLog.log("nav", "screen=${screen.name} level=${selectedLevelId ?: "-"}")
+    }
+
     // One stage for the whole practice flow, so the attempt and its result do not
     // hand the orientation back and forth between themselves.
     LandscapeStage(
@@ -93,7 +102,7 @@ fun RudiMentorApp(
                     screenName = Screen.Metronome.name
                 },
                 onOpenLevels = { screenName = Screen.Levels.name },
-                onOpenMicLab = { screenName = Screen.MicLab.name },
+                onOpenDev = { screenName = Screen.Dev.name },
             )
             Screen.Levels -> LevelsScreen(
                 catalog = levelCatalog,
@@ -137,7 +146,9 @@ fun RudiMentorApp(
                     // screen. Only while this really is the current screen -- during
                     // a transition the outgoing screen must not steer navigation.
                     LaunchedEffect(Unit) {
-                        if (screen == Screen.Practice) screenName = Screen.Levels.name
+                        if (screen != Screen.Practice) return@LaunchedEffect
+                        DevLog.error("nav", "practice without a level, back to the map")
+                        screenName = Screen.Levels.name
                     }
                 } else {
                     key(practiceRunId) {
@@ -149,6 +160,12 @@ fun RudiMentorApp(
                             startWithSettings = practiceStartWithSettings,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
+                                DevLog.log(
+                                    "practice",
+                                    "finished ${level.id} rank=${practiceRank.name} " +
+                                        "bpm=$practiceBpm score=${result.score} " +
+                                        "passed=${result.passed}",
+                                )
                                 onAttemptFinished(level, practiceRank, practiceBpm, result)
                                 practiceResult = result
                                 screenName = Screen.PracticeResult.name
@@ -162,7 +179,9 @@ fun RudiMentorApp(
                 val result = practiceResult
                 if (level == null || result == null) {
                     LaunchedEffect(Unit) {
-                        if (screen == Screen.PracticeResult) screenName = Screen.Levels.name
+                        if (screen != Screen.PracticeResult) return@LaunchedEffect
+                        DevLog.error("nav", "result without level/result, back to the map")
+                        screenName = Screen.Levels.name
                     }
                 } else {
                     val nextLevel = levelCatalog.levels
@@ -200,9 +219,14 @@ fun RudiMentorApp(
                 actions = actions,
                 onBack = { screenName = metronomeBackTargetName },
             )
-            Screen.MicLab -> MicLabScreen(
+            Screen.Dev -> DevScreen(
                 buildInfo = buildInfo,
                 onBack = { screenName = Screen.Menu.name },
+                onOpenMicLab = { screenName = Screen.MicLab.name },
+            )
+            Screen.MicLab -> MicLabScreen(
+                buildInfo = buildInfo,
+                onBack = { screenName = Screen.Dev.name },
             )
         }
     }
@@ -213,7 +237,7 @@ private fun MainMenu(
     buildInfo: BuildInfo,
     onOpenMetronome: () -> Unit,
     onOpenLevels: () -> Unit,
-    onOpenMicLab: () -> Unit,
+    onOpenDev: () -> Unit,
 ) {
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
         Column(
@@ -241,10 +265,10 @@ private fun MainMenu(
             if (BuildConfig.DEBUG) {
                 Spacer(modifier = Modifier.height(12.dp))
                 MenuCard(
-                    title = "Mic Lab · dev",
+                    title = "Developer · dev",
                     letter = "D",
                     enabled = true,
-                    onClick = onOpenMicLab,
+                    onClick = onOpenDev,
                 )
             }
 

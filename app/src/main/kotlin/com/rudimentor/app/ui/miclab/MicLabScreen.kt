@@ -57,6 +57,9 @@ import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
+import com.rudimentor.app.ui.util.OnBackgrounded
+import com.rudimentor.app.ui.util.OnForegrounded
+import com.rudimentor.app.util.DevLog
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -95,12 +98,33 @@ fun MicLabScreen(
     val hits = remember { mutableStateListOf<MicLab.MicLabEvent.Hit>() }
     val ticks = remember { mutableStateListOf<TimedTick>() }
 
+    // Tracks whether the engine is open, so returning to the foreground cannot
+    // start a second stream on top of the first one.
+    var streaming by remember { mutableStateOf(false) }
+
     LaunchedEffect(micGranted) {
-        if (micGranted) {
+        if (micGranted && !streaming) {
             micLab.setBpm(MicLab.DEFAULT_BPM)
             micLab.setSensitivity(MicLab.DEFAULT_SENSITIVITY)
             micLab.setInputLatencyMs(MicLab.DEFAULT_LATENCY_MS)
             micLab.start(scope)
+            streaming = true
+        }
+    }
+
+    // The screen is not disposed when the app leaves the foreground, so the input
+    // stream has to be closed by hand and reopened on the way back.
+    OnBackgrounded {
+        if (streaming) {
+            DevLog.log("miclab", "backgrounded, input stream closed")
+            micLab.stop()
+            streaming = false
+        }
+    }
+    OnForegrounded {
+        if (micGranted && !streaming) {
+            micLab.start(scope)
+            streaming = true
         }
     }
 

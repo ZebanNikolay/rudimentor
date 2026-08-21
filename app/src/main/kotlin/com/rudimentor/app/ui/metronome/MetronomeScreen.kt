@@ -34,7 +34,9 @@ import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.TransportButton
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
+import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.formatElapsed
+import com.rudimentor.app.util.DevLog
 
 /**
  * The metronome screen.
@@ -61,6 +63,16 @@ fun MetronomeScreen(
     DisposableEffect(snapshot.running) {
         if (snapshot.running) view.keepScreenOn = true
         onDispose { view.keepScreenOn = false }
+    }
+
+    // The screen is not disposed when the app goes to the background, so the click
+    // would keep playing behind another app. There is no foreground service here,
+    // so the honest behaviour is to stop.
+    OnBackgrounded {
+        if (snapshot.running) {
+            DevLog.log("metronome", "backgrounded while running, stopped")
+            playback.stop()
+        }
     }
 
     var showSettings by remember { mutableStateOf(false) }

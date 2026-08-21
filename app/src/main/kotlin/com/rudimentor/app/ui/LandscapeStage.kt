@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.rudimentor.app.ui.util.OnForegrounded
 
 /**
  * The landscape stage of the practice flow: forced orientation, hidden system bars
@@ -41,6 +42,15 @@ fun LandscapeStage(landscape: Boolean, keepScreenOn: Boolean) {
             insets?.show(WindowInsetsCompat.Type.systemBars())
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
+    }
+
+    // Coming back from the background brings the system bars back with it, so the
+    // immersive stage has to be re-applied instead of set once.
+    OnForegrounded {
+        if (!landscape) return@OnForegrounded
+        val window = activity?.window ?: return@OnForegrounded
+        WindowInsetsControllerCompat(window, window.decorView)
+            .hide(WindowInsetsCompat.Type.systemBars())
     }
 
     DisposableEffect(activity, keepScreenOn) {
