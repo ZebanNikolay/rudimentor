@@ -82,6 +82,10 @@ class PracticeAttempt(
     var lastJudged: NoteJudgement? = null
         private set
 
+    /** Attempt time the last verdict appeared at, so the track can fade it out. */
+    var lastJudgedAtMs: Float = Float.NEGATIVE_INFINITY
+        private set
+
     /** Signed offsets in the order they were judged, for the scale and histogram. */
     private val offsetsInternal = ArrayList<Float>()
 
@@ -127,6 +131,7 @@ class PracticeAttempt(
         weightedSum += PracticeScoring.weight(window)
         judgedCount += 1
         lastJudged = judgement
+        lastJudgedAtMs = positionMs
         combo += 1
         maxCombo = maxOf(maxCombo, combo)
         score += (
@@ -148,7 +153,14 @@ class PracticeAttempt(
         var index = cursor
         while (index < notes.size) {
             val note = notes[index]
-            if (positionMs <= note.timeMs + PracticeScoring.OK_MS) break
+            // The grace window keeps a hit that arrives in the next poll buffer from
+            // losing its note to expiry: without it a late but valid stroke landed as
+            // an extra while the note itself dropped as a miss (decision 98).
+            if (positionMs <= note.timeMs + PracticeScoring.OK_MS +
+                PracticeScoring.EXPIRE_GRACE_MS
+            ) {
+                break
+            }
             if (judgementsInternal[index] == null) {
                 judgementsInternal[index] =
                     NoteJudgement(offsetMs = Float.NaN, window = HitWindow.Miss)
@@ -156,6 +168,7 @@ class PracticeAttempt(
                 judgedCount += 1
                 combo = 0
                 lastJudged = judgementsInternal[index]
+                lastJudgedAtMs = positionMs
                 missed.add(index)
             }
             index += 1

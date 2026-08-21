@@ -35,7 +35,7 @@ import kotlin.math.roundToInt
 
 /**
  * The top bar of the practice screen: back, what is being played, and the live
- * score. Progress is the 2 dp line above it -- there is no progress bar or beat
+ * score. Progress is the 2 dp line under it -- there is no progress bar or beat
  * counter (decision 88).
  */
 @Composable
@@ -82,7 +82,7 @@ fun PracticeHud(
     }
 }
 
-/** The 2 dp progress line above the HUD. */
+/** The 2 dp progress line under the HUD. */
 @Composable
 fun PracticeProgressLine(progress: Float, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.fillMaxWidth().height(2.dp)) {

@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.audio.PracticeSession
@@ -72,6 +73,7 @@ fun PracticeScreen(
     family: Family,
     rank: PracticeRank,
     bpm: Int,
+    buildInfo: BuildInfo,
     startWithSettings: Boolean = false,
     onExit: () -> Unit,
     onFinished: (PracticeResult) -> Unit,
@@ -146,11 +148,20 @@ fun PracticeScreen(
 
     LaunchedEffect(running, attempt) {
         if (!running) return@LaunchedEffect
+        var skewLogged = false
         while (true) {
             val poll = session.poll()
             envelope = poll.envelope
             threshold = poll.threshold
             if (poll.anchored) {
+                if (!skewLogged) {
+                    skewLogged = true
+                    DevLog.log(
+                        "practice",
+                        "anchored, input-output clock skew ${poll.clockSkewMs.roundToInt()} ms, " +
+                            "latency slider ${latencyMs.roundToInt()} ms",
+                    )
+                }
                 positionMs = poll.positionMs
                 poll.hits.forEach { hitMs ->
                     if (hitMs >= firstJudgedMs) attempt.registerHit(hitMs)
@@ -196,6 +207,7 @@ fun PracticeScreen(
                     latencyMs = it
                     session.setInputLatencyMs(it)
                 },
+                buildInfo = buildInfo,
                 onDone = { settingsOpen = false },
             )
         },
@@ -210,9 +222,8 @@ fun PracticeScreen(
             }
 
             Column(modifier = Modifier.fillMaxSize()) {
-                PracticeProgressLine(
-                    progress = if (lastNoteMs <= 0f) 0f else positionMs / lastNoteMs,
-                )
+                // Toolbar first, progress under it: on the device the progress line ran
+                // into the status bar when it sat on the very top edge (decision 98).
                 PracticeHud(
                     rubric = "${family.name} · ${level.displayNumber}",
                     chips = listOf(
@@ -228,6 +239,9 @@ fun PracticeScreen(
                     accuracy = attempt.liveAccuracy,
                     onBack = { if (running) confirmExit = true else onExit() },
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                )
+                PracticeProgressLine(
+                    progress = if (lastNoteMs <= 0f) 0f else positionMs / lastNoteMs,
                 )
                 PracticeTrack(
                     notes = notes,

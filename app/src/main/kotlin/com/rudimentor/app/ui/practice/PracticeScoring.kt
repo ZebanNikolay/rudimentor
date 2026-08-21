@@ -29,6 +29,13 @@ object PracticeScoring {
     const val GOOD_MS = 60f
     const val OK_MS = 120f
 
+    /**
+     * Extra time a note waits before it is written off as a miss. The poll loop and
+     * the audio buffers report a hit up to a buffer late, and without this grace the
+     * note expired first and the stroke was counted as an extra (decision 98).
+     */
+    const val EXPIRE_GRACE_MS = 60f
+
     /** Draft pass bar. */
     const val PASS_ACCURACY = 0.80f
 

@@ -25,6 +25,8 @@ class NativeMicLab {
     data class Snapshot(
         val sampleRate: Int,
         val inputFrame: Long,
+        /** Output stream frame counter: the clock tick events are stamped on. */
+        val outputFrame: Long,
         val tickCount: Long,
         val envelope: Float,
         val threshold: Float,
@@ -46,7 +48,7 @@ class NativeMicLab {
         val index: Long,
     )
 
-    private val snapshotBuffer = IntArray(10)
+    private val snapshotBuffer = IntArray(12)
     private val hitBuffer = LongArray(HIT_DRAIN_CAPACITY * 3)
     private val tickBuffer = LongArray(TICK_DRAIN_CAPACITY * 2)
 
@@ -64,9 +66,12 @@ class NativeMicLab {
                 (snapshotBuffer[1].toLong() and 0xFFFFFFFFL)
         val tickCount = ((snapshotBuffer[4].toLong() and 0xFFFFFFFFL) shl 32) or
                 (snapshotBuffer[3].toLong() and 0xFFFFFFFFL)
+        val outputFrame = ((snapshotBuffer[11].toLong() and 0xFFFFFFFFL) shl 32) or
+                (snapshotBuffer[10].toLong() and 0xFFFFFFFFL)
         return Snapshot(
             sampleRate = snapshotBuffer[0],
             inputFrame = inputFrame,
+            outputFrame = outputFrame,
             tickCount = tickCount,
             envelope = snapshotBuffer[5] / 1_000_000f,
             threshold = snapshotBuffer[6] / 1_000_000f,

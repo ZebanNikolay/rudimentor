@@ -42,6 +42,8 @@ public:
     struct Snapshot {
         int32_t sampleRate;
         int64_t inputFrame;
+        // Output stream frame counter: the clock tick events are stamped on.
+        int64_t outputFrame;
         int64_t tickCount;
         float envelope;
         float threshold;
@@ -100,6 +102,11 @@ private:
 
     int32_t sampleRate_ = 48000;
     int64_t outputFrames_ = 0;
+    // Mirror of outputFrames_ for the UI thread: ticks are stamped on the
+    // output clock, so the position of the attempt has to be read on the same
+    // clock. Reading the input counter instead put the visual timeline and the
+    // hit timestamps a full round-trip apart (decision 98).
+    std::atomic<int64_t> outputFramesPublished_{0};
     std::atomic<int64_t> inputFrames_{0};
     // Captured on the output stream's first callback: the input frame
     // counter's value at that instant. Because the input stream is started

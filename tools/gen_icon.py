@@ -8,7 +8,7 @@ The monochrome layer draws the same pair of shapes (the launcher tints it).
 
 Canvas is 108dp; adaptive icons keep the key content inside a centered 66dp
 safe-zone. The virtual `SLOT` = 52dp sets the letter size and the LED position;
-with `LETTER_CAP_RATIO` 0.31 the letter is about 16dp and the dot about 6dp,
+with `LETTER_CAP_RATIO` 0.403 the letter is about 21dp and the dot about 8dp,
 both comfortably inside the safe-zone.
 """
 from fontTools.misc.transform import Transform
@@ -22,7 +22,9 @@ FONT = "jetbrains_mono_bold.ttf"
 SLOT = 52.0
 CENTER = 54.0
 LETTER_CAP_RATIO = 0.403  # cap height relative to SLOT (+30% vs previous 0.31)
-DOT_RATIO = 0.24  # LED diameter relative to SLOT (2x previous 0.12)
+# LED diameter relative to SLOT. 0.24 read as a big blob next to the letter on a
+# real launcher, 0.12 was invisible: 0.15 keeps it a dot (decision 98).
+DOT_RATIO = 0.15
 FOREGROUND = "ic_launcher_foreground.xml"
 MONOCHROME = "ic_launcher_monochrome.xml"
 

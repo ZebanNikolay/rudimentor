@@ -157,6 +157,7 @@ fun RudiMentorApp(
                             family = levelCatalog.family,
                             rank = practiceRank,
                             bpm = practiceBpm,
+                            buildInfo = buildInfo,
                             startWithSettings = practiceStartWithSettings,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->

@@ -28,6 +28,12 @@ class PracticeSession(
         val envelope: Float,
         val threshold: Float,
         val running: Boolean,
+        /**
+         * Difference between the input and the output frame counter in
+         * milliseconds. Diagnostics only: on a healthy stream pair it stays close
+         * to constant, and a drift here means the two clocks are not one clock.
+         */
+        val clockSkewMs: Float = 0f,
     )
 
     var bpm: Int = MicLab.DEFAULT_BPM
@@ -113,13 +119,19 @@ class PracticeSession(
         for (hit in hitScratch) {
             hitPositions.add((hit.frame - anchor) / framesPerMs)
         }
+        // The position runs on the output clock, the same clock the ticks -- and so
+        // the anchor, and the hit frames after their re-anchoring -- are stamped on.
+        // Reading the input counter here shifted the whole visual timeline by the
+        // stream skew plus the input latency, so every late stroke read as a miss
+        // while the notes were drawn ahead of their own sound (decision 98).
         return Poll(
             anchored = true,
-            positionMs = (snapshot.inputFrame - anchor) / framesPerMs,
+            positionMs = (snapshot.outputFrame - anchor) / framesPerMs,
             hits = if (hitPositions.isEmpty()) emptyList() else ArrayList(hitPositions),
             envelope = snapshot.envelope,
             threshold = snapshot.threshold,
             running = snapshot.running,
+            clockSkewMs = (snapshot.inputFrame - snapshot.outputFrame) / framesPerMs,
         )
     }
 

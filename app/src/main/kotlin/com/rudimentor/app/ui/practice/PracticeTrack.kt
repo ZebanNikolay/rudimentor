@@ -28,6 +28,10 @@ import com.rudimentor.app.ui.theme.RudiColors
  * one draw pass instead of a hundred composables while still looking identical to
  * the metronome pads.
  *
+ * Geometry follows the approved concept: one lane line across the vertical centre
+ * with the notes sitting on it, hit dots on a virtual rail below the pads, and the
+ * verdict on the bottom edge under the hit line.
+ *
  * [frame] is the poll counter: reading it inside the draw lambda is what makes the
  * track redraw on every engine poll.
  */
@@ -52,8 +56,10 @@ fun PracticeTrack(
         val pxPerMs = width / VISIBLE_MS
         val lineX = width * LINE_FRACTION
         val side = minOf(with(density) { NOTE_SIDE.toPx() }, height * 0.34f)
-        val noteCenterY = height * 0.44f
-        val baselineY = noteCenterY + side * 0.72f + with(density) { 9.dp.toPx() }
+        // The lane sits on the vertical centre and the notes are centred on it.
+        val laneY = height / 2f
+        val hitDotY = laneY + side * HIT_DOT_OFFSET
+        val extraDotY = laneY + side * EXTRA_DOT_OFFSET
 
         drawBarLines(
             positionMs = positionMs,
@@ -62,8 +68,8 @@ fun PracticeTrack(
             lineX = lineX,
             height = height,
         )
+        drawLane(laneY = laneY, width = width)
         drawHitLine(lineX = lineX, height = height)
-        drawBaseline(baselineY = baselineY, width = width)
 
         val letterSize = with(density) { (side * 0.42f).toSp() }
         val letterStyle = TextStyle(
@@ -77,7 +83,7 @@ fun PracticeTrack(
             beatMs = beatMs,
             pxPerMs = pxPerMs,
             lineX = lineX,
-            noteCenterY = noteCenterY,
+            laneY = laneY,
             side = side,
             measurer = measurer,
             style = letterStyle,
@@ -106,7 +112,7 @@ fun PracticeTrack(
                 light = false,
             )
             drawPadFace(
-                topLeft = Offset(x - side / 2f, noteCenterY - side / 2f + fallY),
+                topLeft = Offset(x - side / 2f, laneY - side / 2f + fallY),
                 side = side,
                 round = note.hand == PatternHand.Left,
                 tone = PadTone.Normal,
@@ -124,17 +130,17 @@ fun PracticeTrack(
                 textLayoutResult = label,
                 topLeft = Offset(
                     x - label.size.width / 2f,
-                    noteCenterY - label.size.height / 2f + fallY,
+                    laneY - label.size.height / 2f + fallY,
                 ),
             )
 
-            // The hit itself is a dot on the baseline, offset by how late or early it
+            // The hit itself is a dot below the note, offset by how late or early it
             // landed -- the note keeps its own place on the grid.
             if (judgement != null && judgement.window != HitWindow.Miss) {
                 drawCircle(
                     color = windowColor(judgement.window),
-                    radius = with(density) { HIT_DOT.toPx() } / 2f,
-                    center = Offset(x + judgement.offsetMs * pxPerMs, baselineY),
+                    radius = side * HIT_DOT_SIZE / 2f,
+                    center = Offset(x + judgement.offsetMs * pxPerMs, hitDotY),
                 )
             }
         }
@@ -144,16 +150,17 @@ fun PracticeTrack(
             if (x < 0f || x > width) return@forEach
             drawCircle(
                 color = RudiColors.TrackExtraHit.copy(alpha = 0.7f),
-                radius = with(density) { HIT_DOT.toPx() } / 2f,
-                center = Offset(x, baselineY),
+                radius = side * EXTRA_DOT_SIZE / 2f,
+                center = Offset(x, extraDotY),
             )
         }
 
-        // The verdict of the last judged note sits above the hit line, always in
-        // milliseconds (decision 86).
+        // The verdict of the last judged note sits on the bottom edge under the hit
+        // line and fades out shortly after, as in the concept (decision 98).
         val judged = attempt.lastJudged
         val verdict = verdictText(judged)
-        if (verdict != null) {
+        val age = positionMs - attempt.lastJudgedAtMs
+        if (verdict != null && age in 0f..VERDICT_HOLD_MS) {
             val layout = measurer.measure(
                 text = verdict,
                 style = letterStyle.copy(
@@ -165,7 +172,7 @@ fun PracticeTrack(
                 textLayoutResult = layout,
                 topLeft = Offset(
                     lineX - layout.size.width / 2f,
-                    noteCenterY - side * 0.85f - layout.size.height,
+                    height - layout.size.height - with(density) { 6.dp.toPx() },
                 ),
             )
         }
@@ -232,12 +239,12 @@ private fun DrawScope.drawHitLine(lineX: Float, height: Float) {
     )
 }
 
-/** The thin rail the hit dots sit on. */
-private fun DrawScope.drawBaseline(baselineY: Float, width: Float) {
+/** The lane the notes ride on: one hairline across the vertical centre. */
+private fun DrawScope.drawLane(laneY: Float, width: Float) {
     drawLine(
-        color = RudiColors.TrackHitLine.copy(alpha = 0.45f),
-        start = Offset(0f, baselineY),
-        end = Offset(width, baselineY),
+        color = RudiColors.TrackLane,
+        start = Offset(0f, laneY),
+        end = Offset(width, laneY),
         strokeWidth = 1f,
     )
 }
@@ -251,7 +258,7 @@ private fun DrawScope.drawCountIn(
     beatMs: Float,
     pxPerMs: Float,
     lineX: Float,
-    noteCenterY: Float,
+    laneY: Float,
     side: Float,
     measurer: TextMeasurer,
     style: TextStyle,
@@ -266,14 +273,15 @@ private fun DrawScope.drawCountIn(
             text = (beat + 1).toString(),
             style = style.copy(color = color),
         )
+        val digitCenterY = laneY - side * 0.49f
         drawText(
             textLayoutResult = digit,
-            topLeft = Offset(x - digit.size.width / 2f, noteCenterY - digit.size.height / 2f),
+            topLeft = Offset(x - digit.size.width / 2f, digitCenterY - digit.size.height / 2f),
         )
         drawLine(
             color = color.copy(alpha = 0.6f),
-            start = Offset(x, noteCenterY + side * 0.55f),
-            end = Offset(x, noteCenterY + side * 0.85f),
+            start = Offset(x, laneY - side * 0.09f),
+            end = Offset(x, laneY + side * 0.55f),
             strokeWidth = 2f,
         )
     }
@@ -289,5 +297,14 @@ internal fun verdictText(judgement: NoteJudgement?): String? = when {
 private const val VISIBLE_MS = 2000f
 private const val LINE_FRACTION = 0.33f
 private const val MISS_FALL_MS = 420f
+
+/** How long the verdict stays on screen after a note is judged. */
+private const val VERDICT_HOLD_MS = 380f
+
+/** Concept geometry, as fractions of the note side (44 px in the concept). */
+private const val HIT_DOT_OFFSET = 0.74f
+private const val HIT_DOT_SIZE = 0.25f
+private const val EXTRA_DOT_OFFSET = 0.58f
+private const val EXTRA_DOT_SIZE = 0.16f
+
 private val NOTE_SIDE = 44.dp
-private val HIT_DOT = 11.dp

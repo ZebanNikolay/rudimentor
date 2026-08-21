@@ -67,11 +67,23 @@ class PracticeScoringTest {
         attempt.registerHit(notes[0].timeMs)
         assertEquals(1, attempt.combo)
 
-        // Past the second note by more than the OK window.
-        attempt.expireMissedNotes(notes[1].timeMs + PracticeScoring.OK_MS + 1f)
+        // Past the second note by more than the OK window plus the expiry grace.
+        attempt.expireMissedNotes(
+            notes[1].timeMs + PracticeScoring.OK_MS + PracticeScoring.EXPIRE_GRACE_MS + 1f,
+        )
         assertEquals(1, attempt.misses)
         assertEquals(0, attempt.combo)
         assertEquals(HitWindow.Miss, attempt.judgementAt(1)?.window)
+    }
+
+    @Test
+    fun `the expiry grace keeps a note alive a little past its window`() {
+        val notes = notesEvery(count = 3, spacingMs = 500f)
+        val attempt = PracticeAttempt(notes)
+
+        // Inside the grace the note is still open, so a late poll cannot steal it.
+        attempt.expireMissedNotes(notes[0].timeMs + PracticeScoring.OK_MS + 1f)
+        assertEquals(0, attempt.misses)
     }
 
     @Test

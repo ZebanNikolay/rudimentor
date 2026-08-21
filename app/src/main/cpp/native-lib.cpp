@@ -94,14 +94,16 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeSetInputLatencyMillis(
 //   [7] peak       * 1e6
 //   [8] clickAudible (0/1)
 //   [9] running       (0/1)
+//  [10] outputFrame (low 32 bits)
+//  [11] outputFrame (high 32 bits)
 extern "C" JNIEXPORT void JNICALL
 Java_com_rudimentor_app_audio_NativeMicLab_nativeSnapshot(
         JNIEnv *env, jobject, jintArray out) {
-    if (out == nullptr || env->GetArrayLength(out) < 10) {
+    if (out == nullptr || env->GetArrayLength(out) < 12) {
         return;
     }
     const MicLabEngine::Snapshot s = micLab.snapshot();
-    jint values[10];
+    jint values[12];
     values[0] = s.sampleRate;
     values[1] = static_cast<jint>(s.inputFrame & 0xFFFFFFFFLL);
     values[2] = static_cast<jint>((s.inputFrame >> 32) & 0xFFFFFFFFLL);
@@ -112,7 +114,9 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeSnapshot(
     values[7] = static_cast<jint>(s.peak * 1.0e6f);
     values[8] = s.clickAudible ? 1 : 0;
     values[9] = s.running ? 1 : 0;
-    env->SetIntArrayRegion(out, 0, 10, values);
+    values[10] = static_cast<jint>(s.outputFrame & 0xFFFFFFFFLL);
+    values[11] = static_cast<jint>((s.outputFrame >> 32) & 0xFFFFFFFFLL);
+    env->SetIntArrayRegion(out, 0, 12, values);
 }
 
 // Hit / tick event layouts, packed as long triples / doubles to keep the

@@ -44,6 +44,7 @@ object RudiColors {
 
     /** Practice track (approved practice-screen concept, decisions 85-90). */
     val TrackHitLine = Color(0xFF6F6F6C)
+    val TrackLane = Color(0xFF1E1E1E)
     val TrackBarStrong = Color(0xFF2E2E2E)
     val TrackBar = Color(0xFF232323)
     val WindowPerfect = BrickLit

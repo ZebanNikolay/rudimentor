@@ -35,6 +35,7 @@ bool MicLabEngine::start() {
     }
 
     outputFrames_ = 0;
+    outputFramesPublished_.store(0, std::memory_order_release);
     inputFrames_.store(0, std::memory_order_release);
     inputFrameZero_.store(-1, std::memory_order_release);
     nextTickFrame_ = static_cast<double>(sampleRate_) * 0.30;  // brief warm-up
@@ -155,6 +156,7 @@ MicLabEngine::Snapshot MicLabEngine::snapshot() const {
     return Snapshot{
             sampleRate_,
             inputFrames_.load(std::memory_order_acquire),
+            outputFramesPublished_.load(std::memory_order_acquire),
             tickCount_.load(std::memory_order_acquire),
             detector_.lastEnvelope(),
             detector_.lastThreshold(),
@@ -260,6 +262,7 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
     }
 
     outputFrames_ += numFrames;
+    outputFramesPublished_.store(outputFrames_, std::memory_order_release);
     return running_.load(std::memory_order_acquire)
             ? oboe::DataCallbackResult::Continue
             : oboe::DataCallbackResult::Stop;
