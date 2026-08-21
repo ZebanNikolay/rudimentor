@@ -158,11 +158,8 @@ fun RudiMentorApp(
                             family = levelCatalog.family,
                             rank = practiceRank,
                             bpm = practiceBpm,
-                            buildInfo = buildInfo,
                             clickAudible = settings.clickAudible,
-                            onClickAudible = onClickAudible,
                             latencyMs = settings.inputLatencyMs,
-                            onLatencyMs = onInputLatencyMs,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
                                 DevLog.log(

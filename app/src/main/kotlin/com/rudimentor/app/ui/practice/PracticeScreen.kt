@@ -6,9 +6,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,17 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.audio.PracticeSession
@@ -51,19 +42,14 @@ import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
-import com.rudimentor.app.ui.component.SideSettingsDrawer
 import com.rudimentor.app.ui.component.TransportButton
 import com.rudimentor.app.ui.component.TransportSize
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
-import com.rudimentor.app.ui.theme.RudiDimens
-import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
 import com.rudimentor.app.util.DevLog
 import kotlinx.coroutines.delay
-import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
@@ -74,11 +60,9 @@ import kotlin.math.roundToInt
  * result screen is done with it, so an attempt that is abandoned mid-way leaves no
  * trace (decision 88).
  *
- * Back, the settings drawer and leaving the app pause the attempt instead of
- * dropping it: the engine has no pause of its own, so the run is stopped and the
- * timeline is rewound to the start of the current beat, from where Play resumes
- * (decision 102). Resuming plays a four-beat count-in first, so the stroke does
- * not have to land on the very first tick after the tap (decision 103).
+ * There is no pause and no settings here (decision 104). Back leaves for the level
+ * at once, without a question; Stop closes the attempt and hands it to the result
+ * screen, which is where the click and the latency are tuned before the next try.
  */
 @Composable
 fun PracticeScreen(
@@ -86,11 +70,8 @@ fun PracticeScreen(
     family: Family,
     rank: PracticeRank,
     bpm: Int,
-    buildInfo: BuildInfo,
     clickAudible: Boolean,
-    onClickAudible: (Boolean) -> Unit,
     latencyMs: Float,
-    onLatencyMs: (Float) -> Unit,
     onExit: () -> Unit,
     onFinished: (PracticeResult) -> Unit,
 ) {
@@ -124,32 +105,7 @@ fun PracticeScreen(
     var frame by remember(attempt) { mutableIntStateOf(0) }
     var envelope by remember { mutableFloatStateOf(0f) }
     var threshold by remember { mutableFloatStateOf(0f) }
-    // Where the engine clock zero sits on the attempt timeline. Non-zero after a
-    // pause: the engine always restarts from zero, so every polled position and hit
-    // is shifted by this offset.
-    var timeBaseMs by remember(attempt) { mutableFloatStateOf(0f) }
-    // Engine time swallowed by the count-in of a resume, and what is left of it.
-    var resumeLeadMs by remember(attempt) { mutableFloatStateOf(0f) }
-    var leadRemainingMs by remember(attempt) { mutableFloatStateOf(0f) }
-    var settingsOpen by remember { mutableStateOf(false) }
-    var confirmExit by remember { mutableStateOf(false) }
     var audioFailed by remember { mutableStateOf(false) }
-
-    // Rewinding to the start of the bar is safe: the attempt cursor only moves
-    // forward, so notes already judged are never judged twice.
-    fun pause() {
-        if (!running) return
-        val at = positionMs
-        session.stop()
-        running = false
-        timeBaseMs = (floor(at / beatMs) * beatMs).coerceAtLeast(0f)
-        positionMs = timeBaseMs
-        leadRemainingMs = 0f
-        DevLog.log(
-            "practice",
-            "paused at ${at.roundToInt()} ms, resume from ${timeBaseMs.roundToInt()} ms",
-        )
-    }
 
     DisposableEffect(session) {
         onDispose { session.stop() }
@@ -157,12 +113,14 @@ fun PracticeScreen(
 
     // Leaving the app does not dispose the screen, so the engine has to be stopped
     // by hand: otherwise the microphone keeps recording in the background and the
-    // timeline keeps running, which scored silence as a wall of misses. The attempt
-    // is kept and paused, so coming back resumes it (decision 102).
+    // timeline keeps running, which scored silence as a wall of misses. Without a
+    // pause the attempt is simply dropped, exactly like back (decision 104).
     OnBackgrounded {
         if (running) {
-            DevLog.log("practice", "backgrounded at ${positionMs.roundToInt()} ms, paused")
-            pause()
+            DevLog.log("practice", "backgrounded at ${positionMs.roundToInt()} ms, dropped")
+            session.stop()
+            running = false
+            onExit()
         }
     }
 
@@ -196,21 +154,10 @@ fun PracticeScreen(
                             "latency slider ${latencyMs.roundToInt()} ms",
                     )
                 }
-                // The count-in of a resume is played along with, not judged: the
-                // timeline stands still and the strokes of these beats are dropped.
-                if (poll.positionMs < resumeLeadMs) {
-                    leadRemainingMs = resumeLeadMs - poll.positionMs
-                    positionMs = timeBaseMs
-                    frame += 1
-                    delay(PracticeSession.POLL_INTERVAL_MS)
-                    continue
-                }
-                leadRemainingMs = 0f
-                val now = timeBaseMs + poll.positionMs - resumeLeadMs
+                val now = poll.positionMs
                 positionMs = now
                 poll.hits.forEach { hitMs ->
-                    val at = timeBaseMs + hitMs - resumeLeadMs
-                    if (at >= firstJudgedMs) attempt.registerHit(at)
+                    if (hitMs >= firstJudgedMs) attempt.registerHit(hitMs)
                 }
                 attempt.expireMissedNotes(now)
                 frame += 1
@@ -227,161 +174,112 @@ fun PracticeScreen(
         }
     }
 
-    BackHandler {
-        if (settingsOpen) {
-            settingsOpen = false
-        } else if (running) {
-            pause()
-            confirmExit = true
-        } else {
-            onExit()
-        }
+    // Leaving mid-attempt drops it without a question (decision 104): the score is
+    // only worth keeping once the attempt reaches the result screen.
+    fun leave() {
+        session.stop()
+        running = false
+        onExit()
     }
 
-    SideSettingsDrawer(
-        open = settingsOpen,
-        onOpenChange = {
-            if (it) pause()
-            settingsOpen = it
-        },
-        panel = {
-            PracticeSettingsPanel(
-                clickAudible = clickAudible,
-                onClickAudible = {
-                    onClickAudible(it)
-                    session.setClickAudible(it)
-                },
-                latencyMs = latencyMs,
-                onLatencyMs = {
-                    onLatencyMs(it)
-                    session.setInputLatencyMs(it)
-                },
-                buildInfo = buildInfo,
-                onDone = { settingsOpen = false },
-            )
-        },
-    ) {
-        Box(modifier = Modifier.fillMaxSize().background(RudiColors.Bg).stageSafePadding()) {
-            if (!micGranted) {
-                PermissionGate(
-                    onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
-                    onBack = onExit,
-                )
-                return@Box
-            }
+    BackHandler { leave() }
 
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Toolbar first, progress under it: on the device the progress line ran
-                // into the status bar when it sat on the very top edge (decision 101).
-                PracticeHud(
-                    rubric = "${family.name} · ${level.displayNumber}",
-                    chips = listOf(
-                        rank.name.uppercase(),
-                        stringResource(R.string.practice_bpm, tempo),
-                        stringResource(
-                            R.string.practice_hits_per_beat,
-                            practiceTarget(level, rank)?.hitsPerBeat ?: 1,
-                        ),
+    Box(modifier = Modifier.fillMaxSize().background(RudiColors.Bg).stageSafePadding()) {
+        if (!micGranted) {
+            PermissionGate(
+                onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+                onBack = onExit,
+            )
+            return@Box
+        }
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Toolbar first, progress under it: on the device the progress line ran
+            // into the status bar when it sat on the very top edge (decision 101).
+            PracticeHud(
+                rubric = "${family.name} · ${level.displayNumber}",
+                chips = listOf(
+                    rank.name.uppercase(),
+                    stringResource(R.string.practice_bpm, tempo),
+                    stringResource(
+                        R.string.practice_hits_per_beat,
+                        practiceTarget(level, rank)?.hitsPerBeat ?: 1,
                     ),
-                    score = attempt.score,
-                    combo = attempt.combo,
-                    accuracy = attempt.liveAccuracy,
-                    onBack = { if (running) confirmExit = true else onExit() },
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
-                )
-                PracticeProgressLine(
-                    progress = if (lastNoteMs <= 0f) 0f else positionMs / lastNoteMs,
-                )
-                PracticeTrack(
-                    notes = notes,
-                    attempt = attempt,
-                    positionMs = positionMs,
-                    beatMs = beatMs,
-                    frame = frame,
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                )
-                PracticeDeviationScale(
-                    offsets = attempt.offsets,
-                    modifier = Modifier.padding(horizontal = 18.dp),
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PracticeMicMeter(envelope = envelope, threshold = threshold)
-                    Spacer(modifier = Modifier.weight(1f))
-                    // Reserve the corner the floating transport button sits in.
-                    Spacer(modifier = Modifier.width(TRANSPORT_RESERVE))
-                }
-            }
-
-            if (audioFailed) {
-                Text(
-                    text = stringResource(R.string.practice_audio_failed),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = RudiColors.WindowGood,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(horizontal = 40.dp),
-                )
-            }
-
-            TransportButton(
-                playing = running,
-                size = TransportSize.Small,
-                // Brick in both states: on the level map the call to action is red,
-                // and a grey Play read as disabled on the device.
-                accentIdle = true,
-                onClick = {
-                    if (running) {
-                        session.stop()
-                        running = false
-                        onFinished(attempt.result())
-                    } else {
-                        // Only a resume gets the count-in: the start of an attempt
-                        // already has its own count-in notes (decision 87).
-                        val lead = if (timeBaseMs > 0f) beatMs * RESUME_COUNT_IN_BEATS else 0f
-                        resumeLeadMs = lead
-                        leadRemainingMs = lead
-                        val started = session.start(
-                            bpm = tempo,
-                            clickAudible = clickAudible,
-                            inputLatencyMs = latencyMs,
-                        )
-                        if (!started) DevLog.error("practice", "audio engine refused to start")
-                        audioFailed = !started
-                        running = started
-                        if (!started) leadRemainingMs = 0f
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 18.dp, bottom = 14.dp),
+                ),
+                score = attempt.score,
+                combo = attempt.combo,
+                accuracy = attempt.liveAccuracy,
+                onBack = { leave() },
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
             )
-
-            // Both overlays only paint: taps fall through to the transport button,
-            // so Play stays reachable while the pause plate is up.
-            if (running && leadRemainingMs > 0f) {
-                CountInOverlay(beatsLeft = ceil(leadRemainingMs / beatMs).toInt())
-            } else if (!running && timeBaseMs > 0f && !confirmExit) {
-                PausedOverlay()
-            }
-
-            if (confirmExit) {
-                ExitOverlay(
-                    onContinue = { confirmExit = false },
-                    onLeave = {
-                        session.stop()
-                        running = false
-                        confirmExit = false
-                        onExit()
-                    },
-                )
+            PracticeProgressLine(
+                progress = if (lastNoteMs <= 0f) 0f else positionMs / lastNoteMs,
+            )
+            PracticeTrack(
+                notes = notes,
+                attempt = attempt,
+                positionMs = positionMs,
+                beatMs = beatMs,
+                frame = frame,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+            )
+            PracticeDeviationScale(
+                offsets = attempt.offsets,
+                modifier = Modifier.padding(horizontal = 18.dp),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PracticeMicMeter(envelope = envelope, threshold = threshold)
+                Spacer(modifier = Modifier.weight(1f))
+                // Reserve the corner the floating transport button sits in.
+                Spacer(modifier = Modifier.width(TRANSPORT_RESERVE))
             }
         }
+
+        if (audioFailed) {
+            Text(
+                text = stringResource(R.string.practice_audio_failed),
+                style = MaterialTheme.typography.bodyMedium,
+                color = RudiColors.WindowGood,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 40.dp),
+            )
+        }
+
+        TransportButton(
+            playing = running,
+            size = TransportSize.Small,
+            // Brick in both states: on the level map the call to action is red,
+            // and a grey Play read as disabled on the device.
+            accentIdle = true,
+            onClick = {
+                if (running) {
+                    // Stop closes the attempt: the result screen is where the run is
+                    // reviewed and the settings are tuned (decision 104).
+                    session.stop()
+                    running = false
+                    onFinished(attempt.result())
+                } else {
+                    val started = session.start(
+                        bpm = tempo,
+                        clickAudible = clickAudible,
+                        inputLatencyMs = latencyMs,
+                    )
+                    if (!started) DevLog.error("practice", "audio engine refused to start")
+                    audioFailed = !started
+                    running = started
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 18.dp, bottom = 14.dp),
+        )
     }
 }
 
@@ -413,96 +311,9 @@ private fun PermissionGate(onRequest: () -> Unit, onBack: () -> Unit) {
     }
 }
 
-/** The attempt is stopped and waiting for Play. Paints only, never takes taps. */
-@Composable
-private fun PausedOverlay() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(
-            modifier = Modifier
-                .clip(RoundedCornerShape(RudiDimens.SheetCorner))
-                .background(RudiColors.Surface)
-                .border(1.dp, RudiColors.Line, RoundedCornerShape(RudiDimens.SheetCorner))
-                .padding(horizontal = 26.dp, vertical = 18.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.practice_paused_title),
-                style = RudiTextStyles.Rubric,
-                color = RudiColors.BrickLit,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.practice_paused_hint),
-                style = MaterialTheme.typography.bodyMedium,
-                color = RudiColors.Muted,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-/** The beats counted off before a resumed attempt starts moving again. */
-@Composable
-private fun CountInOverlay(beatsLeft: Int) {
-    val cd = stringResource(R.string.practice_count_in_cd, beatsLeft)
-    Box(
-        modifier = Modifier.fillMaxSize().semantics { contentDescription = cd },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = beatsLeft.toString(),
-            style = RudiTextStyles.BpmValue.copy(fontSize = 76.sp, lineHeight = 80.sp),
-            color = RudiColors.BrickLit,
-        )
-    }
-}
-
-/** Leaving mid-attempt is confirmed, because the score is lost (decision 88). */
-@Composable
-private fun ExitOverlay(onContinue: () -> Unit, onLeave: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(RudiColors.Scrim)
-            // The scrim swallows taps: the transport button underneath must not fire.
-            .pointerInput(Unit) { detectTapGestures { } },
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            modifier = Modifier
-                .clip(RoundedCornerShape(RudiDimens.SheetCorner))
-                .background(RudiColors.Surface)
-                .border(1.dp, RudiColors.Line, RoundedCornerShape(RudiDimens.SheetCorner))
-                .padding(horizontal = 26.dp, vertical = 22.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.practice_exit_title),
-                style = MaterialTheme.typography.bodyLarge,
-                color = RudiColors.Text,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                RudiButton(
-                    text = stringResource(R.string.practice_exit_continue),
-                    onClick = onContinue,
-                )
-                RudiButton(
-                    text = stringResource(R.string.practice_exit_leave),
-                    onClick = onLeave,
-                    style = RudiButtonStyle.Secondary,
-                )
-            }
-        }
-    }
-}
-
 /** Extra time after the last note before the attempt closes itself. */
 private const val TAIL_MS = 300f
 
 /** Corner kept free for the floating transport button: its size plus its margin. */
 private val TRANSPORT_RESERVE = 82.dp
 
-/** Beats counted off before a paused attempt starts moving again (decision 103). */
-private const val RESUME_COUNT_IN_BEATS = 4
