@@ -60,7 +60,7 @@ import kotlin.math.roundToInt
  * result screen is done with it, so an attempt that is abandoned mid-way leaves no
  * trace (decision 88).
  *
- * There is no pause and no settings here (decision 104). Back leaves for the level
+ * There is no pause and no settings here (decision 106). Back leaves for the level
  * at once, without a question; Stop closes the attempt and hands it to the result
  * screen, which is where the click and the latency are tuned before the next try.
  */
@@ -114,7 +114,7 @@ fun PracticeScreen(
     // Leaving the app does not dispose the screen, so the engine has to be stopped
     // by hand: otherwise the microphone keeps recording in the background and the
     // timeline keeps running, which scored silence as a wall of misses. Without a
-    // pause the attempt is simply dropped, exactly like back (decision 104).
+    // pause the attempt is simply dropped, exactly like back (decision 106).
     OnBackgrounded {
         if (running) {
             DevLog.log("practice", "backgrounded at ${positionMs.roundToInt()} ms, dropped")
@@ -174,7 +174,7 @@ fun PracticeScreen(
         }
     }
 
-    // Leaving mid-attempt drops it without a question (decision 104): the score is
+    // Leaving mid-attempt drops it without a question (decision 106): the score is
     // only worth keeping once the attempt reaches the result screen.
     fun leave() {
         session.stop()
@@ -261,7 +261,7 @@ fun PracticeScreen(
             onClick = {
                 if (running) {
                     // Stop closes the attempt: the result screen is where the run is
-                    // reviewed and the settings are tuned (decision 104).
+                    // reviewed and the settings are tuned (decision 106).
                     session.stop()
                     running = false
                     onFinished(attempt.result())
