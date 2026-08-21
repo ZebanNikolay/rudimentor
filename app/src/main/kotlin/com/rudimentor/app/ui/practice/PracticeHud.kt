@@ -16,8 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -93,8 +95,11 @@ fun PracticeProgressLine(progress: Float, modifier: Modifier = Modifier) {
 }
 
 /**
- * The deviation scale: the last two dozen hits from -120 to +120 ms, with the
- * timing windows as bands behind them and the running mean as a white line.
+ * The deviation scale: the last two dozen hits from -120 to +120 ms.
+ *
+ * Drawn as in the approved concept -- a 1 px rail, the timing windows as thin
+ * rounded bars on it, and every hit as a short vertical tick. The first build used
+ * a thick band with round dots; on a device it read as a progress bar.
  */
 @Composable
 fun PracticeDeviationScale(
@@ -108,46 +113,53 @@ fun PracticeDeviationScale(
     }
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.weight(1f)) {
-            Canvas(modifier = Modifier.fillMaxWidth().height(26.dp)) {
+            Canvas(modifier = Modifier.fillMaxWidth().height(SCALE_HEIGHT)) {
                 val half = size.width / 2f
+                val midY = size.height / 2f
                 val pxPerMs = half / PracticeScoring.SCALE_MS
+                val barHeight = SCALE_BAR.toPx()
+                val radius = CornerRadius(barHeight / 2f)
 
-                fun bandWidth(fromMs: Float, toMs: Float) = (toMs - fromMs) * pxPerMs
+                fun window(edgeMs: Float, color: Color) {
+                    drawRoundRect(
+                        color = color,
+                        topLeft = Offset(half - edgeMs * pxPerMs, midY - barHeight / 2f),
+                        size = Size(edgeMs * 2f * pxPerMs, barHeight),
+                        cornerRadius = radius,
+                    )
+                }
 
-                // OK band, then GOOD, then PERFECT on top: the windows read as one
-                // target getting tighter towards the centre.
-                drawRect(
-                    color = RudiColors.WindowGood.copy(alpha = 0.16f),
-                    topLeft = Offset(half - PracticeScoring.OK_MS * pxPerMs, 0f),
-                    size = Size(
-                        bandWidth(-PracticeScoring.OK_MS, PracticeScoring.OK_MS),
-                        size.height,
-                    ),
-                )
-                drawRect(
-                    color = RudiColors.Brick.copy(alpha = 0.30f),
-                    topLeft = Offset(half - PracticeScoring.PERFECT_MS * pxPerMs, 0f),
-                    size = Size(
-                        bandWidth(-PracticeScoring.PERFECT_MS, PracticeScoring.PERFECT_MS),
-                        size.height,
-                    ),
-                )
+                // The rail first, then OK, GOOD and PERFECT on top of each other: the
+                // windows read as one target getting tighter towards the centre.
                 drawLine(
-                    color = RudiColors.TrackHitLine,
-                    start = Offset(half, 0f),
-                    end = Offset(half, size.height),
+                    color = RudiColors.Line,
+                    start = Offset(0f, midY),
+                    end = Offset(size.width, midY),
                     strokeWidth = 1f,
                 )
+                window(PracticeScoring.OK_MS, RudiColors.WindowOk.copy(alpha = 0.16f))
+                window(PracticeScoring.GOOD_MS, RudiColors.WindowGood.copy(alpha = 0.18f))
+                window(PracticeScoring.PERFECT_MS, RudiColors.Brick.copy(alpha = 0.34f))
+                drawLine(
+                    color = RudiColors.TrackHitLine,
+                    start = Offset(half, midY - ZERO_HEIGHT.toPx() / 2f),
+                    end = Offset(half, midY + ZERO_HEIGHT.toPx() / 2f),
+                    strokeWidth = 1f,
+                )
+
+                val tickWidth = TICK_WIDTH.toPx()
+                val tickHeight = TICK_HEIGHT.toPx()
                 recent.forEachIndexed { index, offset ->
                     val fade = 0.35f + 0.65f * (index + 1f) / recent.size
                     val x = half + offset.coerceIn(
                         -PracticeScoring.SCALE_MS,
                         PracticeScoring.SCALE_MS,
                     ) * pxPerMs
-                    drawCircle(
+                    drawRoundRect(
                         color = windowColor(PracticeScoring.window(offset)).copy(alpha = fade),
-                        radius = 3.dp.toPx(),
-                        center = Offset(x, size.height / 2f),
+                        topLeft = Offset(x - tickWidth / 2f, midY - tickHeight / 2f),
+                        size = Size(tickWidth, tickHeight),
+                        cornerRadius = CornerRadius(tickWidth / 2f),
                     )
                 }
                 if (recent.isNotEmpty()) {
@@ -158,9 +170,9 @@ fun PracticeDeviationScale(
                     ) * pxPerMs
                     drawLine(
                         color = RudiColors.Text,
-                        start = Offset(x, 0f),
-                        end = Offset(x, size.height),
-                        strokeWidth = 2f,
+                        start = Offset(x, midY - MEAN_HEIGHT.toPx() / 2f),
+                        end = Offset(x, midY + MEAN_HEIGHT.toPx() / 2f),
+                        strokeWidth = 1f,
                     )
                 }
             }
@@ -178,6 +190,13 @@ fun PracticeDeviationScale(
         }
     }
 }
+
+private val SCALE_HEIGHT = 40.dp
+private val SCALE_BAR = 8.dp
+private val ZERO_HEIGHT = 20.dp
+private val TICK_WIDTH = 3.dp
+private val TICK_HEIGHT = 14.dp
+private val MEAN_HEIGHT = 24.dp
 
 /** The only thing on the bottom edge: the microphone indicator. */
 @Composable

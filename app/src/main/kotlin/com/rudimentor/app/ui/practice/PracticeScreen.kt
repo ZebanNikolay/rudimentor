@@ -1,11 +1,8 @@
 package com.rudimentor.app.ui.practice
 
 import android.Manifest
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.view.WindowManager
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -42,8 +39,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.audio.PracticeSession
@@ -54,6 +49,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.SideSettingsDrawer
 import com.rudimentor.app.ui.component.TransportButton
+import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import kotlinx.coroutines.delay
@@ -77,8 +73,6 @@ fun PracticeScreen(
     onFinished: (PracticeResult) -> Unit,
 ) {
     val context = LocalContext.current
-
-    PracticeStage(keepScreenOn = true)
 
     var micGranted by remember {
         mutableStateOf(
@@ -155,6 +149,7 @@ fun PracticeScreen(
     }
 
     SideSettingsDrawer(
+        modifier = Modifier.stageSafePadding(),
         open = settingsOpen,
         onOpenChange = { settingsOpen = it },
         panel = {
@@ -242,6 +237,9 @@ fun PracticeScreen(
             TransportButton(
                 playing = running,
                 buttonSize = TRANSPORT_SIZE,
+                // Brick in both states: on the level map the call to action is red,
+                // and a grey Play read as disabled on the device.
+                accentIdle = true,
                 onClick = {
                     if (running) {
                         session.stop()
@@ -259,7 +257,7 @@ fun PracticeScreen(
                 },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 18.dp, bottom = 14.dp),
+                    .padding(end = 6.dp, bottom = 2.dp),
             )
 
             if (confirmExit) {
@@ -342,36 +340,6 @@ private fun ExitOverlay(onContinue: () -> Unit, onLeave: () -> Unit) {
                     style = RudiButtonStyle.Secondary,
                 )
             }
-        }
-    }
-}
-
-/**
- * Landscape, full screen and (while playing) awake. The result screen keeps the
- * same stage so the app does not spin back to portrait between an attempt and its
- * score.
- */
-@Composable
-internal fun PracticeStage(keepScreenOn: Boolean) {
-    val activity = LocalActivity.current
-    DisposableEffect(activity, keepScreenOn) {
-        val window = activity?.window
-        val previousOrientation = activity?.requestedOrientation
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        if (keepScreenOn) {
-            window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-        val insets = window?.let { WindowInsetsControllerCompat(it, it.decorView) }
-        insets?.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        insets?.hide(WindowInsetsCompat.Type.systemBars())
-        onDispose {
-            insets?.show(WindowInsetsCompat.Type.systemBars())
-            if (keepScreenOn) {
-                window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            }
-            activity?.requestedOrientation =
-                previousOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 }

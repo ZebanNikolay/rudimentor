@@ -71,11 +71,18 @@ fun RudiMentorApp(
     // The result lives for as long as the result screen does: an attempt is never
     // restored across process death, it is replayed instead.
     var practiceResult by remember { mutableStateOf<PracticeResult?>(null) }
-    var practiceRunId by remember { mutableIntStateOf(0) }
-    var practiceStartWithSettings by remember { mutableStateOf(false) }
+    var practiceRunId by rememberSaveable { mutableIntStateOf(0) }
+    var practiceStartWithSettings by rememberSaveable { mutableStateOf(false) }
     val practiceRank = PracticeRank.entries.firstOrNull { it.name == practiceRankName }
         ?: PracticeRank.Practice
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
+
+    // One stage for the whole practice flow, so the attempt and its result do not
+    // hand the orientation back and forth between themselves.
+    LandscapeStage(
+        landscape = screen == Screen.Practice || screen == Screen.PracticeResult,
+        keepScreenOn = screen == Screen.Practice,
+    )
 
     AnimatedContent(targetState = screen, label = "screen") { currentScreen ->
         when (currentScreen) {
@@ -116,7 +123,6 @@ fun RudiMentorApp(
                             onConfigureLevel(selectedLevel, bpm)
                             practiceRankName = rank.name
                             practiceBpm = bpm
-                            practiceResult = null
                             practiceStartWithSettings = false
                             practiceRunId += 1
                             screenName = Screen.Practice.name
@@ -127,8 +133,12 @@ fun RudiMentorApp(
             Screen.Practice -> {
                 val level = selectedLevelId?.let(levelCatalog::level)
                 if (level == null) {
-                    // Nothing to practise: fall back to the map instead of a blank screen.
-                    LaunchedEffect(Unit) { screenName = Screen.Levels.name }
+                    // Nothing to practise: fall back to the map instead of a blank
+                    // screen. Only while this really is the current screen -- during
+                    // a transition the outgoing screen must not steer navigation.
+                    LaunchedEffect(Unit) {
+                        if (screen == Screen.Practice) screenName = Screen.Levels.name
+                    }
                 } else {
                     key(practiceRunId) {
                         PracticeScreen(
@@ -151,7 +161,9 @@ fun RudiMentorApp(
                 val level = selectedLevelId?.let(levelCatalog::level)
                 val result = practiceResult
                 if (level == null || result == null) {
-                    LaunchedEffect(Unit) { screenName = Screen.Levels.name }
+                    LaunchedEffect(Unit) {
+                        if (screen == Screen.PracticeResult) screenName = Screen.Levels.name
+                    }
                 } else {
                     val nextLevel = levelCatalog.levels
                         .filter { it.row > level.row && it.column.required }
@@ -163,7 +175,6 @@ fun RudiMentorApp(
                         bpm = practiceBpm,
                         result = result,
                         onRetry = {
-                            practiceResult = null
                             practiceStartWithSettings = false
                             practiceRunId += 1
                             screenName = Screen.Practice.name
@@ -171,16 +182,11 @@ fun RudiMentorApp(
                         onNextLevel = nextLevel?.let { next ->
                             {
                                 selectedLevelId = next.id
-                                practiceResult = null
                                 screenName = Screen.LevelDetail.name
                             }
                         },
-                        onToMap = {
-                            practiceResult = null
-                            screenName = Screen.Levels.name
-                        },
+                        onToMap = { screenName = Screen.Levels.name },
                         onOpenSettings = {
-                            practiceResult = null
                             practiceStartWithSettings = true
                             practiceRunId += 1
                             screenName = Screen.Practice.name

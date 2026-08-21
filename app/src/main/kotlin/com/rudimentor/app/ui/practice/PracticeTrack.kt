@@ -4,8 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalDensity
@@ -63,12 +61,6 @@ fun PracticeTrack(
             pxPerMs = pxPerMs,
             lineX = lineX,
             height = height,
-        )
-        drawHitZone(
-            lineX = lineX,
-            pxPerMs = pxPerMs,
-            top = noteCenterY - side * 0.9f,
-            bottom = baselineY,
         )
         drawHitLine(lineX = lineX, height = height)
         drawBaseline(baselineY = baselineY, width = width)
@@ -211,23 +203,11 @@ private fun DrawScope.drawBarLines(
     }
 }
 
-/** The brick gradient behind the hit line, as wide as the OK window. */
-private fun DrawScope.drawHitZone(lineX: Float, pxPerMs: Float, top: Float, bottom: Float) {
-    val halfWidth = PracticeScoring.OK_MS * pxPerMs
-    drawRect(
-        brush = Brush.horizontalGradient(
-            0f to Color.Transparent,
-            0.5f to RudiColors.Brick.copy(alpha = 0.22f),
-            1f to Color.Transparent,
-            startX = lineX - halfWidth,
-            endX = lineX + halfWidth,
-        ),
-        topLeft = Offset(lineX - halfWidth, top),
-        size = Size(halfWidth * 2f, bottom - top),
-    )
-}
-
-/** The hit line is shortened to 21..79% of the height and capped with square nibs. */
+/**
+ * The hit line is shortened to 21..79% of the height and capped with square nibs.
+ * No band behind it: the concept had a faint brick gradient there and on a device it
+ * only muddied the lane, so the line carries the target on its own.
+ */
 private fun DrawScope.drawHitLine(lineX: Float, height: Float) {
     val top = height * 0.21f
     val bottom = height * 0.79f

@@ -12,9 +12,15 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.RudiMentor">
+        <!--
+          The practice stage flips the app to landscape on its own. Handling the
+          configuration change here keeps the activity (and the attempt in
+          progress) alive instead of recreating it and dropping the result.
+        -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density|fontScale|layoutDirection">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -13,15 +13,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
@@ -36,8 +35,8 @@ import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.RudiChip
+import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
-import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import kotlin.math.roundToInt
 
@@ -59,12 +58,12 @@ fun PracticeResultScreen(
     onToMap: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    PracticeStage(keepScreenOn = false)
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(RudiColors.Bg)
-            .padding(horizontal = 26.dp, vertical = 22.dp),
+            .stageSafePadding()
+            .padding(horizontal = 14.dp, vertical = 10.dp),
     ) {
         Text(
             text = stringResource(
@@ -128,19 +127,31 @@ fun PracticeResultScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
-        OffsetHistogram(offsets = result.offsets, modifier = Modifier.fillMaxWidth().height(84.dp))
+        Spacer(modifier = Modifier.height(14.dp))
+        // The histogram takes whatever is left between the numbers and the actions:
+        // a fixed height left it as a strip in the middle of an empty screen.
+        OffsetHistogram(
+            offsets = result.offsets,
+            modifier = Modifier.fillMaxWidth().weight(1f),
+        )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(14.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            // Another attempt is always one tap away, whether the level was passed
+            // or not; only the primary action changes.
             if (result.passed && onNextLevel != null) {
                 RudiButton(
                     text = stringResource(R.string.practice_result_next),
                     onClick = onNextLevel,
+                )
+                RudiButton(
+                    text = stringResource(R.string.practice_result_retry),
+                    onClick = onRetry,
+                    style = RudiButtonStyle.Secondary,
                 )
             } else {
                 RudiButton(
@@ -238,33 +249,47 @@ private fun OffsetHistogram(offsets: List<Float>, modifier: Modifier = Modifier)
         PracticeScoring.histogramBin(offset)?.let { bin -> bins[bin] += 1 }
     }
     val peak = bins.maxOrNull() ?: 0
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(RudiDimens.CardCorner))
-            .background(RudiColors.SurfaceAlt)
-            .semantics { contentDescription = cd },
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 10.dp)) {
-            if (peak == 0) return@Canvas
-            val gap = 2f
-            val binWidth = (size.width - gap * (bins.size - 1)) / bins.size
-            val msPerBin = 2f * PracticeScoring.SCALE_MS / bins.size
-            bins.forEachIndexed { index, count ->
-                val centreMs = -PracticeScoring.SCALE_MS + msPerBin * (index + 0.5f)
-                val height = size.height * (count.toFloat() / peak)
-                drawRect(
-                    color = windowColor(PracticeScoring.window(centreMs)),
-                    topLeft = Offset(index * (binWidth + gap), size.height - height),
-                    size = Size(binWidth, height),
-                )
-            }
+    Box(modifier = modifier.semantics { contentDescription = cd }) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Hairlines top and bottom instead of a card: the concept frames the plot
+            // with two rules and lets the bars stand on the background.
+            drawLine(
+                color = HistogramRule,
+                start = Offset(0f, 0f),
+                end = Offset(size.width, 0f),
+                strokeWidth = 1f,
+            )
+            drawLine(
+                color = HistogramRule,
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1f,
+            )
             val centreX = size.width / 2f
             drawLine(
-                color = RudiColors.TrackHitLine,
+                color = HistogramCentre,
                 start = Offset(centreX, 0f),
                 end = Offset(centreX, size.height),
                 strokeWidth = 1f,
             )
+            if (peak == 0) return@Canvas
+            val gap = 1f
+            val binWidth = (size.width - gap * (bins.size - 1)) / bins.size
+            val msPerBin = 2f * PracticeScoring.SCALE_MS / bins.size
+            val ceiling = size.height * 0.92f
+            bins.forEachIndexed { index, count ->
+                if (count == 0) return@forEachIndexed
+                val centreMs = -PracticeScoring.SCALE_MS + msPerBin * (index + 0.5f)
+                val height = ceiling * (count.toFloat() / peak)
+                drawRect(
+                    color = windowColor(PracticeScoring.window(centreMs)).copy(alpha = 0.8f),
+                    topLeft = Offset(index * (binWidth + gap), size.height - height),
+                    size = Size(binWidth, height),
+                )
+            }
         }
     }
 }
+
+private val HistogramRule = Color(0xFF202020)
+private val HistogramCentre = Color(0xFF3A3A3A)

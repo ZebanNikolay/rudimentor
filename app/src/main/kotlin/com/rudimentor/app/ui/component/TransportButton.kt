@@ -32,8 +32,11 @@ import com.rudimentor.app.ui.theme.RudiDimens
  * The large Play/Stop transport button: a pad with a 4 dp monolithic slab,
  * ripple in the Text color, and a steady halo while it is running. The visual is
  * unchanged -- extracted from ui/metronome/MetronomeControls into a reusable
- * component. [size] only scales it: the practice screen floats a smaller copy of
- * the very same button in the corner, it never draws its own.
+ * component. [buttonSize] only scales it: the practice screen floats a smaller copy
+ * of the very same button in the corner, it never draws its own.
+ *
+ * [accentIdle] paints the idle button brick instead of Surface. The practice screen
+ * uses it so Play reads as the call to action, like on the level map.
  */
 @Composable
 fun TransportButton(
@@ -41,7 +44,9 @@ fun TransportButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     buttonSize: Dp = TRANSPORT_SIZE,
+    accentIdle: Boolean = false,
 ) {
+    val accented = playing || accentIdle
     val corner = buttonSize * CORNER_RATIO
     val shape = RoundedCornerShape(corner)
     val cd = stringResource(if (playing) R.string.transport_stop else R.string.transport_start)
@@ -64,7 +69,7 @@ fun TransportButton(
                     )
                 }
                 drawRoundRect(
-                    color = if (playing) TransportLedgePlaying else TransportLedge,
+                    color = if (accented) TransportLedgePlaying else TransportLedge,
                     topLeft = Offset(0f, 4.dp.toPx()),
                     size = size,
                     cornerRadius = CornerRadius(radius, radius),
@@ -72,12 +77,12 @@ fun TransportButton(
             }
             .clip(shape)
             .background(
-                color = if (playing) RudiColors.Brick else RudiColors.Surface,
+                color = if (accented) RudiColors.Brick else RudiColors.Surface,
                 shape = shape,
             )
             .border(
                 width = RudiDimens.PadBorder,
-                color = if (playing) RudiColors.BrickLit else RudiColors.Line,
+                color = if (accented) RudiColors.BrickLit else RudiColors.Line,
                 shape = shape,
             )
             .clickable(
