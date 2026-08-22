@@ -26,8 +26,9 @@ import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.levels.Level
-import com.rudimentor.app.data.levels.LevelCatalog
+import com.rudimentor.app.data.levels.LevelCourse
 import com.rudimentor.app.data.levels.LearningProgress
+import com.rudimentor.app.data.levels.LevelsUiState
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.ui.component.MenuCard
 import com.rudimentor.app.ui.component.RudiMentorLogo
@@ -60,9 +61,12 @@ private enum class Screen {
 fun RudiMentorApp(
     buildInfo: BuildInfo,
     settings: AppSettings,
-    levelCatalog: LevelCatalog,
+    course: LevelCourse,
     learningProgress: LearningProgress,
+    levelsUi: LevelsUiState,
     actions: MetronomeActions,
+    onSelectTab: (String) -> Unit,
+    onSelectRank: (PracticeRank) -> Unit,
     onClickAudible: (Boolean) -> Unit,
     onInputLatencyMs: (Float) -> Unit,
     onAttemptFinished: (Level, PracticeRank, Int, PracticeResult) -> Unit,
@@ -79,6 +83,12 @@ fun RudiMentorApp(
     val practiceRank = PracticeRank.entries.firstOrNull { it.name == practiceRankName }
         ?: PracticeRank.Practice
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
+    // The difficulty is chosen once for the whole course, and the open tab is the one the
+    // learner left the map on — or the last map they have earned.
+    val rank = levelsUi.rank
+    val activeTabId = levelsUi.familyId
+        ?: course.tabs.lastOrNull { it.available && learningProgress.isTabUnlocked(it) }?.id
+        ?: course.tabs.first().id
 
     // The navigation trail is the first thing a field report needs: every screen
     // change is in the log the developer screen can share.
@@ -105,8 +115,12 @@ fun RudiMentorApp(
                 onOpenDev = { screenName = Screen.Dev.name },
             )
             Screen.Levels -> LevelsScreen(
-                catalog = levelCatalog,
+                course = course,
                 progress = learningProgress,
+                rank = rank,
+                activeTabId = activeTabId,
+                onSelectTab = onSelectTab,
+                onSelectRank = onSelectRank,
                 onBack = { screenName = Screen.Menu.name },
                 onOpenLevel = { levelId ->
                     selectedLevelId = levelId
@@ -114,18 +128,19 @@ fun RudiMentorApp(
                 },
             )
             Screen.LevelDetail -> {
-                val level = selectedLevelId?.let(levelCatalog::level)
-                if (level == null) {
-                    LevelsScreen(
-                        catalog = levelCatalog,
-                        progress = learningProgress,
-                        onBack = { screenName = Screen.Menu.name },
-                        onOpenLevel = { levelId -> selectedLevelId = levelId },
-                    )
+                val level = selectedLevelId?.let(course::level)
+                val family = selectedLevelId?.let(course::family)
+                if (level == null || family == null) {
+                    LaunchedEffect(Unit) {
+                        if (screen != Screen.LevelDetail) return@LaunchedEffect
+                        DevLog.error("nav", "level detail without a level, back to the map")
+                        screenName = Screen.Levels.name
+                    }
                 } else {
                     LevelDetailScreen(
                         level = level,
-                        family = levelCatalog.family,
+                        family = family,
+                        rank = rank,
                         progress = learningProgress.forLevel(level.id),
                         onBack = { screenName = Screen.Levels.name },
                         // The level owns tempo and rank of the attempt only: the
@@ -141,8 +156,9 @@ fun RudiMentorApp(
                 }
             }
             Screen.Practice -> {
-                val level = selectedLevelId?.let(levelCatalog::level)
-                if (level == null) {
+                val level = selectedLevelId?.let(course::level)
+                val family = selectedLevelId?.let(course::family)
+                if (level == null || family == null) {
                     // Nothing to practise: fall back to the map instead of a blank
                     // screen. Only while this really is the current screen -- during
                     // a transition the outgoing screen must not steer navigation.
@@ -155,7 +171,7 @@ fun RudiMentorApp(
                     key(practiceRunId) {
                         PracticeScreen(
                             level = level,
-                            family = levelCatalog.family,
+                            family = family,
                             rank = practiceRank,
                             bpm = practiceBpm,
                             clickAudible = settings.clickAudible,
@@ -177,21 +193,23 @@ fun RudiMentorApp(
                 }
             }
             Screen.PracticeResult -> {
-                val level = selectedLevelId?.let(levelCatalog::level)
+                val level = selectedLevelId?.let(course::level)
+                val family = selectedLevelId?.let(course::family)
                 val result = practiceResult
-                if (level == null || result == null) {
+                if (level == null || family == null || result == null) {
                     LaunchedEffect(Unit) {
                         if (screen != Screen.PracticeResult) return@LaunchedEffect
                         DevLog.error("nav", "result without level/result, back to the map")
                         screenName = Screen.Levels.name
                     }
                 } else {
-                    val nextLevel = levelCatalog.levels
-                        .filter { it.row > level.row && it.column.required }
-                        .minByOrNull(Level::row)
+                    // The next level is the next required one on the same map.
+                    val nextLevel = course.catalog(family.id)?.levels
+                        ?.filter { it.row > level.row && it.column.required }
+                        ?.minByOrNull(Level::row)
                     PracticeResultScreen(
                         level = level,
-                        family = levelCatalog.family,
+                        family = family,
                         rank = practiceRank,
                         bpm = practiceBpm,
                         result = result,

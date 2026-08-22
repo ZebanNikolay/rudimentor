@@ -1,13 +1,13 @@
 {
   "schemaVersion": 7,
   "family": {
-    "id": "singles",
-    "name": "Single Strokes",
-    "description": "Build control, evenness, and speed with alternating single strokes."
+    "id": "doubles",
+    "name": "Double Strokes",
+    "description": "Build control, evenness, and speed with alternating double strokes."
   },
   "lessons": [
     {
-      "id": "singles.ST-01",
+      "id": "doubles.ST-01",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -16,6 +16,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -36,20 +46,765 @@
       "rankTargets": {
         "practice": {
           "bpm": 60,
-          "hitsPerBeat": 1
+          "hitsPerBeat": 2
         },
         "groove": {
           "bpm": 60,
-          "hitsPerBeat": 2
+          "hitsPerBeat": 4
         },
         "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 65,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 65,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 125,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 70,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 70,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 130,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-04",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 135,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-05",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 80,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 80,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 140,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-06",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 85,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 85,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 145,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-07",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 150,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.RM-02",
+      "type": "tempo_ramp",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "hitsPerBeat": 2,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 95,
+                "beatCount": 8
+              },
+              {
+                "bpm": 100,
+                "beatCount": 8
+              },
+              {
+                "bpm": 105,
+                "beatCount": 16
+              },
+              {
+                "bpm": 100,
+                "beatCount": 8
+              },
+              {
+                "bpm": 95,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "groove": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 95,
+                "beatCount": 8
+              },
+              {
+                "bpm": 100,
+                "beatCount": 8
+              },
+              {
+                "bpm": 105,
+                "beatCount": 16
+              },
+              {
+                "bpm": 100,
+                "beatCount": 8
+              },
+              {
+                "bpm": 95,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "stage": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 155,
+                "beatCount": 8
+              },
+              {
+                "bpm": 160,
+                "beatCount": 8
+              },
+              {
+                "bpm": 165,
+                "beatCount": 16
+              },
+              {
+                "bpm": 160,
+                "beatCount": 8
+              },
+              {
+                "bpm": 155,
+                "beatCount": 8
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "doubles.RM-03",
+      "type": "tempo_ramp",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "hitsPerBeat": 2,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 110,
+                "beatCount": 8
+              },
+              {
+                "bpm": 115,
+                "beatCount": 8
+              },
+              {
+                "bpm": 120,
+                "beatCount": 16
+              },
+              {
+                "bpm": 115,
+                "beatCount": 8
+              },
+              {
+                "bpm": 110,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "groove": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 110,
+                "beatCount": 8
+              },
+              {
+                "bpm": 115,
+                "beatCount": 8
+              },
+              {
+                "bpm": 120,
+                "beatCount": 16
+              },
+              {
+                "bpm": 115,
+                "beatCount": 8
+              },
+              {
+                "bpm": 110,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "stage": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 170,
+                "beatCount": 8
+              },
+              {
+                "bpm": 175,
+                "beatCount": 8
+              },
+              {
+                "bpm": 180,
+                "beatCount": 16
+              },
+              {
+                "bpm": 175,
+                "beatCount": 8
+              },
+              {
+                "bpm": 170,
+                "beatCount": 8
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "doubles.RM-01",
+      "type": "tempo_ramp",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "hitsPerBeat": 2,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 80,
+                "beatCount": 8
+              },
+              {
+                "bpm": 85,
+                "beatCount": 8
+              },
+              {
+                "bpm": 90,
+                "beatCount": 16
+              },
+              {
+                "bpm": 85,
+                "beatCount": 8
+              },
+              {
+                "bpm": 80,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "groove": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 80,
+                "beatCount": 8
+              },
+              {
+                "bpm": 85,
+                "beatCount": 8
+              },
+              {
+                "bpm": 90,
+                "beatCount": 16
+              },
+              {
+                "bpm": 85,
+                "beatCount": 8
+              },
+              {
+                "bpm": 80,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "stage": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 140,
+                "beatCount": 8
+              },
+              {
+                "bpm": 145,
+                "beatCount": 8
+              },
+              {
+                "bpm": 150,
+                "beatCount": 16
+              },
+              {
+                "bpm": 145,
+                "beatCount": 8
+              },
+              {
+                "bpm": 140,
+                "beatCount": 8
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "doubles.DI-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
           "bpm": 60,
           "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.ST-02",
+      "id": "doubles.DI-02",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -58,6 +813,120 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 135,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.DI-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 150,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-08",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -77,21 +946,21 @@
       },
       "rankTargets": {
         "practice": {
-          "bpm": 70,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 70,
+          "bpm": 95,
           "hitsPerBeat": 2
         },
+        "groove": {
+          "bpm": 95,
+          "hitsPerBeat": 4
+        },
         "stage": {
-          "bpm": 70,
+          "bpm": 155,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.ST-03",
+      "id": "doubles.ST-09",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -104,320 +973,12 @@
           },
           {
             "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 80,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 80,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 80,
-          "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.ST-04",
-      "type": "steady",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
               "R"
             ]
           },
           {
             "hands": [
               "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 90,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 90,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 90,
-          "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.RM-02",
-      "type": "tempo_ramp",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 48
-      },
-      "rankTargets": {
-        "practice": {
-          "hitsPerBeat": 1,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 130,
-                "beatCount": 8
-              },
-              {
-                "bpm": 140,
-                "beatCount": 8
-              },
-              {
-                "bpm": 150,
-                "beatCount": 16
-              },
-              {
-                "bpm": 140,
-                "beatCount": 8
-              },
-              {
-                "bpm": 130,
-                "beatCount": 8
-              }
-            ]
-          }
-        },
-        "groove": {
-          "hitsPerBeat": 2,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 130,
-                "beatCount": 8
-              },
-              {
-                "bpm": 140,
-                "beatCount": 8
-              },
-              {
-                "bpm": 150,
-                "beatCount": 16
-              },
-              {
-                "bpm": 140,
-                "beatCount": 8
-              },
-              {
-                "bpm": 130,
-                "beatCount": 8
-              }
-            ]
-          }
-        },
-        "stage": {
-          "hitsPerBeat": 4,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 130,
-                "beatCount": 8
-              },
-              {
-                "bpm": 140,
-                "beatCount": 8
-              },
-              {
-                "bpm": 150,
-                "beatCount": 16
-              },
-              {
-                "bpm": 140,
-                "beatCount": 8
-              },
-              {
-                "bpm": 130,
-                "beatCount": 8
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": "singles.RM-03",
-      "type": "tempo_ramp",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 48
-      },
-      "rankTargets": {
-        "practice": {
-          "hitsPerBeat": 1,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 160,
-                "beatCount": 8
-              },
-              {
-                "bpm": 170,
-                "beatCount": 8
-              },
-              {
-                "bpm": 180,
-                "beatCount": 16
-              },
-              {
-                "bpm": 170,
-                "beatCount": 8
-              },
-              {
-                "bpm": 160,
-                "beatCount": 8
-              }
-            ]
-          }
-        },
-        "groove": {
-          "hitsPerBeat": 2,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 160,
-                "beatCount": 8
-              },
-              {
-                "bpm": 170,
-                "beatCount": 8
-              },
-              {
-                "bpm": 180,
-                "beatCount": 16
-              },
-              {
-                "bpm": 170,
-                "beatCount": 8
-              },
-              {
-                "bpm": 160,
-                "beatCount": 8
-              }
-            ]
-          }
-        },
-        "stage": {
-          "hitsPerBeat": 4,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 160,
-                "beatCount": 8
-              },
-              {
-                "bpm": 170,
-                "beatCount": 8
-              },
-              {
-                "bpm": 180,
-                "beatCount": 16
-              },
-              {
-                "bpm": 170,
-                "beatCount": 8
-              },
-              {
-                "bpm": 160,
-                "beatCount": 8
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": "singles.ST-05",
-      "type": "steady",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
             ]
           },
           {
@@ -438,20 +999,20 @@
       "rankTargets": {
         "practice": {
           "bpm": 100,
-          "hitsPerBeat": 1
+          "hitsPerBeat": 2
         },
         "groove": {
           "bpm": 100,
-          "hitsPerBeat": 2
+          "hitsPerBeat": 4
         },
         "stage": {
-          "bpm": 100,
+          "bpm": 160,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.ST-06",
+      "id": "doubles.ST-10",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -460,6 +1021,68 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 105,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 105,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 165,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-11",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -480,20 +1103,20 @@
       "rankTargets": {
         "practice": {
           "bpm": 110,
-          "hitsPerBeat": 1
+          "hitsPerBeat": 2
         },
         "groove": {
           "bpm": 110,
-          "hitsPerBeat": 2
+          "hitsPerBeat": 4
         },
         "stage": {
-          "bpm": 110,
+          "bpm": 170,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.ST-07",
+      "id": "doubles.ST-12",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -502,6 +1125,68 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 115,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 115,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 175,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.ST-13",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -522,380 +1207,11 @@
       "rankTargets": {
         "practice": {
           "bpm": 120,
-          "hitsPerBeat": 1
+          "hitsPerBeat": 2
         },
         "groove": {
           "bpm": 120,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 120,
           "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.RM-01",
-      "type": "tempo_ramp",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 48
-      },
-      "rankTargets": {
-        "practice": {
-          "hitsPerBeat": 1,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 100,
-                "beatCount": 8
-              },
-              {
-                "bpm": 110,
-                "beatCount": 8
-              },
-              {
-                "bpm": 120,
-                "beatCount": 16
-              },
-              {
-                "bpm": 110,
-                "beatCount": 8
-              },
-              {
-                "bpm": 100,
-                "beatCount": 8
-              }
-            ]
-          }
-        },
-        "groove": {
-          "hitsPerBeat": 2,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 100,
-                "beatCount": 8
-              },
-              {
-                "bpm": 110,
-                "beatCount": 8
-              },
-              {
-                "bpm": 120,
-                "beatCount": 16
-              },
-              {
-                "bpm": 110,
-                "beatCount": 8
-              },
-              {
-                "bpm": 100,
-                "beatCount": 8
-              }
-            ]
-          }
-        },
-        "stage": {
-          "hitsPerBeat": 4,
-          "tempoRampPlan": {
-            "mode": "step",
-            "direction": "open_close_open",
-            "phases": [
-              {
-                "bpm": 100,
-                "beatCount": 8
-              },
-              {
-                "bpm": 110,
-                "beatCount": 8
-              },
-              {
-                "bpm": 120,
-                "beatCount": 16
-              },
-              {
-                "bpm": 110,
-                "beatCount": 8
-              },
-              {
-                "bpm": 100,
-                "beatCount": 8
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": "singles.ST-08",
-      "type": "steady",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 130,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 130,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 130,
-          "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.ST-09",
-      "type": "steady",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 140,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 140,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 140,
-          "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.ST-10",
-      "type": "steady",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 150,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 150,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 150,
-          "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.ST-11",
-      "type": "steady",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 160,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 160,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 160,
-          "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.ST-12",
-      "type": "steady",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 170,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 170,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 170,
-          "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.ST-13",
-      "type": "steady",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 180,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 180,
-          "hitsPerBeat": 2
         },
         "stage": {
           "bpm": 180,
@@ -904,7 +1220,7 @@
       }
     },
     {
-      "id": "singles.IS-01",
+      "id": "doubles.IS-01",
       "type": "isolation",
       "modifiers": [],
       "pattern": {
@@ -1003,20 +1319,132 @@
       "rankTargets": {
         "practice": {
           "bpm": 60,
-          "hitsPerBeat": 1
+          "hitsPerBeat": 2
         },
         "groove": {
           "bpm": 60,
-          "hitsPerBeat": 2
+          "hitsPerBeat": 4
         },
         "stage": {
-          "bpm": 60,
+          "bpm": 90,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.IS-02",
+      "id": "doubles.IS-02",
+      "type": "isolation",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 105,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.IS-03",
       "type": "isolation",
       "modifiers": [],
       "pattern": {
@@ -1115,123 +1543,11 @@
       "rankTargets": {
         "practice": {
           "bpm": 90,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 90,
           "hitsPerBeat": 2
         },
-        "stage": {
+        "groove": {
           "bpm": 90,
           "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.IS-03",
-      "type": "isolation",
-      "modifiers": [],
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "R"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 120,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 120,
-          "hitsPerBeat": 2
         },
         "stage": {
           "bpm": 120,
@@ -1240,7 +1556,7 @@
       }
     },
     {
-      "id": "singles.IW-01",
+      "id": "doubles.IW-01",
       "type": "isolation",
       "modifiers": [
         "weak"
@@ -1346,20 +1662,139 @@
       "rankTargets": {
         "practice": {
           "bpm": 60,
-          "hitsPerBeat": 1
+          "hitsPerBeat": 2
         },
         "groove": {
           "bpm": 60,
-          "hitsPerBeat": 2
+          "hitsPerBeat": 4
         },
         "stage": {
-          "bpm": 60,
+          "bpm": 90,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.IW-02",
+      "id": "doubles.IW-02",
+      "type": "isolation",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_only",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 105,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.IW-03",
       "type": "isolation",
       "modifiers": [
         "weak"
@@ -1465,6 +1900,224 @@
       "rankTargets": {
         "practice": {
           "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.UN-01",
+      "type": "unison",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": []
+          },
+          {
+            "hands": []
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        }
+      }
+    },
+    {
+      "id": "doubles.UN-02",
+      "type": "unison",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        }
+      }
+    },
+    {
+      "id": "doubles.UN-03",
+      "type": "unison",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 1
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 2
+        },
+        "stage": {
+          "bpm": 105,
+          "hitsPerBeat": 2
+        }
+      }
+    },
+    {
+      "id": "doubles.UN-04",
+      "type": "unison",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R",
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
           "hitsPerBeat": 1
         },
         "groove": {
@@ -1472,132 +2125,131 @@
           "hitsPerBeat": 2
         },
         "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 2
+        }
+      }
+    },
+    {
+      "id": "doubles.WK-01",
+      "type": "steady",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_lead",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.WK-02",
+      "type": "steady",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_lead",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
           "bpm": 90,
           "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.IW-03",
-      "type": "isolation",
-      "modifiers": [
-        "weak"
-      ],
-      "weakFocus": {
-        "strategy": "weak_only",
-        "authoredWeakHand": "L",
-        "adaptToUser": true
-      },
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "L"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 120,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 120,
-          "hitsPerBeat": 2
         },
         "stage": {
-          "bpm": 120,
+          "bpm": 150,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.WK-01",
+      "id": "doubles.WK-03",
       "type": "steady",
       "modifiers": [
         "weak"
@@ -1619,6 +2271,16 @@
             "hands": [
               "R"
             ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
           }
         ]
       },
@@ -1632,21 +2294,21 @@
       },
       "rankTargets": {
         "practice": {
-          "bpm": 60,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 60,
+          "bpm": 90,
           "hitsPerBeat": 2
         },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
         "stage": {
-          "bpm": 60,
+          "bpm": 150,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.WK-02",
+      "id": "doubles.WK-04",
       "type": "steady",
       "modifiers": [
         "weak"
@@ -1662,6 +2324,16 @@
           {
             "hands": [
               "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
             ]
           },
           {
@@ -1682,60 +2354,11 @@
       "rankTargets": {
         "practice": {
           "bpm": 120,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 120,
           "hitsPerBeat": 2
         },
-        "stage": {
+        "groove": {
           "bpm": 120,
           "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.WK-03",
-      "type": "steady",
-      "modifiers": [
-        "weak"
-      ],
-      "weakFocus": {
-        "strategy": "weak_lead",
-        "authoredWeakHand": "L",
-        "adaptToUser": true
-      },
-      "pattern": {
-        "mode": "repeat",
-        "steps": [
-          {
-            "hands": [
-              "L"
-            ]
-          },
-          {
-            "hands": [
-              "R"
-            ]
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 180,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 180,
-          "hitsPerBeat": 2
         },
         "stage": {
           "bpm": 180,
@@ -1744,7 +2367,7 @@
       }
     },
     {
-      "id": "singles.SS-01",
+      "id": "doubles.SS-01",
       "type": "subdivision_switch",
       "modifiers": [],
       "pattern": {
@@ -1753,6 +2376,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -1807,7 +2440,7 @@
       }
     },
     {
-      "id": "singles.SS-02",
+      "id": "doubles.SS-02",
       "type": "subdivision_switch",
       "modifiers": [],
       "pattern": {
@@ -1816,6 +2449,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -1870,7 +2513,7 @@
       }
     },
     {
-      "id": "singles.SS-03",
+      "id": "doubles.SS-03",
       "type": "subdivision_switch",
       "modifiers": [],
       "pattern": {
@@ -1879,6 +2522,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -1933,107 +2586,101 @@
       }
     },
     {
-      "id": "singles.TR-01",
-      "type": "transition",
-      "modifiers": [],
-      "transitionPlan": {
-        "repeatCount": 4,
-        "phases": [
-          {
-            "beatCount": 4,
-            "pattern": {
-              "mode": "repeat",
-              "steps": [
-                {
-                  "hands": [
-                    "R"
-                  ]
-                }
-              ]
-            }
-          },
-          {
-            "beatCount": 4,
-            "pattern": {
-              "mode": "repeat",
-              "steps": [
-                {
-                  "hands": [
-                    "R"
-                  ]
-                },
-                {
-                  "hands": [
-                    "L"
-                  ]
-                }
-              ]
-            }
-          },
-          {
-            "beatCount": 4,
-            "pattern": {
-              "mode": "repeat",
-              "steps": [
-                {
-                  "hands": [
-                    "L"
-                  ]
-                }
-              ]
-            }
-          },
-          {
-            "beatCount": 4,
-            "pattern": {
-              "mode": "repeat",
-              "steps": [
-                {
-                  "hands": [
-                    "L"
-                  ]
-                },
-                {
-                  "hands": [
-                    "R"
-                  ]
-                }
-              ]
-            }
-          }
-        ]
-      },
-      "technique": {
-        "strokeStyle": "full_rebound",
-        "dynamics": "even",
-        "accents": "none"
-      },
-      "execution": {
-        "beatCount": 64
-      },
-      "rankTargets": {
-        "practice": {
-          "bpm": 60,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 60,
-          "hitsPerBeat": 2
-        },
-        "stage": {
-          "bpm": 60,
-          "hitsPerBeat": 4
-        }
-      }
-    },
-    {
-      "id": "singles.TR-02",
+      "id": "doubles.TR-01",
       "type": "transition",
       "modifiers": [],
       "transitionPlan": {
         "repeatCount": 8,
         "phases": [
           {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 135,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.TR-02",
+      "type": "transition",
+      "modifiers": [],
+      "transitionPlan": {
+        "repeatCount": 16,
+        "phases": [
+          {
             "beatCount": 2,
             "pattern": {
               "mode": "repeat",
@@ -2041,6 +2688,21 @@
                 {
                   "hands": [
                     "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
                   ]
                 }
               ]
@@ -2060,28 +2722,7 @@
                   "hands": [
                     "L"
                   ]
-                }
-              ]
-            }
-          },
-          {
-            "beatCount": 2,
-            "pattern": {
-              "mode": "repeat",
-              "steps": [
-                {
-                  "hands": [
-                    "L"
-                  ]
-                }
-              ]
-            }
-          },
-          {
-            "beatCount": 2,
-            "pattern": {
-              "mode": "repeat",
-              "steps": [
+                },
                 {
                   "hands": [
                     "L"
@@ -2108,20 +2749,20 @@
       "rankTargets": {
         "practice": {
           "bpm": 90,
-          "hitsPerBeat": 1
+          "hitsPerBeat": 2
         },
         "groove": {
           "bpm": 90,
-          "hitsPerBeat": 2
+          "hitsPerBeat": 4
         },
         "stage": {
-          "bpm": 90,
+          "bpm": 150,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.EN-01",
+      "id": "doubles.EN-01",
       "type": "steady",
       "modifiers": [
         "endurance"
@@ -2132,6 +2773,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -2152,21 +2803,21 @@
       },
       "rankTargets": {
         "practice": {
-          "bpm": 100,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 100,
+          "bpm": 75,
           "hitsPerBeat": 2
         },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
         "stage": {
-          "bpm": 100,
+          "bpm": 125,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.EN-02",
+      "id": "doubles.EN-02",
       "type": "steady",
       "modifiers": [
         "endurance"
@@ -2177,6 +2828,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -2197,21 +2858,21 @@
       },
       "rankTargets": {
         "practice": {
-          "bpm": 110,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 110,
+          "bpm": 80,
           "hitsPerBeat": 2
         },
+        "groove": {
+          "bpm": 80,
+          "hitsPerBeat": 4
+        },
         "stage": {
-          "bpm": 110,
+          "bpm": 130,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.EN-03",
+      "id": "doubles.EN-03",
       "type": "steady",
       "modifiers": [
         "endurance"
@@ -2222,6 +2883,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -2242,21 +2913,21 @@
       },
       "rankTargets": {
         "practice": {
-          "bpm": 120,
-          "hitsPerBeat": 1
-        },
-        "groove": {
-          "bpm": 120,
+          "bpm": 85,
           "hitsPerBeat": 2
         },
+        "groove": {
+          "bpm": 85,
+          "hitsPerBeat": 4
+        },
         "stage": {
-          "bpm": 120,
+          "bpm": 135,
           "hitsPerBeat": 4
         }
       }
     },
     {
-      "id": "singles.TS-01",
+      "id": "doubles.TS-01",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -2265,6 +2936,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -2298,7 +2979,7 @@
       }
     },
     {
-      "id": "singles.SS-04",
+      "id": "doubles.SS-04",
       "type": "subdivision_switch",
       "modifiers": [],
       "pattern": {
@@ -2307,6 +2988,16 @@
           {
             "hands": [
               "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
             ]
           },
           {
@@ -2364,247 +3055,302 @@
   "map": {
     "nodes": [
       {
-        "lessonId": "singles.ST-01",
+        "lessonId": "doubles.ST-01",
         "column": "center",
         "prerequisites": []
       },
       {
-        "lessonId": "singles.WK-01",
+        "lessonId": "doubles.WK-01",
         "column": "left",
         "prerequisites": [
-          "singles.ST-01"
+          "doubles.ST-01"
         ]
       },
       {
-        "lessonId": "singles.IS-01",
+        "lessonId": "doubles.IS-01",
         "column": "center",
         "prerequisites": [
-          "singles.ST-01"
+          "doubles.ST-01"
         ]
       },
       {
-        "lessonId": "singles.IW-01",
+        "lessonId": "doubles.IW-01",
         "column": "left",
         "prerequisites": [
-          "singles.IS-01"
+          "doubles.IS-01"
         ]
       },
       {
-        "lessonId": "singles.TR-01",
+        "lessonId": "doubles.UN-01",
+        "column": "center",
+        "prerequisites": [
+          "doubles.IS-01"
+        ]
+      },
+      {
+        "lessonId": "doubles.UN-02",
+        "column": "center",
+        "prerequisites": [
+          "doubles.UN-01"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-02",
+        "column": "center",
+        "prerequisites": [
+          "doubles.UN-02"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-03",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-02"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-04",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-03"
+        ]
+      },
+      {
+        "lessonId": "doubles.SS-01",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-04"
+        ]
+      },
+      {
+        "lessonId": "doubles.SS-02",
         "column": "right",
         "prerequisites": [
-          "singles.IS-01"
+          "doubles.SS-01"
         ]
       },
       {
-        "lessonId": "singles.ST-02",
-        "column": "center",
-        "prerequisites": [
-          "singles.IS-01"
-        ]
-      },
-      {
-        "lessonId": "singles.ST-03",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-02"
-        ]
-      },
-      {
-        "lessonId": "singles.ST-04",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-03"
-        ]
-      },
-      {
-        "lessonId": "singles.SS-01",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-04"
-        ]
-      },
-      {
-        "lessonId": "singles.SS-02",
+        "lessonId": "doubles.SS-03",
         "column": "right",
         "prerequisites": [
-          "singles.SS-01"
+          "doubles.SS-02"
         ]
       },
       {
-        "lessonId": "singles.SS-03",
+        "lessonId": "doubles.ST-05",
+        "column": "center",
+        "prerequisites": [
+          "doubles.SS-01"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-06",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-05"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-07",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-06"
+        ]
+      },
+      {
+        "lessonId": "doubles.EN-01",
         "column": "right",
         "prerequisites": [
-          "singles.SS-02"
+          "doubles.ST-07"
         ]
       },
       {
-        "lessonId": "singles.ST-05",
+        "lessonId": "doubles.RM-01",
         "column": "center",
         "prerequisites": [
-          "singles.SS-01"
+          "doubles.ST-07"
         ]
       },
       {
-        "lessonId": "singles.ST-06",
+        "lessonId": "doubles.TS-01",
         "column": "center",
         "prerequisites": [
-          "singles.ST-05"
+          "doubles.RM-01"
         ]
       },
       {
-        "lessonId": "singles.ST-07",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-06"
-        ]
-      },
-      {
-        "lessonId": "singles.EN-01",
+        "lessonId": "doubles.SS-04",
         "column": "right",
         "prerequisites": [
-          "singles.ST-07"
+          "doubles.TS-01"
         ]
       },
       {
-        "lessonId": "singles.RM-01",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-07"
-        ]
-      },
-      {
-        "lessonId": "singles.TS-01",
-        "column": "center",
-        "prerequisites": [
-          "singles.RM-01"
-        ]
-      },
-      {
-        "lessonId": "singles.SS-04",
-        "column": "right",
-        "prerequisites": [
-          "singles.TS-01"
-        ]
-      },
-      {
-        "lessonId": "singles.WK-02",
+        "lessonId": "doubles.WK-02",
         "column": "left",
         "prerequisites": [
-          "singles.ST-07"
+          "doubles.ST-07"
         ]
       },
       {
-        "lessonId": "singles.IS-02",
+        "lessonId": "doubles.IS-02",
         "column": "center",
         "prerequisites": [
-          "singles.TS-01"
+          "doubles.TS-01"
         ]
       },
       {
-        "lessonId": "singles.IW-02",
+        "lessonId": "doubles.IW-02",
         "column": "left",
         "prerequisites": [
-          "singles.IS-02"
+          "doubles.IS-02"
         ]
       },
       {
-        "lessonId": "singles.TR-02",
+        "lessonId": "doubles.UN-03",
+        "column": "center",
+        "prerequisites": [
+          "doubles.IS-02"
+        ]
+      },
+      {
+        "lessonId": "doubles.DI-01",
+        "column": "center",
+        "prerequisites": [
+          "doubles.UN-03"
+        ]
+      },
+      {
+        "lessonId": "doubles.DI-02",
+        "column": "center",
+        "prerequisites": [
+          "doubles.DI-01"
+        ]
+      },
+      {
+        "lessonId": "doubles.DI-03",
+        "column": "center",
+        "prerequisites": [
+          "doubles.DI-02"
+        ]
+      },
+      {
+        "lessonId": "doubles.TR-01",
+        "column": "center",
+        "prerequisites": [
+          "doubles.DI-03"
+        ]
+      },
+      {
+        "lessonId": "doubles.TR-02",
         "column": "right",
         "prerequisites": [
-          "singles.IS-02",
-          "singles.TR-01"
+          "doubles.TR-01"
         ]
       },
       {
-        "lessonId": "singles.ST-08",
-        "column": "center",
-        "prerequisites": [
-          "singles.IS-02"
-        ]
-      },
-      {
-        "lessonId": "singles.ST-09",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-08"
-        ]
-      },
-      {
-        "lessonId": "singles.ST-10",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-09"
-        ]
-      },
-      {
-        "lessonId": "singles.EN-02",
-        "column": "right",
-        "prerequisites": [
-          "singles.ST-10"
-        ]
-      },
-      {
-        "lessonId": "singles.RM-02",
-        "column": "right",
-        "prerequisites": [
-          "singles.ST-10"
-        ]
-      },
-      {
-        "lessonId": "singles.ST-11",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-10"
-        ]
-      },
-      {
-        "lessonId": "singles.ST-12",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-11"
-        ]
-      },
-      {
-        "lessonId": "singles.ST-13",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-12"
-        ]
-      },
-      {
-        "lessonId": "singles.EN-03",
-        "column": "right",
-        "prerequisites": [
-          "singles.ST-13"
-        ]
-      },
-      {
-        "lessonId": "singles.RM-03",
-        "column": "right",
-        "prerequisites": [
-          "singles.ST-13"
-        ]
-      },
-      {
-        "lessonId": "singles.IS-03",
-        "column": "center",
-        "prerequisites": [
-          "singles.ST-13"
-        ]
-      },
-      {
-        "lessonId": "singles.IW-03",
+        "lessonId": "doubles.WK-03",
         "column": "left",
         "prerequisites": [
-          "singles.IS-03"
+          "doubles.DI-03"
         ]
       },
       {
-        "lessonId": "singles.WK-03",
+        "lessonId": "doubles.ST-08",
+        "column": "center",
+        "prerequisites": [
+          "doubles.TR-01"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-09",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-08"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-10",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-09"
+        ]
+      },
+      {
+        "lessonId": "doubles.EN-02",
+        "column": "right",
+        "prerequisites": [
+          "doubles.ST-10"
+        ]
+      },
+      {
+        "lessonId": "doubles.RM-02",
+        "column": "right",
+        "prerequisites": [
+          "doubles.ST-10"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-11",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-10"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-12",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-11"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-13",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-12"
+        ]
+      },
+      {
+        "lessonId": "doubles.EN-03",
+        "column": "right",
+        "prerequisites": [
+          "doubles.ST-13"
+        ]
+      },
+      {
+        "lessonId": "doubles.RM-03",
+        "column": "right",
+        "prerequisites": [
+          "doubles.ST-13"
+        ]
+      },
+      {
+        "lessonId": "doubles.IS-03",
+        "column": "center",
+        "prerequisites": [
+          "doubles.ST-13"
+        ]
+      },
+      {
+        "lessonId": "doubles.IW-03",
         "column": "left",
         "prerequisites": [
-          "singles.ST-13"
+          "doubles.IS-03"
+        ]
+      },
+      {
+        "lessonId": "doubles.UN-04",
+        "column": "center",
+        "prerequisites": [
+          "doubles.IS-03"
+        ]
+      },
+      {
+        "lessonId": "doubles.WK-04",
+        "column": "left",
+        "prerequisites": [
+          "doubles.ST-13"
         ]
       }
     ]

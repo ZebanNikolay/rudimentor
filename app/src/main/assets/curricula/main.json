@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "curriculum": {
+    "id": "main",
+    "name": "RudiMentor"
+  },
+  "tabs": [
+    {
+      "id": "singles",
+      "title": "Singles",
+      "status": "available",
+      "unlock": {
+        "type": "always"
+      }
+    },
+    {
+      "id": "doubles",
+      "title": "Doubles",
+      "status": "available",
+      "unlock": {
+        "type": "lesson_rank",
+        "lessonId": "singles.ST-07",
+        "rank": "practice"
+      }
+    },
+    {
+      "id": "paradiddles",
+      "title": "Paradiddles",
+      "status": "available",
+      "unlock": {
+        "type": "lesson_rank",
+        "lessonId": "doubles.ST-07",
+        "rank": "practice"
+      }
+    },
+    {
+      "id": "integration",
+      "title": "Mix",
+      "status": "planned",
+      "unlock": {
+        "type": "never"
+      }
+    }
+  ]
+}

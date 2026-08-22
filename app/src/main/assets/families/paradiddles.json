@@ -1,0 +1,5305 @@
+{
+  "schemaVersion": 7,
+  "family": {
+    "id": "paradiddles",
+    "name": "Paradiddles",
+    "description": "Build coordination, control, and speed across paradiddle patterns."
+  },
+  "lessons": [
+    {
+      "id": "paradiddles.SP-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 65,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 65,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 124,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 70,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 70,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 128,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-04",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 132,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-05",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 80,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 80,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 136,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-06",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 85,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 85,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 140,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-07",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 144,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.RM-01",
+      "type": "tempo_ramp",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "hitsPerBeat": 2,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 80,
+                "beatCount": 8
+              },
+              {
+                "bpm": 85,
+                "beatCount": 8
+              },
+              {
+                "bpm": 90,
+                "beatCount": 16
+              },
+              {
+                "bpm": 85,
+                "beatCount": 8
+              },
+              {
+                "bpm": 80,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "groove": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 80,
+                "beatCount": 8
+              },
+              {
+                "bpm": 85,
+                "beatCount": 8
+              },
+              {
+                "bpm": 90,
+                "beatCount": 16
+              },
+              {
+                "bpm": 85,
+                "beatCount": 8
+              },
+              {
+                "bpm": 80,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "stage": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 136,
+                "beatCount": 8
+              },
+              {
+                "bpm": 140,
+                "beatCount": 8
+              },
+              {
+                "bpm": 144,
+                "beatCount": 16
+              },
+              {
+                "bpm": 140,
+                "beatCount": 8
+              },
+              {
+                "bpm": 136,
+                "beatCount": 8
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-08",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 95,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 95,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 148,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-09",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 100,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 100,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 152,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-10",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 105,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 105,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 156,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-11",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 110,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 110,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 160,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-12",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 115,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 115,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 164,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SP-13",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 120,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 168,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PIM-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PIM-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 144,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PIM-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 120,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 168,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PIS-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PIS-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 144,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PIS-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 120,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 168,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.DP-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 84,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.DP-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 66,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 90,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.DP-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 72,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 96,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.DP-04",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 105,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 78,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 102,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.DP-05",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 120,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 84,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 108,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.TP-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 100,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.TP-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 80,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.TP-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 100,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 140,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.TP-04",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 120,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 100,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 160,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PDD-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 100,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PDD-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 70,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 105,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PDD-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 80,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 110,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PDD-04",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 105,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 115,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PDD-05",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 120,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 100,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.WK-01",
+      "type": "steady",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_lead",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.RM-02",
+      "type": "tempo_ramp",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "hitsPerBeat": 2,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 95,
+                "beatCount": 8
+              },
+              {
+                "bpm": 100,
+                "beatCount": 8
+              },
+              {
+                "bpm": 105,
+                "beatCount": 16
+              },
+              {
+                "bpm": 100,
+                "beatCount": 8
+              },
+              {
+                "bpm": 95,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "groove": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 95,
+                "beatCount": 8
+              },
+              {
+                "bpm": 100,
+                "beatCount": 8
+              },
+              {
+                "bpm": 105,
+                "beatCount": 16
+              },
+              {
+                "bpm": 100,
+                "beatCount": 8
+              },
+              {
+                "bpm": 95,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "stage": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 148,
+                "beatCount": 8
+              },
+              {
+                "bpm": 152,
+                "beatCount": 8
+              },
+              {
+                "bpm": 156,
+                "beatCount": 16
+              },
+              {
+                "bpm": 152,
+                "beatCount": 8
+              },
+              {
+                "bpm": 148,
+                "beatCount": 8
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "paradiddles.RM-03",
+      "type": "tempo_ramp",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "hitsPerBeat": 2,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 110,
+                "beatCount": 8
+              },
+              {
+                "bpm": 115,
+                "beatCount": 8
+              },
+              {
+                "bpm": 120,
+                "beatCount": 16
+              },
+              {
+                "bpm": 115,
+                "beatCount": 8
+              },
+              {
+                "bpm": 110,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "groove": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 110,
+                "beatCount": 8
+              },
+              {
+                "bpm": 115,
+                "beatCount": 8
+              },
+              {
+                "bpm": 120,
+                "beatCount": 16
+              },
+              {
+                "bpm": 115,
+                "beatCount": 8
+              },
+              {
+                "bpm": 110,
+                "beatCount": 8
+              }
+            ]
+          }
+        },
+        "stage": {
+          "hitsPerBeat": 4,
+          "tempoRampPlan": {
+            "mode": "step",
+            "direction": "open_close_open",
+            "phases": [
+              {
+                "bpm": 160,
+                "beatCount": 8
+              },
+              {
+                "bpm": 164,
+                "beatCount": 8
+              },
+              {
+                "bpm": 168,
+                "beatCount": 16
+              },
+              {
+                "bpm": 164,
+                "beatCount": 8
+              },
+              {
+                "bpm": 160,
+                "beatCount": 8
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "paradiddles.WK-02",
+      "type": "steady",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_lead",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.WK-03",
+      "type": "steady",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_lead",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 84,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.WK-04",
+      "type": "steady",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_lead",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 100,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.WK-05",
+      "type": "steady",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_lead",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.WK-06",
+      "type": "steady",
+      "modifiers": [
+        "weak"
+      ],
+      "weakFocus": {
+        "strategy": "weak_lead",
+        "authoredWeakHand": "L",
+        "adaptToUser": true
+      },
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 100,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SS-01",
+      "type": "subdivision_switch",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "subdivisionPlan": {
+            "blockBeats": 8,
+            "hitsPerBeat": [
+              1,
+              2,
+              1
+            ]
+          }
+        },
+        "groove": {
+          "bpm": 60,
+          "subdivisionPlan": {
+            "blockBeats": 8,
+            "hitsPerBeat": [
+              2,
+              4,
+              2
+            ]
+          }
+        },
+        "stage": {
+          "bpm": 90,
+          "subdivisionPlan": {
+            "blockBeats": 8,
+            "hitsPerBeat": [
+              2,
+              4,
+              2
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SS-02",
+      "type": "subdivision_switch",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "subdivisionPlan": {
+            "blockBeats": 4,
+            "hitsPerBeat": [
+              1,
+              2,
+              1
+            ]
+          }
+        },
+        "groove": {
+          "bpm": 60,
+          "subdivisionPlan": {
+            "blockBeats": 4,
+            "hitsPerBeat": [
+              2,
+              4,
+              2
+            ]
+          }
+        },
+        "stage": {
+          "bpm": 90,
+          "subdivisionPlan": {
+            "blockBeats": 4,
+            "hitsPerBeat": [
+              2,
+              4,
+              2
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SS-03",
+      "type": "subdivision_switch",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "subdivisionPlan": {
+            "blockBeats": 2,
+            "hitsPerBeat": [
+              1,
+              2,
+              1
+            ]
+          }
+        },
+        "groove": {
+          "bpm": 60,
+          "subdivisionPlan": {
+            "blockBeats": 2,
+            "hitsPerBeat": [
+              2,
+              4,
+              2
+            ]
+          }
+        },
+        "stage": {
+          "bpm": 90,
+          "subdivisionPlan": {
+            "blockBeats": 2,
+            "hitsPerBeat": [
+              2,
+              4,
+              2
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "paradiddles.TR-01",
+      "type": "transition",
+      "modifiers": [],
+      "transitionPlan": {
+        "repeatCount": 4,
+        "phases": [
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 144,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.TR-02",
+      "type": "transition",
+      "modifiers": [],
+      "transitionPlan": {
+        "repeatCount": 4,
+        "phases": [
+          {
+            "beatCount": 2,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 3,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 3,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.EN-01",
+      "type": "steady",
+      "modifiers": [
+        "endurance"
+      ],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "durationSeconds": 120,
+        "completionMode": "complete_pattern_cycle"
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 75,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.EN-02",
+      "type": "steady",
+      "modifiers": [
+        "endurance"
+      ],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "durationSeconds": 180,
+        "completionMode": "complete_pattern_cycle"
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 80,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 80,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 124,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.EN-03",
+      "type": "steady",
+      "modifiers": [
+        "endurance"
+      ],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "durationSeconds": 300,
+        "completionMode": "complete_pattern_cycle"
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 85,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 85,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 128,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "paradiddles.TS-01",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 75,
+          "hitsPerBeat": 3
+        },
+        "stage": {
+          "bpm": 90,
+          "hitsPerBeat": 3
+        }
+      }
+    },
+    {
+      "id": "paradiddles.SS-04",
+      "type": "subdivision_switch",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 48
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "subdivisionPlan": {
+            "blockBeats": 8,
+            "hitsPerBeat": [
+              2,
+              3,
+              2
+            ]
+          }
+        },
+        "groove": {
+          "bpm": 75,
+          "subdivisionPlan": {
+            "blockBeats": 8,
+            "hitsPerBeat": [
+              2,
+              3,
+              2
+            ]
+          }
+        },
+        "stage": {
+          "bpm": 90,
+          "subdivisionPlan": {
+            "blockBeats": 8,
+            "hitsPerBeat": [
+              2,
+              3,
+              2
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "map": {
+    "nodes": [
+      {
+        "lessonId": "paradiddles.SP-01",
+        "column": "center",
+        "prerequisites": []
+      },
+      {
+        "lessonId": "paradiddles.WK-01",
+        "column": "left",
+        "prerequisites": [
+          "paradiddles.SP-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-02",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-03",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-02"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-04",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-03"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SS-01",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-04"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SS-02",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.SS-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SS-03",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.SS-02"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-05",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SS-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-06",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-05"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-07",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-06"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.EN-01",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.SP-07"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.RM-01",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-07"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PIM-01",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.RM-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.WK-02",
+        "column": "left",
+        "prerequisites": [
+          "paradiddles.PIM-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.DP-01",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PIM-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.TS-01",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.DP-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SS-04",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.TS-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.WK-03",
+        "column": "left",
+        "prerequisites": [
+          "paradiddles.DP-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-08",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.TS-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-09",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-08"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.DP-02",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-09"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.TP-01",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.DP-02"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.WK-04",
+        "column": "left",
+        "prerequisites": [
+          "paradiddles.TP-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PIS-01",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.TP-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.WK-05",
+        "column": "left",
+        "prerequisites": [
+          "paradiddles.PIS-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PDD-01",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PIS-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.WK-06",
+        "column": "left",
+        "prerequisites": [
+          "paradiddles.PDD-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PIM-02",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PDD-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-10",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PIM-02"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.EN-02",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.SP-10"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.RM-02",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.SP-10"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-11",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-10"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.DP-03",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-11"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.TP-02",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.DP-03"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PIS-02",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.TP-02"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PDD-02",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PIS-02"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-12",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PDD-02"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PIM-03",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-12"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.DP-04",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PIM-03"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.TP-03",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.DP-04"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PDD-03",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.TP-03"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PIS-03",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PDD-03"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.TR-01",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.PIS-03"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.SP-13",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PIS-03"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.EN-03",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.SP-13"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.RM-03",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.SP-13"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.DP-05",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.SP-13"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PDD-04",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.DP-05"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.TP-04",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PDD-04"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PDD-05",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.TP-04"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.TR-02",
+        "column": "right",
+        "prerequisites": [
+          "paradiddles.PDD-05",
+          "paradiddles.TP-04"
+        ]
+      }
+    ]
+  }
+}

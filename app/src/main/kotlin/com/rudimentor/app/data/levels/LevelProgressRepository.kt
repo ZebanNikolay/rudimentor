@@ -20,79 +20,118 @@ private val Context.levelProgressDataStore by preferencesDataStore(
     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
 )
 
+/** What the levels screen remembers between launches besides progress itself. */
+data class LevelsUiState(
+    val familyId: String? = null,
+    val rank: PracticeRank = PracticeRank.Practice,
+)
+
 interface LevelProgressRepository {
     val progress: Flow<LearningProgress>
 
-    suspend fun saveLevel(levelId: String, progress: LevelProgress)
+    /** The selected map and the global rank, restored on the next launch. */
+    val uiState: Flow<LevelsUiState>
+
+    suspend fun saveLevel(levelId: String, rank: PracticeRank, progress: RankProgress)
+
+    suspend fun selectFamily(familyId: String)
+
+    suspend fun selectRank(rank: PracticeRank)
 }
 
+/**
+ * Stores progress per level *and* per rank. Keys of the previous single-rank layout are not
+ * read: three passes of a level cannot be reconstructed from one completion flag, so early
+ * local progress is dropped instead of being guessed at.
+ */
 class DataStoreLevelProgressRepository(
     private val context: Context,
-    catalog: LevelCatalog,
-    private val initialProgress: LearningProgress = LearningProgress.placeholder(),
+    course: LevelCourse,
 ) : LevelProgressRepository {
-    private val levelIds = catalog.levels.map(Level::id).toSet()
+    private val levelIds = course.levelIds
 
-    override val progress: Flow<LearningProgress> = context.levelProgressDataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences()) else throw exception
-        }
-        .map(::toLearningProgress)
+    // Every tab of the curriculum, not only the ones with a package: a planned tab can be
+    // opened on the map to read what it will contain, and that choice is worth remembering.
+    private val familyIds = course.tabs.map(CurriculumTab::id).toSet()
 
-    override suspend fun saveLevel(levelId: String, progress: LevelProgress) {
+    override val progress: Flow<LearningProgress> = preferences().map(::toLearningProgress)
+
+    override val uiState: Flow<LevelsUiState> = preferences().map(::toUiState)
+
+    override suspend fun saveLevel(levelId: String, rank: PracticeRank, progress: RankProgress) {
         require(levelId in levelIds) { "Unknown level: $levelId" }
         context.levelProgressDataStore.edit { preferences ->
-            preferences.write(levelId, progress)
+            preferences.write(levelId, rank, progress)
         }
     }
 
+    override suspend fun selectFamily(familyId: String) {
+        require(familyId in familyIds) { "Unknown family: $familyId" }
+        context.levelProgressDataStore.edit { preferences ->
+            preferences[Keys.ActiveFamily] = familyId
+        }
+    }
+
+    override suspend fun selectRank(rank: PracticeRank) {
+        context.levelProgressDataStore.edit { preferences ->
+            preferences[Keys.ActiveRank] = rank.storageName
+        }
+    }
+
+    private fun preferences(): Flow<Preferences> = context.levelProgressDataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+
     private fun toLearningProgress(preferences: Preferences): LearningProgress = LearningProgress(
-        streakDays = preferences[Keys.StreakDays] ?: initialProgress.streakDays,
+        streakDays = preferences[Keys.StreakDays] ?: 0,
         levels = levelIds.associateWith { levelId ->
-            val initial = initialProgress.forLevel(levelId)
-            val storedBestBpm = preferences[Keys.bestBpm(levelId)]
-            val storedBestScore = preferences[Keys.bestScore(levelId)]
             LevelProgress(
-                completed = preferences[Keys.completed(levelId)] ?: initial.completed,
-                rankStars = decodeStars(preferences[Keys.rankStars(levelId)]) ?: initial.rankStars,
-                bestBpm = storedBestBpm?.takeUnless { it == NO_VALUE } ?: if (storedBestBpm == null) {
-                    initial.bestBpm
-                } else {
-                    null
-                },
-                bestScore = storedBestScore?.takeUnless { it == NO_VALUE } ?: if (storedBestScore == null) {
-                    initial.bestScore
-                } else {
-                    null
+                ranks = PracticeRank.entries.associateWith { rank ->
+                    RankProgress(
+                        completed = preferences[Keys.completed(levelId, rank)] ?: false,
+                        stars = preferences[Keys.stars(levelId, rank)] ?: 0,
+                        bestBpm = preferences[Keys.bestBpm(levelId, rank)]?.takeUnless { it == NO_VALUE },
+                        bestScore = preferences[Keys.bestScore(levelId, rank)]?.takeUnless { it == NO_VALUE },
+                    )
                 },
             )
         },
     )
 
-    private fun MutablePreferences.write(levelId: String, progress: LevelProgress) {
-        this[Keys.completed(levelId)] = progress.completed
-        this[Keys.rankStars(levelId)] = PracticeRank.entries.joinToString(",") { progress.stars(it).toString() }
-        this[Keys.bestBpm(levelId)] = progress.bestBpm ?: NO_VALUE
-        this[Keys.bestScore(levelId)] = progress.bestScore ?: NO_VALUE
-    }
+    private fun toUiState(preferences: Preferences): LevelsUiState = LevelsUiState(
+        familyId = preferences[Keys.ActiveFamily]?.takeIf { it in familyIds },
+        rank = preferences[Keys.ActiveRank]
+            ?.let { stored -> PracticeRank.entries.firstOrNull { it.storageName == stored } }
+            ?: PracticeRank.Practice,
+    )
 
-    private fun decodeStars(value: String?): Map<PracticeRank, Int>? {
-        val stars = value?.split(',')?.mapNotNull(String::toIntOrNull) ?: return null
-        if (stars.size != PracticeRank.entries.size || stars.any { it !in 0..MAX_STARS }) return null
-        return PracticeRank.entries.zip(stars).toMap()
+    private fun MutablePreferences.write(levelId: String, rank: PracticeRank, progress: RankProgress) {
+        this[Keys.completed(levelId, rank)] = progress.completed
+        this[Keys.stars(levelId, rank)] = progress.clampedStars
+        this[Keys.bestBpm(levelId, rank)] = progress.bestBpm ?: NO_VALUE
+        this[Keys.bestScore(levelId, rank)] = progress.bestScore ?: NO_VALUE
     }
 
     private object Keys {
         val StreakDays = intPreferencesKey("streak_days")
+        val ActiveFamily = stringPreferencesKey("levels.active_family")
+        val ActiveRank = stringPreferencesKey("levels.active_rank")
 
-        fun completed(levelId: String) = booleanPreferencesKey("level.$levelId.completed")
-        fun rankStars(levelId: String) = stringPreferencesKey("level.$levelId.rank_stars")
-        fun bestBpm(levelId: String) = intPreferencesKey("level.$levelId.best_bpm")
-        fun bestScore(levelId: String) = intPreferencesKey("level.$levelId.best_score")
+        fun completed(levelId: String, rank: PracticeRank) =
+            booleanPreferencesKey("level.$levelId.${rank.storageName}.completed")
+
+        fun stars(levelId: String, rank: PracticeRank) =
+            intPreferencesKey("level.$levelId.${rank.storageName}.stars")
+
+        fun bestBpm(levelId: String, rank: PracticeRank) =
+            intPreferencesKey("level.$levelId.${rank.storageName}.best_bpm")
+
+        fun bestScore(levelId: String, rank: PracticeRank) =
+            intPreferencesKey("level.$levelId.${rank.storageName}.best_score")
     }
 
     companion object {
-        private const val MAX_STARS = 3
         private const val NO_VALUE = -1
     }
 }

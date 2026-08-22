@@ -12,7 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rudimentor.app.data.DataStoreSettingsRepository
-import com.rudimentor.app.data.levels.AssetLevelCatalogLoader
+import com.rudimentor.app.data.levels.AssetCourseLoader
 import com.rudimentor.app.data.levels.DataStoreLevelProgressRepository
 import com.rudimentor.app.ui.RudiMentorApp
 import com.rudimentor.app.ui.metronome.MetronomeActions
@@ -20,12 +20,13 @@ import com.rudimentor.app.ui.theme.RudiMentorTheme
 import com.rudimentor.app.util.DevLog
 
 class MainActivity : ComponentActivity() {
-    private val levelCatalog by lazy { AssetLevelCatalogLoader(assets).load() }
+    // The whole course: the curriculum and every family package that ships with it.
+    private val course by lazy { AssetCourseLoader(assets).load() }
 
     private val viewModel: AppViewModel by viewModels {
         AppViewModel.factory(
             repository = DataStoreSettingsRepository(applicationContext),
-            progressRepository = DataStoreLevelProgressRepository(applicationContext, levelCatalog),
+            progressRepository = DataStoreLevelProgressRepository(applicationContext, course),
         )
     }
 
@@ -51,6 +52,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by viewModel.settings.collectAsStateWithLifecycle()
             val learningProgress by viewModel.learningProgress.collectAsStateWithLifecycle()
+            val levelsUi by viewModel.levelsUi.collectAsStateWithLifecycle()
             // The action holder is stable for the lifetime of the view model,
             // so composables that only close over `actions` skip recomposition
             // when unrelated settings change.
@@ -74,9 +76,12 @@ class MainActivity : ComponentActivity() {
                         versionCode = BuildConfig.VERSION_CODE,
                     ),
                     settings = settings,
-                    levelCatalog = levelCatalog,
+                    course = course,
                     learningProgress = learningProgress,
+                    levelsUi = levelsUi,
                     actions = actions,
+                    onSelectTab = viewModel::selectFamily,
+                    onSelectRank = viewModel::selectRank,
                     onClickAudible = viewModel::setClickAudible,
                     onInputLatencyMs = viewModel::setInputLatencyMs,
                     onAttemptFinished = { level, rank, bpm, result ->

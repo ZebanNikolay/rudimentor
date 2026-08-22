@@ -61,9 +61,11 @@ class AssetLevelCatalogLoader(
         var id = ""
         var type = LevelType.Steady
         var modifiers = emptySet<LevelModifier>()
-        var pattern = Pattern(mode = PatternMode.Repeat, steps = emptyList())
+        var pattern: Pattern? = null
+        var transitionPlan: TransitionPlan? = null
+        var weakFocus: WeakFocus? = null
         var technique = Technique(strokeStyle = "", dynamics = "", accents = "")
-        var execution = Execution(beatCount = 0)
+        var execution = Execution()
         var rankTargets = emptyList<RankTarget>()
         reader.beginObject()
         while (reader.hasNext()) {
@@ -72,6 +74,8 @@ class AssetLevelCatalogLoader(
                 "type" -> type = LevelType.fromStorageName(reader.nextString())
                 "modifiers" -> modifiers = reader.readArray { LevelModifier.fromStorageName(it.nextString()) }.toSet()
                 "pattern" -> pattern = readPattern(reader)
+                "transitionPlan" -> transitionPlan = readTransitionPlan(reader)
+                "weakFocus" -> weakFocus = readWeakFocus(reader)
                 "technique" -> technique = readTechnique(reader)
                 "execution" -> execution = readExecution(reader)
                 "rankTargets" -> rankTargets = readRankTargets(reader)
@@ -84,6 +88,8 @@ class AssetLevelCatalogLoader(
             type = type,
             modifiers = modifiers,
             pattern = pattern,
+            transitionPlan = transitionPlan,
+            weakFocus = weakFocus,
             technique = technique,
             execution = execution,
             rankTargets = rankTargets,
@@ -135,38 +141,160 @@ class AssetLevelCatalogLoader(
         return Technique(strokeStyle = strokeStyle, dynamics = dynamics, accents = accents)
     }
 
-    private fun readExecution(reader: JsonReader): Execution {
-        var beatCount = 0
+    private fun readTransitionPlan(reader: JsonReader): TransitionPlan {
+        var repeatCount = 0
+        var phases = emptyList<TransitionPhase>()
         reader.beginObject()
         while (reader.hasNext()) {
             when (reader.nextName()) {
-                "beatCount" -> beatCount = reader.nextInt()
+                "repeatCount" -> repeatCount = reader.nextInt()
+                "phases" -> phases = reader.readArray(::readTransitionPhase)
                 else -> reader.skipValue()
             }
         }
         reader.endObject()
-        return Execution(beatCount = beatCount)
+        return TransitionPlan(repeatCount = repeatCount, phases = phases)
     }
 
-    /** `rankTargets` is an object keyed by rank, not an array. */
+    private fun readTransitionPhase(reader: JsonReader): TransitionPhase {
+        var beatCount = 0
+        var pattern = Pattern(mode = PatternMode.Repeat, steps = emptyList())
+        reader.beginObject()
+        while (reader.hasNext()) {
+            when (reader.nextName()) {
+                "beatCount" -> beatCount = reader.nextInt()
+                "pattern" -> pattern = readPattern(reader)
+                else -> reader.skipValue()
+            }
+        }
+        reader.endObject()
+        return TransitionPhase(beatCount = beatCount, pattern = pattern)
+    }
+
+    private fun readWeakFocus(reader: JsonReader): WeakFocus {
+        var strategy = WeakStrategy.WeakLead
+        var authoredWeakHand = PatternHand.Left
+        var adaptToUser = false
+        reader.beginObject()
+        while (reader.hasNext()) {
+            when (reader.nextName()) {
+                "strategy" -> strategy = WeakStrategy.fromStorageName(reader.nextString())
+                "authoredWeakHand" -> authoredWeakHand = PatternHand.fromStorageName(reader.nextString())
+                "adaptToUser" -> adaptToUser = reader.nextBoolean()
+                else -> reader.skipValue()
+            }
+        }
+        reader.endObject()
+        return WeakFocus(
+            strategy = strategy,
+            authoredWeakHand = authoredWeakHand,
+            adaptToUser = adaptToUser,
+        )
+    }
+
+    private fun readExecution(reader: JsonReader): Execution {
+        var beatCount: Int? = null
+        var durationSeconds: Int? = null
+        var completionMode: CompletionMode? = null
+        reader.beginObject()
+        while (reader.hasNext()) {
+            when (reader.nextName()) {
+                "beatCount" -> beatCount = reader.nextInt()
+                "durationSeconds" -> durationSeconds = reader.nextInt()
+                "completionMode" -> completionMode = CompletionMode.fromStorageName(reader.nextString())
+                else -> reader.skipValue()
+            }
+        }
+        reader.endObject()
+        return Execution(
+            beatCount = beatCount,
+            durationSeconds = durationSeconds,
+            completionMode = completionMode,
+        )
+    }
+
+    /**
+     * `rankTargets` is an object keyed by rank, not an array. A planned target carries no
+     * scalar tempo or density, so both are taken from the entry point of its plan — the
+     * value the practice engine starts at.
+     */
     private fun readRankTargets(reader: JsonReader): List<RankTarget> = buildList {
         reader.beginObject()
         while (reader.hasNext()) {
             val rank = PracticeRank.fromStorageName(reader.nextName())
-            var bpm = 0
-            var hitsPerBeat = 0
+            var bpm: Int? = null
+            var hitsPerBeat: Int? = null
+            var subdivisionPlan: SubdivisionPlan? = null
+            var tempoRampPlan: TempoRampPlan? = null
             reader.beginObject()
             while (reader.hasNext()) {
                 when (reader.nextName()) {
                     "bpm" -> bpm = reader.nextInt()
                     "hitsPerBeat" -> hitsPerBeat = reader.nextInt()
+                    "subdivisionPlan" -> subdivisionPlan = readSubdivisionPlan(reader)
+                    "tempoRampPlan" -> tempoRampPlan = readTempoRampPlan(reader)
                     else -> reader.skipValue()
                 }
             }
             reader.endObject()
-            add(RankTarget(rank = rank, bpm = bpm, hitsPerBeat = hitsPerBeat))
+            add(
+                RankTarget(
+                    rank = rank,
+                    bpm = bpm ?: tempoRampPlan?.phases?.firstOrNull()?.bpm ?: 0,
+                    hitsPerBeat = hitsPerBeat ?: subdivisionPlan?.hitsPerBeat?.firstOrNull() ?: 0,
+                    subdivisionPlan = subdivisionPlan,
+                    tempoRampPlan = tempoRampPlan,
+                ),
+            )
         }
         reader.endObject()
+    }
+
+    private fun readSubdivisionPlan(reader: JsonReader): SubdivisionPlan {
+        var blockBeats = 0
+        var hitsPerBeat = emptyList<Int>()
+        reader.beginObject()
+        while (reader.hasNext()) {
+            when (reader.nextName()) {
+                "blockBeats" -> blockBeats = reader.nextInt()
+                "hitsPerBeat" -> hitsPerBeat = reader.readArray(JsonReader::nextInt)
+                else -> reader.skipValue()
+            }
+        }
+        reader.endObject()
+        return SubdivisionPlan(blockBeats = blockBeats, hitsPerBeat = hitsPerBeat)
+    }
+
+    private fun readTempoRampPlan(reader: JsonReader): TempoRampPlan {
+        var mode = ""
+        var direction = ""
+        var phases = emptyList<TempoRampPhase>()
+        reader.beginObject()
+        while (reader.hasNext()) {
+            when (reader.nextName()) {
+                "mode" -> mode = reader.nextString()
+                "direction" -> direction = reader.nextString()
+                "phases" -> phases = reader.readArray(::readTempoRampPhase)
+                else -> reader.skipValue()
+            }
+        }
+        reader.endObject()
+        return TempoRampPlan(mode = mode, direction = direction, phases = phases)
+    }
+
+    private fun readTempoRampPhase(reader: JsonReader): TempoRampPhase {
+        var bpm = 0
+        var beatCount = 0
+        reader.beginObject()
+        while (reader.hasNext()) {
+            when (reader.nextName()) {
+                "bpm" -> bpm = reader.nextInt()
+                "beatCount" -> beatCount = reader.nextInt()
+                else -> reader.skipValue()
+            }
+        }
+        reader.endObject()
+        return TempoRampPhase(bpm = bpm, beatCount = beatCount)
     }
 
     private fun readMap(reader: JsonReader): List<MapNode> {

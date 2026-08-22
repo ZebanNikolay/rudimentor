@@ -1,11 +1,7 @@
 package com.rudimentor.app.ui.levels
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,28 +9,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,27 +29,27 @@ import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelProgress
 import com.rudimentor.app.data.levels.PracticeRank
+import com.rudimentor.app.data.levels.RankProgress
 import com.rudimentor.app.ui.component.AppToolbar
-import com.rudimentor.app.ui.component.SquareIconButton
-import com.rudimentor.app.ui.theme.JetBrainsMono
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
+/**
+ * One level at the difficulty chosen on the map (decision 111). The screen no longer picks a
+ * rank or a tempo: the rank is global, and its target BPM belongs to the course data, so the
+ * learner sees what the level asks for instead of a stepper that can contradict it.
+ */
 @Composable
 fun LevelDetailScreen(
     level: Level,
     family: Family,
+    rank: PracticeRank,
     progress: LevelProgress,
     onBack: () -> Unit,
     onStartPractice: (Level, PracticeRank, Int) -> Unit,
 ) {
-    var selectedRankName by rememberSaveable(level.id) { mutableStateOf(RankChoice.Practice.name) }
-    var customBpm by rememberSaveable(level.id) {
-        mutableIntStateOf(level.target(PracticeRank.Practice).bpm)
-    }
-    val selectedRank = RankChoice.entries.single { it.name == selectedRankName }
-    val selectedTarget = level.target(selectedRank.rank ?: PracticeRank.Practice)
-    val bpm = if (selectedRank == RankChoice.Custom) customBpm else selectedTarget.bpm
+    val target = level.target(rank)
+    val rankProgress = progress.forRank(rank)
     BackHandler(onBack = onBack)
 
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
@@ -78,7 +64,11 @@ fun LevelDetailScreen(
                 onBack = onBack,
                 rightContent = {
                     Text(
-                        text = stringResource(R.string.level_detail_rank_meta, selectedRank.displayName, bpm),
+                        text = stringResource(
+                            R.string.level_detail_rank_meta,
+                            rank.displayName.uppercase(),
+                            target.hitsPerBeat,
+                        ),
                         style = RudiTextStyles.RowNumber,
                         color = RudiColors.Muted,
                         maxLines = 1,
@@ -94,7 +84,7 @@ fun LevelDetailScreen(
             ) {
                 Spacer(modifier = Modifier.height(22.dp))
                 Text(
-                    text = level.headline(family),
+                    text = level.headline(family, rank),
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp),
                     color = RudiColors.Text,
                 )
@@ -114,55 +104,36 @@ fun LevelDetailScreen(
                         .padding(top = 26.dp),
                 )
 
-                BpmPicker(
-                    bpm = bpm,
-                    custom = selectedRank == RankChoice.Custom,
-                    canDecrease = customBpm > CUSTOM_BPM_MIN,
-                    canIncrease = customBpm < CUSTOM_BPM_MAX,
-                    onDecrease = { customBpm = (customBpm - CUSTOM_BPM_STEP).coerceAtLeast(CUSTOM_BPM_MIN) },
-                    onIncrease = { customBpm = (customBpm + CUSTOM_BPM_STEP).coerceAtMost(CUSTOM_BPM_MAX) },
+                TargetTempo(
+                    bpm = target.bpm,
+                    stars = rankProgress.clampedStars,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 22.dp),
                 )
 
-                RankGrid(
-                    level = level,
-                    progress = progress,
-                    selected = selectedRank,
-                    customBpm = customBpm,
-                    onSelect = { selectedRankName = it.name },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 18.dp),
-                )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 14.dp),
+                        .padding(top = 18.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     MetricCard(
                         label = stringResource(R.string.level_detail_best_bpm),
-                        value = progress.bestBpm?.toString() ?: stringResource(R.string.level_detail_no_score),
+                        value = rankProgress.bestBpm?.toString()
+                            ?: stringResource(R.string.level_detail_no_score),
                         modifier = Modifier.weight(1f),
                     )
                     MetricCard(
                         label = stringResource(R.string.level_detail_best_score),
-                        value = progress.bestScore?.let { stringResource(R.string.level_detail_score_value, it) }
+                        value = rankProgress.bestScore
+                            ?.let { stringResource(R.string.level_detail_score_value, it) }
                             ?: stringResource(R.string.level_detail_no_score),
                         modifier = Modifier.weight(1f),
                     )
                 }
-                if (!level.supportsBeatGrid) {
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Text(
-                        text = stringResource(R.string.level_detail_unison_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = RudiColors.Muted,
-                    )
-                }
+
+                LevelNotes(level = level, rankProgress = rankProgress, approximated = target.approximated)
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -181,214 +152,96 @@ fun LevelDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = stringResource(
-                            R.string.level_detail_execution,
-                            level.beatCount,
-                            selectedTarget.hitsPerBeat,
-                        ),
+                        text = executionLabel(level, target.hitsPerBeat),
                         style = RudiTextStyles.Timer,
                         color = RudiColors.Text,
                     )
                 }
                 LevelPlayButton(
-                    onClick = {
-                        onStartPractice(
-                            level,
-                            selectedRank.rank ?: PracticeRank.Practice,
-                            bpm,
-                        )
-                    },
+                    onClick = { onStartPractice(level, rank, target.bpm) },
                     contentDescription = stringResource(
-                        if (level.supportsBeatGrid) {
+                        if (level.playable) {
                             R.string.level_detail_start
                         } else {
-                            R.string.level_detail_unison_pending
+                            R.string.level_detail_preview_only
                         },
                     ),
-                    active = level.supportsBeatGrid,
+                    active = level.playable,
                 )
             }
         }
     }
 }
 
+/** Beats or seconds — a lesson is measured one way or the other, never both. */
 @Composable
-private fun BpmPicker(
+private fun executionLabel(level: Level, hitsPerBeat: Int): String {
+    val durationSeconds = level.durationSeconds
+    return if (durationSeconds != null) {
+        stringResource(R.string.level_detail_execution_timed, durationSeconds, hitsPerBeat)
+    } else {
+        stringResource(R.string.level_detail_execution, level.beatCount, hitsPerBeat)
+    }
+}
+
+/** The tempo the level asks for at the selected rank, plus the stars earned at that rank. */
+@Composable
+private fun TargetTempo(
     bpm: Int,
-    custom: Boolean,
-    canDecrease: Boolean,
-    canIncrease: Boolean,
-    onDecrease: () -> Unit,
-    onIncrease: () -> Unit,
+    stars: Int,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        if (custom) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                BpmStepButton(
-                    label = "−",
-                    contentDescription = stringResource(R.string.level_detail_slower),
-                    enabled = canDecrease,
-                    onClick = onDecrease,
-                )
-                BpmStepButton(
-                    label = "+",
-                    contentDescription = stringResource(R.string.level_detail_faster),
-                    enabled = canIncrease,
-                    onClick = onIncrease,
-                )
-            }
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = bpm.toString(),
-                style = RudiTextStyles.BpmValue.copy(fontSize = 44.sp),
-                color = RudiColors.Text,
-            )
-            Text(
-                text = stringResource(R.string.level_detail_bpm).uppercase(),
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.Muted,
-                letterSpacing = 1.8.sp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun BpmStepButton(
-    label: String,
-    contentDescription: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    SquareIconButton(
-        onClick = onClick,
-        contentDescription = contentDescription,
-        size = 44.dp,
-        corner = 13.dp,
-        background = RudiColors.Surface,
-        border = RudiColors.Line,
-        enabled = enabled,
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = label,
-            style = MaterialTheme.typography.titleLarge,
+            text = bpm.toString(),
+            style = RudiTextStyles.BpmValue.copy(fontSize = 44.sp),
             color = RudiColors.Text,
         )
-    }
-}
-
-@Composable
-private fun RankGrid(
-    level: Level,
-    progress: LevelProgress,
-    selected: RankChoice,
-    customBpm: Int,
-    onSelect: (RankChoice) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        RankChoice.entries.filter { it != RankChoice.Custom }.chunked(2).forEach { rowRanks ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                rowRanks.forEach { rank ->
-                    RankOption(
-                        rank = rank,
-                        selected = selected == rank,
-                        trailing = rankStars(progress, rank),
-                        onClick = { onSelect(rank) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-        RankOption(
-            rank = RankChoice.Custom,
-            selected = selected == RankChoice.Custom,
-            trailing = if (selected == RankChoice.Custom) {
-                stringResource(R.string.level_detail_custom_value, customBpm)
-            } else {
-                stringResource(R.string.level_detail_custom_hint)
+        Text(
+            text = stringResource(R.string.level_detail_bpm).uppercase(),
+            style = RudiTextStyles.RowNumber,
+            color = RudiColors.Muted,
+            letterSpacing = 1.8.sp,
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = "★".repeat(stars) + "☆".repeat(RankProgress.MAX_STARS - stars),
+            modifier = Modifier.semantics {
+                contentDescription = "$stars of ${RankProgress.MAX_STARS} stars"
             },
-            onClick = { onSelect(RankChoice.Custom) },
-            modifier = Modifier.fillMaxWidth(),
+            style = RudiTextStyles.Timer,
+            color = STAR_COLOR,
+            letterSpacing = 3.sp,
         )
     }
 }
 
+/** Everything the learner should know before pressing play, and nothing else. */
 @Composable
-private fun RankOption(
-    rank: RankChoice,
-    selected: Boolean,
-    trailing: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun LevelNotes(
+    level: Level,
+    rankProgress: RankProgress,
+    approximated: Boolean,
 ) {
-    val shape = RoundedCornerShape(12.dp)
-    Row(
-        modifier = modifier
-            .height(46.dp)
-            .background(
-                if (selected) RudiColors.Brick.copy(alpha = 0.12f) else RudiColors.Surface,
-                shape,
+    val notes = buildList {
+        if (!level.playable) add(stringResource(R.string.level_detail_preview_body))
+        if (approximated) add(stringResource(R.string.level_detail_approximation_body))
+        if (rankProgress.completed) add(stringResource(R.string.level_detail_completed_body))
+    }
+    if (notes.isEmpty()) return
+    Spacer(modifier = Modifier.height(14.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        notes.forEach { note ->
+            Text(
+                text = note,
+                style = MaterialTheme.typography.bodySmall,
+                color = RudiColors.Muted,
             )
-            .border(1.dp, if (selected) RudiColors.Brick else RudiColors.Line, shape)
-            .clickable(onClick = onClick)
-            .semantics { role = Role.RadioButton }
-            .padding(horizontal = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = null,
-            modifier = Modifier.size(30.dp),
-            colors = RadioButtonDefaults.colors(
-                selectedColor = RudiColors.BrickLit,
-                unselectedColor = RudiColors.RowNumber,
-            ),
-        )
-        Text(
-            text = rank.displayName,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.labelLarge,
-            color = RudiColors.Text,
-            maxLines = 1,
-        )
-        Text(
-            text = trailing,
-            fontFamily = JetBrainsMono,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 11.sp,
-            color = if (rank == RankChoice.Custom) RudiColors.Muted else STAR_COLOR,
-            maxLines = 1,
-        )
+        }
     }
 }
 
-private fun rankStars(progress: LevelProgress, rank: RankChoice): String {
-    val stars = progress.stars(checkNotNull(rank.rank))
-    return "★".repeat(stars) + "☆".repeat(MAX_RANK_STARS - stars)
-}
-
-private enum class RankChoice(
-    val displayName: String,
-    val rank: PracticeRank?,
-) {
-    Practice("Practice", PracticeRank.Practice),
-    Groove("Groove", PracticeRank.Groove),
-    Stage("Stage", PracticeRank.Stage),
-    Custom("Custom", null),
-}
-
-private val STAR_COLOR = androidx.compose.ui.graphics.Color(0xFFE0A94A)
-private const val MAX_RANK_STARS = 3
-private const val CUSTOM_BPM_MIN = 40
-private const val CUSTOM_BPM_MAX = 250
-private const val CUSTOM_BPM_STEP = 5
+private val STAR_COLOR = Color(0xFFE0A94A)

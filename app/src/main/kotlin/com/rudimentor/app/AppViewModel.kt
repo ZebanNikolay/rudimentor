@@ -10,7 +10,9 @@ import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.SettingsRepository
 import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.data.levels.LevelProgressRepository
+import com.rudimentor.app.data.levels.LevelsUiState
 import com.rudimentor.app.data.levels.PracticeRank
+import com.rudimentor.app.data.levels.RankProgress
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -29,7 +31,16 @@ class AppViewModel(
     val learningProgress: StateFlow<LearningProgress> = progressRepository.progress.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = LearningProgress.placeholder(),
+        // No demo progress: an empty course is the honest starting state, and the map
+        // opens its first level from it.
+        initialValue = LearningProgress(),
+    )
+
+    /** The map and the difficulty the learner left the levels screen on. */
+    val levelsUi: StateFlow<LevelsUiState> = progressRepository.uiState.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = LevelsUiState(),
     )
 
     fun setBpm(bpm: Int) = update { copy(bpm = Bpm.clamp(bpm)) }
@@ -80,9 +91,9 @@ class AppViewModel(
     }
 
     /**
-     * Stores the outcome of one practice attempt. Only improvements are kept: a worse
-     * run never takes stars or a personal best away, and a level once completed stays
-     * completed.
+     * Stores the outcome of one practice attempt at one rank. Only improvements are kept:
+     * a worse run never takes stars or a personal best away, and a rank once passed stays
+     * passed. Other ranks of the same level are untouched (decision 111).
      */
     fun recordAttempt(
         levelId: String,
@@ -93,19 +104,27 @@ class AppViewModel(
         passed: Boolean,
     ) {
         viewModelScope.launch {
-            val current = learningProgress.value.forLevel(levelId)
-            val bestStars = maxOf(current.stars(rank), if (passed) stars else 0)
+            val current = learningProgress.value.forLevel(levelId, rank)
             progressRepository.saveLevel(
                 levelId = levelId,
-                progress = current.copy(
+                rank = rank,
+                progress = RankProgress(
                     completed = current.completed || passed,
-                    rankStars = current.rankStars + (rank to bestStars),
+                    stars = maxOf(current.clampedStars, if (passed) stars else 0),
                     bestBpm = maxOf(current.bestBpm ?: 0, if (passed) bpm else 0)
                         .takeIf { it > 0 } ?: current.bestBpm,
                     bestScore = maxOf(current.bestScore ?: 0, score),
                 ),
             )
         }
+    }
+
+    fun selectFamily(familyId: String) {
+        viewModelScope.launch { progressRepository.selectFamily(familyId) }
+    }
+
+    fun selectRank(rank: PracticeRank) {
+        viewModelScope.launch { progressRepository.selectRank(rank) }
     }
 
     private fun AppSettings.setRowCountInternal(count: Int): AppSettings {
