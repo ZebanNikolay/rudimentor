@@ -263,6 +263,46 @@ class LevelCatalogTest {
     }
 
     @Test
+    fun `a tempo ramp repeats its pass within one attempt`() {
+        val level = catalog(
+            lessons = listOf(
+                lesson("f.RM-01").copy(
+                    type = LevelType.TempoRamp,
+                    rankTargets = listOf(
+                        RankTarget(
+                            rank = PracticeRank.Practice,
+                            bpm = 80,
+                            hitsPerBeat = 1,
+                            tempoRampPlan = TempoRampPlan(
+                                mode = "step",
+                                direction = "up",
+                                phases = listOf(TempoRampPhase(bpm = 80, beatCount = 32)),
+                                repeatCount = 3,
+                            ),
+                        ),
+                        RankTarget(rank = PracticeRank.Groove, bpm = 90, hitsPerBeat = 2),
+                        RankTarget(rank = PracticeRank.Stage, bpm = 90, hitsPerBeat = 4),
+                    ),
+                ),
+            ),
+            nodes = listOf(node("f.RM-01")),
+        ).levels.single()
+
+        assertEquals(3, level.target(PracticeRank.Practice).attemptRepeats)
+        assertEquals(1, level.target(PracticeRank.Stage).attemptRepeats)
+    }
+
+    @Test
+    fun `an annotation without a reason is rejected`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            catalog(
+                lessons = listOf(lesson("f.ST-01").copy(intentionalRollback = " ")),
+                nodes = listOf(node("f.ST-01")),
+            )
+        }
+    }
+
+    @Test
     fun `practice grid keeps the hand order of the pattern`() {
         val level = catalog(
             lessons = listOf(lesson("f.ST-01", hands = "RLRRLRLL")),

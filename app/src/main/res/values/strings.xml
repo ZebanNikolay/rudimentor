@@ -36,7 +36,7 @@
     <string name="level_detail_approximation_body">The engine plays the entry tempo and density of this level: the authored plan changes them mid-attempt and is not followed yet.</string>
     <string name="level_detail_completed_body">Passed at this difficulty. Play it again to raise your best score.</string>
     <string name="level_detail_execution">%1$d beats · %2$d hits per beat</string>
-    <string name="level_detail_execution_timed">%1$d s · %2$d hits per beat</string>
+    <string name="level_detail_execution_timed">≥ %1$d min · %2$d hits per beat</string>
 
     <!-- Metronome screen chrome -->
     <string name="metronome_title">METRONOME</string>

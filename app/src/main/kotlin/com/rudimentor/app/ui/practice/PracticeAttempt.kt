@@ -24,7 +24,8 @@ data class PracticeNote(
 /**
  * Builds the note list of one attempt.
  *
- * The pattern repeats until `beatCount * hitsPerBeat` notes are laid out, and the
+ * The pattern repeats until `beatCount * attemptRepeats * hitsPerBeat` notes are laid out
+ * (a tempo ramp plays its pass several times per attempt), and the
  * count-in beats sit before note 0, so `timeMs` is already the time on the shared
  * clock the audio engine reports.
  */
@@ -35,7 +36,7 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
     val beatMs = 60_000f / bpm
     val noteMs = beatMs / target.hitsPerBeat
     val countInMs = PracticeScoring.COUNT_IN_BEATS * beatMs
-    val total = level.beatCount * target.hitsPerBeat
+    val total = level.beatCount * target.attemptRepeats * target.hitsPerBeat
     return List(total) { index ->
         val step = steps[index % steps.size]
         PracticeNote(

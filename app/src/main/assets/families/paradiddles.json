@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "family": {
     "id": "paradiddles",
     "name": "Paradiddles",
@@ -594,7 +594,8 @@
                 "bpm": 80,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "groove": {
@@ -623,7 +624,8 @@
                 "bpm": 80,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "stage": {
@@ -652,7 +654,8 @@
                 "bpm": 136,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         }
       }
@@ -3052,7 +3055,8 @@
                 "bpm": 95,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "groove": {
@@ -3081,7 +3085,8 @@
                 "bpm": 95,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "stage": {
@@ -3110,7 +3115,8 @@
                 "bpm": 148,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 3
           }
         }
       }
@@ -3199,7 +3205,8 @@
                 "bpm": 110,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "groove": {
@@ -3228,7 +3235,8 @@
                 "bpm": 110,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "stage": {
@@ -3257,7 +3265,8 @@
                 "bpm": 160,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 3
           }
         }
       }
@@ -3443,6 +3452,9 @@
     {
       "id": "paradiddles.WK-04",
       "type": "steady",
+      "intentionalRollback": {
+        "reason": "The weak-hand line is a set of separate drills, not one ladder, so its tempos do not stack."
+      },
       "modifiers": [
         "weak"
       ],
@@ -3833,6 +3845,7 @@
     {
       "id": "paradiddles.SS-02",
       "type": "subdivision_switch",
+      "midCycleSwitch": true,
       "modifiers": [],
       "pattern": {
         "mode": "repeat",
@@ -3926,6 +3939,7 @@
     {
       "id": "paradiddles.SS-03",
       "type": "subdivision_switch",
+      "midCycleSwitch": true,
       "modifiers": [],
       "pattern": {
         "mode": "repeat",
@@ -4243,6 +4257,9 @@
     {
       "id": "paradiddles.TR-02",
       "type": "transition",
+      "intentionalRollback": {
+        "reason": "Uneven phase lengths cost more than raw speed, so the transition line steps back from TR-01."
+      },
       "modifiers": [],
       "transitionPlan": {
         "repeatCount": 4,
@@ -4844,6 +4861,9 @@
     {
       "id": "paradiddles.SS-04",
       "type": "subdivision_switch",
+      "intentionalRollback": {
+        "reason": "Triplet switching restarts the switch line at a slower tempo: the 2-3-2 block is new ground even though SS-03 already ran faster."
+      },
       "modifiers": [],
       "pattern": {
         "mode": "repeat",

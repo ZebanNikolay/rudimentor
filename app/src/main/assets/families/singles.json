@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "family": {
     "id": "singles",
     "name": "Single Strokes",
@@ -228,7 +228,8 @@
                 "bpm": 130,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "groove": {
@@ -257,7 +258,8 @@
                 "bpm": 130,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "stage": {
@@ -286,7 +288,8 @@
                 "bpm": 130,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         }
       }
@@ -345,7 +348,8 @@
                 "bpm": 160,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 3
           }
         },
         "groove": {
@@ -374,7 +378,8 @@
                 "bpm": 160,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 3
           }
         },
         "stage": {
@@ -403,7 +408,8 @@
                 "bpm": 160,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 3
           }
         }
       }
@@ -588,7 +594,8 @@
                 "bpm": 100,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "groove": {
@@ -617,7 +624,8 @@
                 "bpm": 100,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "stage": {
@@ -646,7 +654,8 @@
                 "bpm": 100,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         }
       }
@@ -1772,6 +1781,9 @@
       },
       "rankTargets": {
         "practice": {
+          "densityException": {
+            "reason": "The doubled block is the whole point of the first switch lesson; the pulse itself stays at the tempo already reached."
+          },
           "bpm": 60,
           "subdivisionPlan": {
             "blockBeats": 8,
@@ -1783,6 +1795,9 @@
           }
         },
         "groove": {
+          "densityException": {
+            "reason": "The doubled block is the whole point of the first switch lesson; the pulse itself stays at the tempo already reached."
+          },
           "bpm": 60,
           "subdivisionPlan": {
             "blockBeats": 8,
@@ -2284,6 +2299,9 @@
       },
       "rankTargets": {
         "practice": {
+          "densityException": {
+            "reason": "Triplets enter at a halved pulse, so each hand keeps its load even though notes per minute rise."
+          },
           "bpm": 60,
           "hitsPerBeat": 3
         },
@@ -2300,6 +2318,9 @@
     {
       "id": "singles.SS-04",
       "type": "subdivision_switch",
+      "intentionalRollback": {
+        "reason": "Triplet switching restarts the switch line at a slower tempo: the 2-3-2 block is new ground even though SS-03 already ran faster."
+      },
       "modifiers": [],
       "pattern": {
         "mode": "repeat",

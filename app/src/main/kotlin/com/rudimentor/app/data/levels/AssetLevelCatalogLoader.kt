@@ -67,6 +67,8 @@ class AssetLevelCatalogLoader(
         var technique = Technique(strokeStyle = "", dynamics = "", accents = "")
         var execution = Execution()
         var rankTargets = emptyList<RankTarget>()
+        var midCycleSwitch = false
+        var intentionalRollback: String? = null
         reader.beginObject()
         while (reader.hasNext()) {
             when (reader.nextName()) {
@@ -79,6 +81,8 @@ class AssetLevelCatalogLoader(
                 "technique" -> technique = readTechnique(reader)
                 "execution" -> execution = readExecution(reader)
                 "rankTargets" -> rankTargets = readRankTargets(reader)
+                "midCycleSwitch" -> midCycleSwitch = reader.nextBoolean()
+                "intentionalRollback" -> intentionalRollback = readAnnotationReason(reader)
                 else -> reader.skipValue()
             }
         }
@@ -93,7 +97,23 @@ class AssetLevelCatalogLoader(
             technique = technique,
             execution = execution,
             rankTargets = rankTargets,
+            midCycleSwitch = midCycleSwitch,
+            intentionalRollback = intentionalRollback,
         )
+    }
+
+    /** An annotation is an object with a mandatory human-readable `reason`. */
+    private fun readAnnotationReason(reader: JsonReader): String {
+        var reason = ""
+        reader.beginObject()
+        while (reader.hasNext()) {
+            when (reader.nextName()) {
+                "reason" -> reason = reader.nextString()
+                else -> reader.skipValue()
+            }
+        }
+        reader.endObject()
+        return reason
     }
 
     private fun readPattern(reader: JsonReader): Pattern {
@@ -226,6 +246,7 @@ class AssetLevelCatalogLoader(
             var hitsPerBeat: Int? = null
             var subdivisionPlan: SubdivisionPlan? = null
             var tempoRampPlan: TempoRampPlan? = null
+            var densityException: String? = null
             reader.beginObject()
             while (reader.hasNext()) {
                 when (reader.nextName()) {
@@ -233,6 +254,7 @@ class AssetLevelCatalogLoader(
                     "hitsPerBeat" -> hitsPerBeat = reader.nextInt()
                     "subdivisionPlan" -> subdivisionPlan = readSubdivisionPlan(reader)
                     "tempoRampPlan" -> tempoRampPlan = readTempoRampPlan(reader)
+                    "densityException" -> densityException = readAnnotationReason(reader)
                     else -> reader.skipValue()
                 }
             }
@@ -244,6 +266,7 @@ class AssetLevelCatalogLoader(
                     hitsPerBeat = hitsPerBeat ?: subdivisionPlan?.hitsPerBeat?.firstOrNull() ?: 0,
                     subdivisionPlan = subdivisionPlan,
                     tempoRampPlan = tempoRampPlan,
+                    densityException = densityException,
                 ),
             )
         }
@@ -269,17 +292,24 @@ class AssetLevelCatalogLoader(
         var mode = ""
         var direction = ""
         var phases = emptyList<TempoRampPhase>()
+        var repeatCount = 1
         reader.beginObject()
         while (reader.hasNext()) {
             when (reader.nextName()) {
                 "mode" -> mode = reader.nextString()
                 "direction" -> direction = reader.nextString()
                 "phases" -> phases = reader.readArray(::readTempoRampPhase)
+                "repeatCount" -> repeatCount = reader.nextInt()
                 else -> reader.skipValue()
             }
         }
         reader.endObject()
-        return TempoRampPlan(mode = mode, direction = direction, phases = phases)
+        return TempoRampPlan(
+            mode = mode,
+            direction = direction,
+            phases = phases,
+            repeatCount = repeatCount,
+        )
     }
 
     private fun readTempoRampPhase(reader: JsonReader): TempoRampPhase {

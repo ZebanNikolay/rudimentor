@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "family": {
     "id": "doubles",
     "name": "Double Strokes",
@@ -434,7 +434,8 @@
                 "bpm": 95,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "groove": {
@@ -463,7 +464,8 @@
                 "bpm": 95,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "stage": {
@@ -492,7 +494,8 @@
                 "bpm": 155,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 3
           }
         }
       }
@@ -561,7 +564,8 @@
                 "bpm": 110,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "groove": {
@@ -590,7 +594,8 @@
                 "bpm": 110,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "stage": {
@@ -619,7 +624,8 @@
                 "bpm": 170,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 3
           }
         }
       }
@@ -688,7 +694,8 @@
                 "bpm": 80,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "groove": {
@@ -717,7 +724,8 @@
                 "bpm": 80,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 2
           }
         },
         "stage": {
@@ -746,7 +754,8 @@
                 "bpm": 140,
                 "beatCount": 8
               }
-            ]
+            ],
+            "repeatCount": 3
           }
         }
       }
@@ -2515,6 +2524,7 @@
     {
       "id": "doubles.SS-03",
       "type": "subdivision_switch",
+      "midCycleSwitch": true,
       "modifiers": [],
       "pattern": {
         "mode": "repeat",
@@ -2981,6 +2991,9 @@
     {
       "id": "doubles.SS-04",
       "type": "subdivision_switch",
+      "intentionalRollback": {
+        "reason": "Triplet switching restarts the switch line at a slower tempo: the 2-3-2 block is new ground even though SS-03 already ran faster."
+      },
       "modifiers": [],
       "pattern": {
         "mode": "repeat",

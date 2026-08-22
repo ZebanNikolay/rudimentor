@@ -153,10 +153,15 @@ data class TempoRampPhase(
     val beatCount: Int,
 )
 
+/**
+ * A tempo ramp. One pass through [phases] is usually shorter than a meaningful attempt, so
+ * the course pipeline computes [repeatCount]: how many passes one official attempt plays.
+ */
 data class TempoRampPlan(
     val mode: String,
     val direction: String,
     val phases: List<TempoRampPhase>,
+    val repeatCount: Int = 1,
 )
 
 /**
@@ -171,9 +176,14 @@ data class RankTarget(
     val hitsPerBeat: Int,
     val subdivisionPlan: SubdivisionPlan? = null,
     val tempoRampPlan: TempoRampPlan? = null,
+    /** Why this target is allowed to break the density growth rule, when it is. */
+    val densityException: String? = null,
 ) {
     /** True when the engine plays an approximation of the authored plan. */
     val approximated: Boolean get() = subdivisionPlan != null || tempoRampPlan != null
+
+    /** How many times the authored execution repeats within one attempt at this rank. */
+    val attemptRepeats: Int get() = tempoRampPlan?.repeatCount ?: 1
 }
 
 data class TransitionPhase(
@@ -210,6 +220,10 @@ data class Lesson(
     val technique: Technique,
     val execution: Execution,
     val rankTargets: List<RankTarget>,
+    /** True when the lesson switches subdivision inside an unfinished sticking cycle. */
+    val midCycleSwitch: Boolean = false,
+    /** Why this lesson deliberately steps back from the tempo reached before it. */
+    val intentionalRollback: String? = null,
 )
 
 /** One map node exactly as the package defines it. */
@@ -301,7 +315,7 @@ data class LevelCatalog(
     fun level(id: String): Level? = levelsById[id]
 
     companion object {
-        const val CURRENT_SCHEMA_VERSION = 7
+        const val CURRENT_SCHEMA_VERSION = 8
         const val MIN_BPM = 40
         const val MAX_BPM = 250
 
@@ -383,6 +397,9 @@ data class LevelCatalog(
             require(lesson.transitionPlan == null || lesson.transitionPlan.repeatCount > 0) {
                 "${lesson.id}: a transition plan must repeat at least once"
             }
+            require(lesson.intentionalRollback?.isNotBlank() != false) {
+                "${lesson.id}: an intentional rollback must carry a reason"
+            }
             validateExecution(lesson)
             validateRankTargets(lesson)
         }
@@ -429,6 +446,12 @@ data class LevelCatalog(
                     require(plan.phases.all { it.bpm in MIN_BPM..MAX_BPM && it.beatCount > 0 }) {
                         "${lesson.id}: every tempo ramp phase needs a valid tempo and beats"
                     }
+                    require(plan.repeatCount > 0) {
+                        "${lesson.id}: a tempo ramp must repeat at least once per attempt"
+                    }
+                }
+                require(target.densityException?.isNotBlank() != false) {
+                    "${lesson.id}: a density exception must carry a reason"
                 }
             }
         }

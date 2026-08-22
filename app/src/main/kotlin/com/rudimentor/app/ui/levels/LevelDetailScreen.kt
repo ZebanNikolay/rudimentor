@@ -30,9 +30,11 @@ import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelProgress
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankProgress
+import com.rudimentor.app.data.levels.RankTarget
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
+import kotlin.math.ceil
 
 /**
  * One level at the difficulty chosen on the map (decision 111). The screen no longer picks a
@@ -152,7 +154,7 @@ fun LevelDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = executionLabel(level, target.hitsPerBeat),
+                        text = executionLabel(level, target),
                         style = RudiTextStyles.Timer,
                         color = RudiColors.Text,
                     )
@@ -173,14 +175,23 @@ fun LevelDetailScreen(
     }
 }
 
-/** Beats or seconds — a lesson is measured one way or the other, never both. */
+/**
+ * Beats or minutes — a lesson is measured one way or the other, never both. A timed lesson
+ * states a floor (`≥ 5 min`) because the attempt ends on the next full sticking cycle, and a
+ * ramp lesson counts every pass of its plan.
+ */
 @Composable
-private fun executionLabel(level: Level, hitsPerBeat: Int): String {
+private fun executionLabel(level: Level, target: RankTarget): String {
     val durationSeconds = level.durationSeconds
     return if (durationSeconds != null) {
-        stringResource(R.string.level_detail_execution_timed, durationSeconds, hitsPerBeat)
+        val minutes = ceil(durationSeconds / 60f).toInt()
+        stringResource(R.string.level_detail_execution_timed, minutes, target.hitsPerBeat)
     } else {
-        stringResource(R.string.level_detail_execution, level.beatCount, hitsPerBeat)
+        stringResource(
+            R.string.level_detail_execution,
+            level.beatCount * target.attemptRepeats,
+            target.hitsPerBeat,
+        )
     }
 }
 
