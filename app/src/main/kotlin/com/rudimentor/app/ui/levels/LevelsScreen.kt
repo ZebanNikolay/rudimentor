@@ -44,11 +44,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -407,7 +404,8 @@ private fun LevelMap(
     ) {
         // The map needs room for its widest branch; when that fits on screen it simply fills
         // the width, so there is nothing to pan sideways and no horizontal scroll is attached.
-        val neededWidth = MAP_COLUMN_WIDTH * (2 * catalog.lastLateral) + MAP_CENTER_WIDTH
+        val neededWidth = MAP_CENTER_WIDTH +
+            if (catalog.hasSideLevels) MAP_COLUMN_WIDTH * 2 else 0.dp
         val panning = neededWidth > maxWidth
         val mapWidth = if (panning) neededWidth else maxWidth
 
@@ -446,16 +444,17 @@ private fun LevelMap(
                         val rowPx = MAP_ROW_HEIGHT.toPx()
                         val columnPx = MAP_COLUMN_WIDTH.toPx()
                         val bottomPx = MAP_VERTICAL_PADDING.toPx()
-                        val kinkPx = MAP_KINK.toPx()
 
                         fun centerOf(level: Level) = Offset(
-                            x = size.width / 2f + level.column.direction * columnPx * level.lateral,
+                            x = size.width / 2f + level.column.direction * columnPx,
                             y = size.height - bottomPx - level.row * rowPx - nodePx / 2f,
                         )
 
                         // Connectors follow decision 33: they start and end on the node edge,
-                        // never crossing the pad, and an offset step is a short diagonal kink
-                        // at mid height between two verticals. An LED dot marks both ends.
+                        // never crossing the pad, and an LED dot marks both ends. The layout
+                        // only ever links neighbouring cells (decision 120), so a connector is
+                        // either vertical along a column or a straight line into the cell beside
+                        // it — on the same row or one row further along.
                         catalog.levels.forEach { level ->
                             val toCenter = centerOf(level)
                             level.prerequisiteIds.mapNotNull(catalog::level).forEach { prerequisite ->
@@ -463,60 +462,46 @@ private fun LevelMap(
                                 val passed = states[prerequisite.id] == LevelNodeState.Completed
                                 val color = if (passed) RudiColors.Brick else RudiColors.Line
                                 val stroke = (if (passed) 2.dp else 1.5.dp).toPx()
-                                val sideways = kotlin.math.abs(fromCenter.y - toCenter.y) < 1f
+                                val dx = toCenter.x - fromCenter.x
+                                val dy = toCenter.y - fromCenter.y
+                                // An optional level branches off sideways; everything else runs
+                                // straight up or down its own column.
+                                val branching = kotlin.math.abs(dx) > 1f
 
                                 val start: Offset
                                 val end: Offset
-                                if (sideways) {
-                                    // A branch on the same row leaves through the side edge.
-                                    val dir = if (toCenter.x >= fromCenter.x) 1f else -1f
-                                    start = Offset(fromCenter.x + dir * halfNode, fromCenter.y)
-                                    end = Offset(toCenter.x - dir * halfNode, toCenter.y)
-                                    drawLine(
-                                        color = color,
-                                        start = start,
-                                        end = end,
-                                        strokeWidth = stroke,
-                                        cap = StrokeCap.Round,
-                                        pathEffect = if (passed) {
-                                            null
-                                        } else {
-                                            PathEffect.dashPathEffect(
-                                                floatArrayOf(2.dp.toPx(), 3.dp.toPx()),
-                                            )
-                                        },
+                                if (branching) {
+                                    val length = kotlin.math.hypot(dx, dy)
+                                    val unitX = dx / length
+                                    val unitY = dy / length
+                                    // Leave through the edge of the node box, not its inscribed
+                                    // circle, so a diagonal starts outside the pad as well.
+                                    val reach = halfNode /
+                                        maxOf(kotlin.math.abs(unitX), kotlin.math.abs(unitY))
+                                    start = Offset(
+                                        fromCenter.x + unitX * reach,
+                                        fromCenter.y + unitY * reach,
                                     )
+                                    end = Offset(toCenter.x - unitX * reach, toCenter.y - unitY * reach)
                                 } else {
-                                    val dirY = if (toCenter.y < fromCenter.y) -1f else 1f
+                                    val dirY = if (dy < 0f) -1f else 1f
                                     start = Offset(fromCenter.x, fromCenter.y + dirY * halfNode)
                                     end = Offset(toCenter.x, toCenter.y - dirY * halfNode)
-                                    if (kotlin.math.abs(start.x - end.x) < 1f) {
-                                        drawLine(
-                                            color = color,
-                                            start = start,
-                                            end = end,
-                                            strokeWidth = stroke,
-                                            cap = StrokeCap.Round,
-                                        )
-                                    } else {
-                                        val mid = (start.y + end.y) / 2f
-                                        val path = Path().apply {
-                                            moveTo(start.x, start.y)
-                                            lineTo(start.x, mid - dirY * kinkPx)
-                                            lineTo(end.x, mid + dirY * kinkPx)
-                                            lineTo(end.x, end.y)
-                                        }
-                                        drawPath(
-                                            path = path,
-                                            color = color,
-                                            style = Stroke(
-                                                width = stroke,
-                                                cap = StrokeCap.Round,
-                                                join = StrokeJoin.Round,
-                                            ),
-                                        )
-                                    }
                                 }
+                                drawLine(
+                                    color = color,
+                                    start = start,
+                                    end = end,
+                                    strokeWidth = stroke,
+                                    cap = StrokeCap.Round,
+                                    pathEffect = if (passed || !branching) {
+                                        null
+                                    } else {
+                                        PathEffect.dashPathEffect(
+                                            floatArrayOf(2.dp.toPx(), 3.dp.toPx()),
+                                        )
+                                    },
+                                )
 
                                 val dotColor = if (passed) RudiColors.BrickLit else RudiColors.PadLed
                                 val dotRadius = (if (passed) 2.6.dp else 2.dp).toPx()
@@ -528,7 +513,7 @@ private fun LevelMap(
             ) {
                 catalog.levels.forEach { level ->
                     val x = mapWidth / 2 +
-                        MAP_COLUMN_WIDTH * (level.column.direction * level.lateral) -
+                        MAP_COLUMN_WIDTH * level.column.direction -
                         NODE_SIZE / 2
                     val y = mapHeight - MAP_VERTICAL_PADDING - MAP_ROW_HEIGHT * level.row - NODE_SIZE
                     LevelMapNode(
@@ -621,6 +606,3 @@ private val MAP_ROW_HEIGHT = 78.dp
 private val MAP_COLUMN_WIDTH = 74.dp
 private val MAP_CENTER_WIDTH = 200.dp
 private val MAP_VERTICAL_PADDING = 30.dp
-
-/** Half height of the diagonal kink that offsets one column from the next (decision 33). */
-private val MAP_KINK = 6.dp

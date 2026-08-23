@@ -22,38 +22,76 @@ class LevelCatalogTest {
 
         assertEquals(listOf(0, 1, 2), catalog.levels.map(Level::row))
         assertEquals(2, catalog.lastRow)
-        assertEquals(0, catalog.lastLateral)
+        assertFalse(catalog.hasSideLevels)
         assertEquals(listOf("f.ST-01", "f.ST-02", "f.ST-03"), catalog.centerPath.map(Level::id))
     }
 
     @Test
-    fun `side lessons share the row of their branch and take lateral slots per side`() {
+    fun `optional lessons take the row they branch from and step forward when it is taken`() {
         val catalog = catalog(
             lessons = listOf(
                 lesson("f.ST-01"),
                 lesson("f.ST-02"),
+                lesson("f.ST-03"),
                 lesson("f.WK-01"),
                 lesson("f.WK-02"),
                 lesson("f.EN-01"),
+                lesson("f.EN-02"),
             ),
             nodes = listOf(
                 node("f.ST-01"),
                 node("f.ST-02", prerequisites = setOf("f.ST-01")),
+                node("f.ST-03", prerequisites = setOf("f.ST-02")),
                 node("f.WK-01", column = LevelColumn.Left, prerequisites = setOf("f.ST-02")),
                 node("f.WK-02", column = LevelColumn.Left, prerequisites = setOf("f.WK-01")),
                 node("f.EN-01", column = LevelColumn.Right, prerequisites = setOf("f.ST-02")),
+                node("f.EN-02", column = LevelColumn.Right, prerequisites = setOf("f.ST-02")),
             ),
         )
 
         assertEquals(1, catalog.level("f.WK-01")!!.row)
-        assertEquals(1, catalog.level("f.WK-02")!!.row)
+        // A chain of optional lessons walks its own column forward, row by row.
+        assertEquals(2, catalog.level("f.WK-02")!!.row)
         assertEquals(1, catalog.level("f.EN-01")!!.row)
-        assertEquals(1, catalog.level("f.WK-01")!!.lateral)
-        assertEquals(2, catalog.level("f.WK-02")!!.lateral)
-        // Sides are counted apart: the first branch on the right also starts at slot one.
-        assertEquals(1, catalog.level("f.EN-01")!!.lateral)
-        assertEquals(0, catalog.level("f.ST-02")!!.lateral)
-        assertEquals(2, catalog.lastLateral)
+        // Two branches off the same row on the same side: the second steps one row forward.
+        assertEquals(2, catalog.level("f.EN-02")!!.row)
+        assertTrue(catalog.hasSideLevels)
+    }
+
+    @Test
+    fun `an optional lesson enters the map through exactly one level`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            catalog(
+                lessons = listOf(lesson("f.ST-01"), lesson("f.ST-02"), lesson("f.EN-01")),
+                nodes = listOf(
+                    node("f.ST-01"),
+                    node("f.ST-02", prerequisites = setOf("f.ST-01")),
+                    node(
+                        "f.EN-01",
+                        column = LevelColumn.Right,
+                        prerequisites = setOf("f.ST-01", "f.ST-02"),
+                    ),
+                ),
+            )
+        }
+
+        assertTrue(error.message!!.contains("exactly one entry"))
+    }
+
+    @Test
+    fun `an optional chain stays on its own side`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            catalog(
+                lessons = listOf(lesson("f.ST-01"), lesson("f.WK-01"), lesson("f.EN-01")),
+                nodes = listOf(
+                    node("f.ST-01"),
+                    node("f.WK-01", column = LevelColumn.Left, prerequisites = setOf("f.ST-01")),
+                    node("f.EN-01", column = LevelColumn.Right, prerequisites = setOf("f.WK-01")),
+                ),
+            )
+        }
+
+        assertTrue(error.message!!.contains("its own column"))
     }
 
     @Test

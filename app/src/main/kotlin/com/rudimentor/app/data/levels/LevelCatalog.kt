@@ -249,15 +249,15 @@ data class MapNode(
  * A lesson merged with its map node and its place on the map.
  *
  * The package stores no coordinates: the map is a graph. [row] follows the chain of
- * required center levels, and a side level sits on the row of the level it branches from.
- * Several side levels can branch from the same row on the same side, so [lateral] is the
- * slot away from the center chain: 0 for a center level, 1 for the first side level, and so on.
+ * required center levels, and the map is exactly three columns wide — the required path plus
+ * one optional column per side. An optional level sits on the row of the level it branches
+ * from; when that cell is taken it steps one row forward along its own column, so a branch
+ * never widens the map (decision 120).
  */
 data class Level(
     val lesson: Lesson,
     val node: MapNode,
     val row: Int,
-    val lateral: Int,
 ) {
     val id: String get() = lesson.id
     val column: LevelColumn get() = node.column
@@ -328,8 +328,8 @@ data class LevelCatalog(
 
     val lastRow: Int = levels.maxOfOrNull(Level::row) ?: 0
 
-    /** How far the map spreads sideways, per side. Drives the width of the drawn map. */
-    val lastLateral: Int = levels.maxOfOrNull(Level::lateral) ?: 0
+    /** Whether the map has optional columns at all. Drives the width of the drawn map. */
+    val hasSideLevels: Boolean = levels.any { it.column != LevelColumn.Center }
 
     /** The chain of required levels, bottom to top. */
     val centerPath: List<Level> = levels.filter { it.column == LevelColumn.Center }.sortedBy(Level::row)
@@ -369,19 +369,17 @@ data class LevelCatalog(
                 require(node.prerequisites.all(lessonsById::containsKey)) {
                     "${node.lessonId}: prerequisites must point at lessons of this family"
                 }
-                require(node.column == LevelColumn.Center || node.prerequisites.isNotEmpty()) {
-                    "${node.lessonId}: a side lesson must branch off the required path"
+                require(node.column == LevelColumn.Center || node.prerequisites.size == 1) {
+                    "${node.lessonId}: an optional lesson has exactly one entry"
                 }
             }
 
-            val layout = deriveLayout(nodes)
+            val rows = deriveLayout(nodes)
             val levels = nodes.map { node ->
-                val place = layout.getValue(node.lessonId)
                 Level(
                     lesson = lessonsById.getValue(node.lessonId),
                     node = node,
-                    row = place.row,
-                    lateral = place.lateral,
+                    row = rows.getValue(node.lessonId),
                 )
             }
             return LevelCatalog(schemaVersion = schemaVersion, family = family, levels = levels)
@@ -481,15 +479,18 @@ data class LevelCatalog(
             }
         }
 
-        private data class Place(val row: Int, val lateral: Int)
+        /** How far an optional level may step away from its anchor before the map gives up. */
+        private const val MAX_ROW_SHIFT = 4
 
         /**
          * Rows follow the required path: the center levels form one chain, and its index in
-         * that chain is the row. A side level shares the row of the level it branches from,
-         * which keeps a branch next to the level that unlocked it — several side levels of
-         * the same row and side then take lateral slots 1, 2, 3 in graph order.
+         * that chain is the row. An optional level enters through its single prerequisite and
+         * lands in its own column — on the anchor's row when that comes from the required
+         * path, one row further when it continues an optional chain. If the cell is taken the
+         * level steps forward along the same column (then backward, when forward is full), so
+         * the map stays three columns wide (decision 120).
          */
-        private fun deriveLayout(nodes: List<MapNode>): Map<String, Place> {
+        private fun deriveLayout(nodes: List<MapNode>): Map<String, Int> {
             val byId = nodes.associateBy(MapNode::lessonId)
             val depths = deriveDepths(byId)
 
@@ -502,32 +503,45 @@ data class LevelCatalog(
                 }
             }
             val rows = centers.withIndex().associate { (index, node) -> node.lessonId to index }.toMutableMap()
+            val taken = centers.indices.map { it to LevelColumn.Center }.toMutableSet()
 
-            // A side level takes the row of its deepest prerequisite, following chains of
-            // side levels back to the center chain they hang from.
-            fun rowOf(id: String): Int {
-                rows[id]?.let { return it }
-                val node = byId.getValue(id)
-                val row = node.prerequisites.maxOf { rowOf(it) }
-                rows[id] = row
-                return row
-            }
-            nodes.forEach { rowOf(it.lessonId) }
-
-            val sides = nodes.filter { it.column != LevelColumn.Center }
-            val laterals = sides
-                .groupBy { rows.getValue(it.lessonId) to it.column }
-                .flatMap { (_, group) ->
-                    group.sortedWith(compareBy({ depths.getValue(it.lessonId) }, MapNode::lessonId))
-                        .mapIndexed { index, node -> node.lessonId to index + 1 }
+            nodes.filter { it.column != LevelColumn.Center }
+                .sortedWith(compareBy({ depths.getValue(it.lessonId) }, MapNode::lessonId))
+                .forEach { node ->
+                    val anchorId = node.prerequisites.single()
+                    val anchor = byId.getValue(anchorId)
+                    require(anchor.column == LevelColumn.Center || anchor.column == node.column) {
+                        "${node.lessonId}: an optional chain must stay in its own column"
+                    }
+                    val base = rows.getValue(anchorId) +
+                        if (anchor.column == LevelColumn.Center) 0 else 1
+                    val row = requireNotNull(freeRow(base, node.column, taken)) {
+                        "${node.lessonId}: the optional column has no free cell near row $base"
+                    }
+                    rows[node.lessonId] = row
+                    taken += row to node.column
                 }
-                .toMap()
 
-            return nodes.associate { node ->
-                node.lessonId to Place(
-                    row = rows.getValue(node.lessonId),
-                    lateral = laterals[node.lessonId] ?: 0,
-                )
+            return rows
+        }
+
+        /**
+         * The cell an optional level takes: its anchor's row when free, otherwise the nearest
+         * row along the same column — forward first — whose whole vertical path is free, so the
+         * connector to it never runs through another level.
+         */
+        private fun freeRow(
+            base: Int,
+            column: LevelColumn,
+            taken: Set<Pair<Int, LevelColumn>>,
+        ): Int? {
+            val candidates = sequenceOf(base) +
+                (1..MAX_ROW_SHIFT).asSequence().flatMap { sequenceOf(base + it, base - it) }
+            return candidates.firstOrNull { candidate ->
+                candidate >= 0 &&
+                    (minOf(base, candidate)..maxOf(base, candidate)).none { row ->
+                        (row != base || candidate == base) && (row to column) in taken
+                    }
             }
         }
 
