@@ -16,6 +16,10 @@
     <string name="levels_rank_confirm">Choose</string>
     <string name="levels_rank_cancel">Cancel</string>
     <string name="levels_rank_art_cd">%1$s difficulty illustration</string>
+    <string name="levels_tab_sticking_none">—</string>
+    <string name="levels_tab_hand_right">right</string>
+    <string name="levels_tab_hand_left">left</string>
+    <string name="levels_tab_description">%1$s, %2$s</string>
     <string name="levels_tab_locked">Pass level %1$s of %2$s at %3$s to open this map.</string>
     <string name="levels_tab_planned">This map is still being written. It arrives in a later release.</string>
     <string name="levels_next_level">Next level</string>

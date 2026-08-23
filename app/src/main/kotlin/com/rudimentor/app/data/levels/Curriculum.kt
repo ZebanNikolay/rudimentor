@@ -38,6 +38,12 @@ data class CurriculumTab(
     val title: String,
     val status: FamilyStatus,
     val unlock: UnlockRule,
+    /**
+     * One bar of the family figure in R/L letters, e.g. `RLRL` for Singles (decision 120).
+     * The tab spells it under the title instead of carrying an icon, so it belongs to the
+     * family, not to the composable. `null` on a map that mixes figures, such as Mix.
+     */
+    val sticking: String? = null,
 ) {
     val available: Boolean get() = status == FamilyStatus.Available
 }
@@ -51,7 +57,9 @@ data class Curriculum(
     fun tab(id: String): CurriculumTab? = tabs.firstOrNull { it.id == id }
 
     companion object {
-        const val CURRENT_SCHEMA_VERSION = 1
+        const val CURRENT_SCHEMA_VERSION = 2
+
+        private val STICKING = Regex("[RL]{2,8}")
 
         /** Mirrors `tools/generate_curriculum.py`, so bad data fails at load instead of in the UI. */
         fun build(
@@ -75,6 +83,10 @@ data class Curriculum(
             tabs.forEach { tab ->
                 require(tab.available == (tab.unlock != UnlockRule.Never)) {
                     "${tab.id}: a planned tab must never unlock, an available tab must be reachable"
+                }
+                val sticking = tab.sticking
+                require(sticking == null || STICKING.matches(sticking)) {
+                    "${tab.id}: a sticking pattern is 2 to 8 R/L letters, got '$sticking'"
                 }
             }
             return Curriculum(schemaVersion = schemaVersion, id = id, name = name, tabs = tabs)

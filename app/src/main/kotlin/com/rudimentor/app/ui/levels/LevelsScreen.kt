@@ -53,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
@@ -70,6 +69,8 @@ import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.Pad
 import com.rudimentor.app.ui.component.PadShape
 import com.rudimentor.app.ui.component.PadTone
+import com.rudimentor.app.ui.component.RudiTab
+import com.rudimentor.app.ui.component.RudiTabRow
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
@@ -199,9 +200,10 @@ private fun NextLevelBar(
 }
 
 /**
- * One row, one slot per family: the tab set is fixed and small, so the tabs split the width
- * evenly instead of sizing to their titles — a short title used to collapse into a chip
- * next to the long ones.
+ * One row, one slot per family, on the Material tab row wrapped as [RudiTabRow]: the tab set is
+ * fixed and small, so the tabs split the width evenly instead of sizing to their titles — a short
+ * title used to collapse into a chip next to the long ones (decision 117). Under each title the
+ * tab spells the family figure in R/L letters instead of carrying an icon (decision 120).
  */
 @Composable
 private fun FamilyTabs(
@@ -210,45 +212,35 @@ private fun FamilyTabs(
     activeTabId: String,
     onSelectTab: (String) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+    val noSticking = stringResource(R.string.levels_tab_sticking_none)
+    RudiTabRow(selectedTabIndex = tabs.indexOfFirst { it.id == activeTabId }.coerceAtLeast(0)) {
         tabs.forEach { tab ->
             val enabled = tab.available && progress.isTabUnlocked(tab)
             val selected = tab.id == activeTabId
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .background(
-                        color = if (selected) RudiColors.SurfaceAlt else Color.Transparent,
-                        shape = RoundedCornerShape(10.dp),
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = if (selected) RudiColors.Brick else RudiColors.Line,
-                        shape = RoundedCornerShape(10.dp),
-                    )
-                    .clickable(enabled = enabled || !selected) { onSelectTab(tab.id) }
-                    .padding(horizontal = 4.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = tab.title.uppercase(),
-                    style = RudiTextStyles.RowNumber,
-                    color = when {
-                        selected -> RudiColors.Text
-                        enabled -> RudiColors.Muted
-                        else -> RudiColors.RowNumber
-                    },
-                    letterSpacing = 0.8.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
-            }
+            RudiTab(
+                title = tab.title.uppercase(),
+                subtitle = tab.sticking ?: noSticking,
+                selected = selected,
+                // A locked tab still opens its own gate explanation, so it stays clickable.
+                enabled = enabled || !selected,
+                description = tabDescription(tab),
+                onClick = { onSelectTab(tab.id) },
+            )
         }
     }
+}
+
+/**
+ * Sticking is spoken as words, not as letters: "Singles, right left right left" instead of
+ * "Singles, R L R L". A family without a figure of its own is announced by name only.
+ */
+@Composable
+private fun tabDescription(tab: CurriculumTab): String {
+    val sticking = tab.sticking ?: return tab.title
+    val right = stringResource(R.string.levels_tab_hand_right)
+    val left = stringResource(R.string.levels_tab_hand_left)
+    val hands = sticking.map { hand -> if (hand == 'R') right else left }.joinToString(" ")
+    return stringResource(R.string.levels_tab_description, tab.title, hands)
 }
 
 /** A tab the learner has not earned yet, or one whose map is still being written. */

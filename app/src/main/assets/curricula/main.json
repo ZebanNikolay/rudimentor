@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "curriculum": {
     "id": "main",
     "name": "RudiMentor"
@@ -8,6 +8,7 @@
     {
       "id": "singles",
       "title": "Singles",
+      "sticking": "RLRL",
       "status": "available",
       "unlock": {
         "type": "always"
@@ -16,6 +17,7 @@
     {
       "id": "doubles",
       "title": "Doubles",
+      "sticking": "RRLL",
       "status": "available",
       "unlock": {
         "type": "lesson_rank",
@@ -26,6 +28,7 @@
     {
       "id": "paradiddles",
       "title": "Paradiddles",
+      "sticking": "RLRR",
       "status": "available",
       "unlock": {
         "type": "lesson_rank",

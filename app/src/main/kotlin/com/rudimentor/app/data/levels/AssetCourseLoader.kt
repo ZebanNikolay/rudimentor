@@ -56,6 +56,7 @@ class AssetCourseLoader(
     private fun readTab(reader: JsonReader): CurriculumTab {
         var id = ""
         var title = ""
+        var sticking: String? = null
         var status = FamilyStatus.Planned
         var unlock: UnlockRule = UnlockRule.Never
         reader.beginObject()
@@ -63,13 +64,20 @@ class AssetCourseLoader(
             when (reader.nextName()) {
                 "id" -> id = reader.nextString()
                 "title" -> title = reader.nextString()
+                "sticking" -> sticking = reader.nextString()
                 "status" -> status = FamilyStatus.fromStorageName(reader.nextString())
                 "unlock" -> unlock = readUnlock(reader)
                 else -> reader.skipValue()
             }
         }
         reader.endObject()
-        return CurriculumTab(id = id, title = title, status = status, unlock = unlock)
+        return CurriculumTab(
+            id = id,
+            title = title,
+            status = status,
+            unlock = unlock,
+            sticking = sticking,
+        )
     }
 
     private fun readUnlock(reader: JsonReader): UnlockRule {

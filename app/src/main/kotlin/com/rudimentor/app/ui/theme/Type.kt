@@ -116,6 +116,28 @@ object RudiTextStyles {
         fontFeatureSettings = TABULAR,
     )
 
+    /** Family tab title on the levels map (decision 120). */
+    val TabTitle = TextStyle(
+        fontFamily = JetBrainsMono,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+        lineHeight = 13.sp,
+        letterSpacing = 0.8f.sp,
+    )
+
+    /**
+     * The R/L sticking line under a family tab title (decision 120). Monospaced on purpose:
+     * R and L share one advance width, so the letters of all four tabs stand in the same
+     * columns and only their order differs.
+     */
+    val TabSticking = TextStyle(
+        fontFamily = JetBrainsMono,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+        lineHeight = 12.sp,
+        letterSpacing = 1.6f.sp,
+    )
+
     val RowNumberActive = TextStyle(
         fontFamily = JetBrainsMono,
         fontWeight = FontWeight.Bold,
