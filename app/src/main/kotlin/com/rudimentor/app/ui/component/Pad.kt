@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,6 +66,8 @@ fun Pad(
     pressed: Boolean = false,
     letterFraction: Float = RudiDimens.PAD_LETTER_FRACTION,
     variant: PadVariant = PadVariant.Dark,
+    stars: Int = 0,
+    crown: Boolean = false,
 ) {
     val light = variant == PadVariant.Light
     val round = shape == PadShape.Round
@@ -119,16 +122,35 @@ fun Pad(
                 lit = lit,
                 strokeWidth = RudiDimens.PadBorder.toPx(),
                 light = light,
+                // The crown stands exactly where the LED dot would be, so the dot goes.
+                showLed = !crown,
             )
+            if (stars > 0 || crown) {
+                drawPadMarkers(
+                    topLeft = Offset.Zero,
+                    side = this.size.minDimension,
+                    round = round,
+                    stars = stars,
+                    crown = crown,
+                )
+            }
         }
 
         if (showLetter && !letter.isNullOrEmpty()) {
+            // Stars take the bottom band of the face, so the letter shrinks a little and
+            // moves up to keep the pad balanced instead of colliding with them.
+            val crowded = stars > 0
             Text(
                 text = letter,
+                modifier = if (crowded) {
+                    Modifier.offset(y = -size * 0.12f)
+                } else {
+                    Modifier
+                },
                 color = palette.letter,
                 fontFamily = JetBrainsMono,
                 fontWeight = FontWeight.Bold,
-                fontSize = maxOf(9f, size.value * letterFraction).sp,
+                fontSize = maxOf(9f, size.value * letterFraction * if (crowded) 0.85f else 1f).sp,
                 // A muted pad is told apart by the dashed outline and the dimmed letter
                 // only — the letter is never struck through.
             )

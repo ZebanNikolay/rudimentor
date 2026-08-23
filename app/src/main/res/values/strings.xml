@@ -33,15 +33,15 @@
     <string name="level_detail_rank_meta">%1$s · ×%2$d</string>
     <string name="level_detail_bpm">BPM</string>
     <string name="level_detail_best_bpm">best BPM</string>
-    <string name="level_detail_best_score">best score</string>
-    <string name="level_detail_score_value">%1$d pts</string>
+    <string name="level_detail_best_accuracy">best accuracy</string>
+    <string name="level_detail_accuracy_value">%1$d%%</string>
     <string name="level_detail_no_score">—</string>
     <string name="level_detail_mode">Mode</string>
     <string name="level_detail_start">Start level practice</string>
     <string name="level_detail_preview_only">Practice for this level is not available yet</string>
     <string name="level_detail_preview_body">Preview only for now: this level needs phase switching, a timed attempt or two hands on one position. Practice unlocks when the engine supports it.</string>
     <string name="level_detail_approximation_body">The engine plays the entry tempo and density of this level: the authored plan changes them mid-attempt and is not followed yet.</string>
-    <string name="level_detail_completed_body">Passed at this difficulty. Play it again to raise your best score.</string>
+    <string name="level_detail_completed_body">Passed at this difficulty. Play it again to raise your best accuracy.</string>
     <string name="level_detail_execution">%1$d beats · %2$d hits per beat</string>
     <string name="level_detail_execution_timed">≥ %1$d min · %2$d hits per beat</string>
 
@@ -83,7 +83,8 @@
     <string name="practice_level_clear">LEVEL CLEAR</string>
     <string name="practice_bpm">%1$d BPM</string>
     <string name="practice_hits_per_beat">×%1$d</string>
-    <string name="practice_combo">×%1$d · %2$d%%</string>
+    <string name="practice_hud_accuracy">%1$d%%</string>
+    <string name="practice_hud_errors">%1$d miss · %2$d extra</string>
     <string name="practice_mic_cd">Microphone level</string>
     <string name="practice_permission_body">Practice needs the microphone to hear your strokes.</string>
     <string name="practice_permission_button">Allow microphone</string>
@@ -92,9 +93,13 @@
     <!-- Practice result screen -->
     <string name="practice_result_passed">LEVEL PASSED</string>
     <string name="practice_result_failed">NOT YET</string>
-    <string name="practice_result_score">Score</string>
     <string name="practice_result_accuracy">Accuracy</string>
-    <string name="practice_result_max_combo">Max combo</string>
+    <string name="practice_result_perfect">Perfect</string>
+    <string name="practice_result_good">Good</string>
+    <string name="practice_result_ok">Ok</string>
+    <string name="practice_result_full_combo">FULL COMBO</string>
+    <string name="practice_result_all_perfect">ALL PERFECT</string>
+    <string name="practice_result_count_value">%1$d/%2$d</string>
     <string name="practice_result_misses">Misses</string>
     <string name="practice_result_extras">Extra hits</string>
     <string name="practice_result_mean">Mean offset</string>

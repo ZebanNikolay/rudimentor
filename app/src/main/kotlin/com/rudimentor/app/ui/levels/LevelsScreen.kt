@@ -64,6 +64,7 @@ import com.rudimentor.app.data.levels.LevelColumn
 import com.rudimentor.app.data.levels.LevelCourse
 import com.rudimentor.app.data.levels.LevelNodeState
 import com.rudimentor.app.data.levels.PracticeRank
+import com.rudimentor.app.data.levels.RankProgress
 import com.rudimentor.app.data.levels.UnlockRule
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.Pad
@@ -576,6 +577,7 @@ private fun LevelMap(
                         level = level,
                         state = states.getValue(level.id),
                         rank = rank,
+                        rankProgress = progress.forLevel(level.id, rank),
                         onClick = { onOpenLevel(level.id) },
                         modifier = Modifier.absoluteOffset(x = x, y = y),
                     )
@@ -590,6 +592,7 @@ private fun LevelMapNode(
     level: Level,
     state: LevelNodeState,
     rank: PracticeRank,
+    rankProgress: RankProgress,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -645,6 +648,10 @@ private fun LevelMapNode(
             letter = level.displayCode,
             pressed = false,
             letterFraction = 0.2f,
+            // The result of the level lives on the node itself: stars in the bottom band,
+            // and the ALL PERFECT crown where the LED dot sits (decision 126).
+            stars = rankProgress.clampedStars,
+            crown = rankProgress.allPerfect,
         )
     }
 }

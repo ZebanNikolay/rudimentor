@@ -30,6 +30,12 @@ object RudiColors {
     val PadLetterAccent = Color(0xFFD9A8A8)
     val PadLetterMute = Color(0xFF4A4A48)
     val PadLetterLit = Color(0xFFFFFFFF)
+
+    // Level result marks on a node: three stars plus the ALL PERFECT crown. Both are
+    // white — gold fought with the brick face of a lit pad (decision 126).
+    val PadStar = Color(0xFFFFFFFF)
+    val PadStarOff = Color(0x42FFFFFF)
+    val PadCrown = Color(0xFFFFFFFF)
     val PadMuteBorder = Color(0xFF2F2F2F)
     val PadAccentLit = Color(0xFFE8332F)
     val PadMuteLitBorder = Color(0xFF585856)
@@ -76,6 +82,12 @@ object RudiDimens {
     /** LED inset for the round pad, pushed inwards along the diagonal. */
     const val PAD_LED_TOP_ROUND = 0.18f
     const val PAD_LED_RIGHT_ROUND = 0.19f
+
+    // Result marks drawn inside a node, as fractions of its side.
+    const val PAD_STAR_FRACTION = 0.19f
+    const val PAD_STAR_GAP_FRACTION = 0.025f
+    const val PAD_STAR_BOTTOM_FRACTION = 0.09f
+    const val PAD_CROWN_FRACTION = 0.23f
 
     /** Hand letter size inside a pad (brandbook: 0.42 * S). */
     const val PAD_LETTER_FRACTION = 0.42f

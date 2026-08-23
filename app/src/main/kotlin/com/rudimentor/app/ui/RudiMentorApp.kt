@@ -47,6 +47,7 @@ import com.rudimentor.app.ui.practice.PracticeScreen
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.util.DevLog
+import kotlin.math.roundToInt
 
 /** Top-level destinations. Added to as new sections come online. */
 private enum class Screen {
@@ -195,8 +196,9 @@ fun RudiMentorApp(
                                 DevLog.log(
                                     "practice",
                                     "finished ${level.id} rank=${practiceRank.name} " +
-                                        "bpm=$practiceBpm score=${result.score} " +
-                                        "passed=${result.passed}",
+                                        "bpm=$practiceBpm " +
+                                        "accuracy=${(result.accuracy * 100f).roundToInt()}% " +
+                                        "stars=${result.stars} passed=${result.passed}",
                                 )
                                 onAttemptFinished(level, practiceRank, practiceBpm, result)
                                 practiceResult = result

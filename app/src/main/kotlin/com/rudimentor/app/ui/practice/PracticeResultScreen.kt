@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -42,6 +41,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.RudiChip
 import com.rudimentor.app.ui.component.SideSettingsDrawer
+import com.rudimentor.app.ui.component.padStarPath
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
@@ -153,28 +153,50 @@ private fun ResultBody(
         }
 
         Spacer(modifier = Modifier.height(14.dp))
-        StarRow(stars = result.stars)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            StarRow(stars = result.stars)
+            // The badges name the two top states the stars already encode, so the screen
+            // says out loud what the node will carry (decision 126).
+            if (result.fullCombo) {
+                Spacer(modifier = Modifier.width(12.dp))
+                RudiChip(text = stringResource(R.string.practice_result_full_combo), accent = true)
+            }
+            if (result.allPerfect) {
+                Spacer(modifier = Modifier.width(6.dp))
+                RudiChip(text = stringResource(R.string.practice_result_all_perfect), accent = true)
+            }
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Metric(
-                label = stringResource(R.string.practice_result_score),
-                value = result.score.toString(),
-                strong = true,
-            )
+            // Accuracy is the result now: one number, and under it what it was spent on
+            // (decision 125). Score and max combo are gone.
             Metric(
                 label = stringResource(R.string.practice_result_accuracy),
                 value = stringResource(
                     R.string.practice_result_accuracy_value,
                     (result.accuracy * 100f).roundToInt(),
                 ),
+                strong = true,
             )
             Metric(
-                label = stringResource(R.string.practice_result_max_combo),
-                value = "×${result.maxCombo}",
+                label = stringResource(R.string.practice_result_perfect),
+                value = stringResource(
+                    R.string.practice_result_count_value,
+                    result.perfect,
+                    result.noteCount,
+                ),
+            )
+            Metric(
+                label = stringResource(R.string.practice_result_good),
+                value = result.good.toString(),
+            )
+            Metric(
+                label = stringResource(R.string.practice_result_ok),
+                value = result.ok.toString(),
             )
             Metric(
                 label = stringResource(R.string.practice_result_misses),
@@ -265,7 +287,7 @@ private fun StarRow(stars: Int) {
         repeat(3) { index ->
             val filled = index < stars
             Canvas(modifier = Modifier.size(24.dp)) {
-                val path = starPath(size.minDimension)
+                val path = padStarPath(size.minDimension)
                 if (filled) {
                     drawPath(path = path, color = RudiColors.BrickLit)
                 } else {
@@ -278,23 +300,6 @@ private fun StarRow(stars: Int) {
             }
         }
     }
-}
-
-/** Five-pointed star inscribed in a square of [side]. */
-private fun starPath(side: Float): Path {
-    val path = Path()
-    val center = side / 2f
-    val outer = side / 2f
-    val inner = outer * 0.42f
-    for (point in 0 until 10) {
-        val radius = if (point % 2 == 0) outer else inner
-        val angle = (-90f + point * 36f) * (Math.PI / 180f).toFloat()
-        val x = center + radius * kotlin.math.cos(angle)
-        val y = center + radius * kotlin.math.sin(angle)
-        if (point == 0) path.moveTo(x, y) else path.lineTo(x, y)
-    }
-    path.close()
-    return path
 }
 
 /**

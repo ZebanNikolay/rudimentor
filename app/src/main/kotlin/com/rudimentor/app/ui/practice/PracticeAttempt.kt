@@ -5,7 +5,6 @@ import com.rudimentor.app.data.levels.PatternHand
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankTarget
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /**
  * The rank target of a level, or null when the package does not define that rank.
@@ -53,6 +52,24 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
 }
 
 /**
+ * Windows of an attempt, derived from the shortest gap between its notes.
+ *
+ * Called once next to [buildPracticeNotes]: the clamp exists for the fast ranks, where
+ * the interval between notes drops under twice the OK window (Stage at 180 BPM leaves
+ * 83 ms), and is a no-op at ordinary tempos.
+ */
+fun hitWindowsFor(notes: List<PracticeNote>): HitWindows {
+    if (notes.size < 2) return HitWindows.Default
+    var minInterval = Float.MAX_VALUE
+    for (index in 1 until notes.size) {
+        val gap = notes[index].timeMs - notes[index - 1].timeMs
+        if (gap > 0f && gap < minInterval) minInterval = gap
+    }
+    if (minInterval == Float.MAX_VALUE) return HitWindows.Default
+    return HitWindows.forMinInterval(minInterval)
+}
+
+/**
  * The judged state of one attempt.
  *
  * Pure logic on purpose: the audio session only feeds it a position and stick
@@ -61,14 +78,13 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
  */
 class PracticeAttempt(
     val notes: List<PracticeNote>,
+    val windows: HitWindows = HitWindows.Default,
 ) {
     private val judgementsInternal = arrayOfNulls<NoteJudgement>(notes.size)
 
     /** Hits that matched no note, kept as positions in milliseconds. */
     private val extrasInternal = ArrayList<Float>()
 
-    var score: Int = 0
-        private set
     var combo: Int = 0
         private set
     var maxCombo: Int = 0
@@ -93,16 +109,18 @@ class PracticeAttempt(
     private var weightedSum = 0f
     private var judgedCount = 0
 
+    /** Position of the last stroke that was not dropped by the debounce filter. */
+    private var lastHitMs = Float.NEGATIVE_INFINITY
+
     /**
-     * Accuracy over the notes judged so far, cheap enough to read every frame. The
-     * final number on the result screen is computed over the whole level instead.
+     * Accuracy over what has happened so far, cheap enough to read every frame. Same
+     * formula as the final number, just over the notes judged up to now: an extra hit
+     * grows the denominator instead of subtracting a penalty (decision 125).
      */
     val liveAccuracy: Float
-        get() = if (judgedCount == 0) {
-            0f
-        } else {
-            val penalty = extrasInternal.size * PracticeScoring.weight(HitWindow.Ok)
-            ((weightedSum - penalty) / judgedCount).coerceIn(0f, 1f)
+        get() {
+            val denominator = judgedCount + extrasInternal.size
+            return if (denominator == 0) 0f else (weightedSum / denominator).coerceIn(0f, 1f)
         }
 
     val judgements: List<NoteJudgement?> get() = judgementsInternal.asList()
@@ -117,15 +135,18 @@ class PracticeAttempt(
      * the hit belongs to no note and is counted as an extra.
      */
     fun registerHit(positionMs: Float): NoteJudgement? {
+        // A second trigger inside the debounce window is the onset detector ringing,
+        // not a stroke: dropped before it can be judged or charged as an extra.
+        if (positionMs - lastHitMs < PracticeScoring.DEBOUNCE_MS) return null
+        lastHitMs = positionMs
         val note = nearestOpenNote(positionMs)
         if (note == null) {
             extrasInternal.add(positionMs)
-            score = (score - PracticeScoring.extraHitPenalty()).coerceAtLeast(0)
             combo = 0
             return null
         }
         val offset = positionMs - note.timeMs
-        val window = PracticeScoring.window(offset)
+        val window = windows.window(offset)
         val judgement = NoteJudgement(offsetMs = offset, window = window)
         judgementsInternal[note.index] = judgement
         offsetsInternal.add(offset)
@@ -135,9 +156,6 @@ class PracticeAttempt(
         lastJudgedAtMs = positionMs
         combo += 1
         maxCombo = maxOf(maxCombo, combo)
-        score += (
-            PracticeScoring.points(window) * PracticeScoring.comboMultiplier(combo)
-            ).roundToInt()
         advanceCursor()
         return judgement
     }
@@ -157,9 +175,7 @@ class PracticeAttempt(
             // The grace window keeps a hit that arrives in the next poll buffer from
             // losing its note to expiry: without it a late but valid stroke landed as
             // an extra while the note itself dropped as a miss (decision 101).
-            if (positionMs <= note.timeMs + PracticeScoring.OK_MS +
-                PracticeScoring.EXPIRE_GRACE_MS
-            ) {
+            if (positionMs <= note.timeMs + windows.okMs + PracticeScoring.EXPIRE_GRACE_MS) {
                 break
             }
             if (judgementsInternal[index] == null) {
@@ -193,13 +209,13 @@ class PracticeAttempt(
             weighted += PracticeScoring.weight(judgement?.window ?: HitWindow.Miss)
         }
         val noteCount = notes.size
-        // Extra hits cost accuracy as well, otherwise flamming through a level would
-        // still read as clean.
-        val penalty = extrasInternal.size * PracticeScoring.weight(HitWindow.Ok)
-        val accuracy = if (noteCount == 0) {
+        // Extra hits grow the denominator instead of subtracting points, so flamming
+        // through a level cannot read as clean and the number stays inside 0…100 %.
+        val denominator = noteCount + extrasInternal.size
+        val accuracy = if (denominator == 0) {
             0f
         } else {
-            ((weighted - penalty) / noteCount).coerceIn(0f, 1f)
+            (weighted / denominator).coerceIn(0f, 1f)
         }
         return PracticeResult(
             noteCount = noteCount,
@@ -208,7 +224,6 @@ class PracticeAttempt(
             ok = ok,
             misses = noteCount - perfect - good - ok,
             extras = extrasInternal.size,
-            score = score,
             maxCombo = maxCombo,
             accuracy = accuracy,
             meanOffsetMs = if (offsetsInternal.isEmpty()) {
@@ -232,12 +247,12 @@ class PracticeAttempt(
      */
     private fun nearestOpenNote(positionMs: Float): PracticeNote? {
         var best: PracticeNote? = null
-        var bestDistance = PracticeScoring.OK_MS
+        var bestDistance = windows.okMs
         var index = cursor
         while (index < notes.size) {
             val note = notes[index]
             val distance = abs(positionMs - note.timeMs)
-            if (note.timeMs - positionMs > PracticeScoring.OK_MS) break
+            if (note.timeMs - positionMs > windows.okMs) break
             if (judgementsInternal[index] == null && distance <= bestDistance) {
                 best = note
                 bestDistance = distance

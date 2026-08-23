@@ -38,8 +38,12 @@ import kotlin.math.roundToInt
 
 /**
  * The top bar of the practice screen: back, what is being played, and the live
- * score. Progress is the 2 dp line under it -- there is no progress bar or beat
+ * accuracy. Progress is the 2 dp line under it -- there is no progress bar or beat
  * counter (decision 88).
+ *
+ * Accuracy is the only number of the run now (decision 125), so the big figure is the
+ * percentage and the line under it counts the two things that spend it: misses and
+ * extra hits.
  *
  * Once the finish pad is lit the rubric says so instead of naming the level: the run
  * is over and the result screen is one moment away (decision 116).
@@ -48,9 +52,9 @@ import kotlin.math.roundToInt
 fun PracticeHud(
     rubric: String,
     chips: List<String>,
-    score: Int,
-    combo: Int,
     accuracy: Float,
+    misses: Int,
+    extras: Int,
     finished: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -74,16 +78,15 @@ fun PracticeHud(
         Spacer(modifier = Modifier.weight(1f))
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = score.toString(),
+                text = stringResource(
+                    R.string.practice_hud_accuracy,
+                    (accuracy * 100f).roundToInt(),
+                ),
                 style = RudiTextStyles.BpmValue.copy(fontSize = 26.sp, lineHeight = 28.sp),
                 color = RudiColors.Text,
             )
             Text(
-                text = stringResource(
-                    R.string.practice_combo,
-                    combo,
-                    (accuracy * 100f).roundToInt(),
-                ),
+                text = stringResource(R.string.practice_hud_errors, misses, extras),
                 style = RudiTextStyles.RowNumber,
                 color = RudiColors.Muted,
             )
@@ -114,6 +117,7 @@ fun PracticeProgressLine(progress: Float, modifier: Modifier = Modifier) {
 fun PracticeDeviationScale(
     offsets: List<Float>,
     modifier: Modifier = Modifier,
+    windows: HitWindows = HitWindows.Default,
 ) {
     val recent = if (offsets.size <= PracticeScoring.RECENT_OFFSETS) {
         offsets
@@ -146,9 +150,11 @@ fun PracticeDeviationScale(
                     end = Offset(size.width, midY),
                     strokeWidth = 1f,
                 )
-                window(PracticeScoring.OK_MS, RudiColors.WindowOk.copy(alpha = 0.16f))
-                window(PracticeScoring.GOOD_MS, RudiColors.WindowGood.copy(alpha = 0.18f))
-                window(PracticeScoring.PERFECT_MS, RudiColors.Brick.copy(alpha = 0.34f))
+                // The bars show the windows of *this* level, which a dense level narrows;
+                // the axis stays at the fixed -120..+120 ms so plots stay comparable.
+                window(windows.okMs, RudiColors.WindowOk.copy(alpha = 0.16f))
+                window(windows.goodMs, RudiColors.WindowGood.copy(alpha = 0.18f))
+                window(windows.perfectMs, RudiColors.Brick.copy(alpha = 0.34f))
                 drawLine(
                     color = RudiColors.TrackHitLine,
                     start = Offset(half, midY - ZERO_HEIGHT.toPx() / 2f),
@@ -165,7 +171,7 @@ fun PracticeDeviationScale(
                         PracticeScoring.SCALE_MS,
                     ) * pxPerMs
                     drawRoundRect(
-                        color = windowColor(PracticeScoring.window(offset)).copy(alpha = fade),
+                        color = windowColor(windows.window(offset)).copy(alpha = fade),
                         topLeft = Offset(x - tickWidth / 2f, midY - tickHeight / 2f),
                         size = Size(tickWidth, tickHeight),
                         cornerRadius = CornerRadius(tickWidth / 2f),

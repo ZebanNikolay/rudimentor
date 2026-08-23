@@ -13,6 +13,9 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * The pad face as plain drawing instructions.
@@ -95,6 +98,7 @@ internal fun DrawScope.drawPadFace(
     strokeWidth: Float,
     light: Boolean = false,
     alpha: Float = 1f,
+    showLed: Boolean = true,
 ) {
     if (side <= 0f) return
     val muted = tone == PadTone.Mute
@@ -161,17 +165,111 @@ internal fun DrawScope.drawPadFace(
             ),
         )
 
-        val ledRadius = side * RudiDimens.PAD_LED_FRACTION / 2f
-        val topFraction = if (round) RudiDimens.PAD_LED_TOP_ROUND else RudiDimens.PAD_LED_TOP_SQUARE
-        val rightFraction =
-            if (round) RudiDimens.PAD_LED_RIGHT_ROUND else RudiDimens.PAD_LED_RIGHT_SQUARE
-        drawCircle(
-            color = palette.led.copy(alpha = palette.led.alpha * total),
-            radius = maxOf(ledRadius, 1.5f),
-            center = Offset(
-                x = side - rightFraction * side - ledRadius,
-                y = topFraction * side + ledRadius,
-            ),
-        )
+        if (showLed) {
+            val center = ledCenter(side, round)
+            drawCircle(
+                color = palette.led.copy(alpha = palette.led.alpha * total),
+                radius = maxOf(side * RudiDimens.PAD_LED_FRACTION / 2f, 1.5f),
+                center = center,
+            )
+        }
     }
+}
+
+/** Centre of the LED dot -- also the anchor the crown is centred on. */
+private fun ledCenter(side: Float, round: Boolean): Offset {
+    val ledRadius = side * RudiDimens.PAD_LED_FRACTION / 2f
+    val topFraction = if (round) RudiDimens.PAD_LED_TOP_ROUND else RudiDimens.PAD_LED_TOP_SQUARE
+    val rightFraction =
+        if (round) RudiDimens.PAD_LED_RIGHT_ROUND else RudiDimens.PAD_LED_RIGHT_SQUARE
+    return Offset(
+        x = side - rightFraction * side - ledRadius,
+        y = topFraction * side + ledRadius,
+    )
+}
+
+/**
+ * The result of a level drawn on its own node: three stars in the bottom band of the
+ * pad and, for ALL PERFECT, a crown standing where the LED dot would be.
+ *
+ * Four states in all (decision 126): one, two, three stars -- the third one *is* FULL
+ * COMBO -- plus the crown on top of three stars. Both marks are white; gold fought
+ * with the brick face of a lit pad.
+ */
+internal fun DrawScope.drawPadMarkers(
+    topLeft: Offset,
+    side: Float,
+    round: Boolean,
+    stars: Int,
+    crown: Boolean,
+    alpha: Float = 1f,
+) {
+    if (side <= 0f) return
+    val total = alpha.coerceIn(0f, 1f)
+    val filled = stars.coerceIn(0, PAD_STAR_COUNT)
+
+    translate(left = topLeft.x, top = topLeft.y) {
+        if (filled > 0) {
+            val starSide = side * RudiDimens.PAD_STAR_FRACTION
+            val gap = side * RudiDimens.PAD_STAR_GAP_FRACTION
+            val rowWidth = starSide * PAD_STAR_COUNT + gap * (PAD_STAR_COUNT - 1)
+            val left = (side - rowWidth) / 2f
+            val top = side * (1f - RudiDimens.PAD_STAR_BOTTOM_FRACTION) - starSide
+            for (index in 0 until PAD_STAR_COUNT) {
+                val color = if (index < filled) RudiColors.PadStar else RudiColors.PadStarOff
+                translate(left = left + index * (starSide + gap), top = top) {
+                    drawPath(
+                        path = padStarPath(starSide),
+                        color = color.copy(alpha = color.alpha * total),
+                    )
+                }
+            }
+        }
+        if (crown) {
+            val crownSide = side * RudiDimens.PAD_CROWN_FRACTION
+            val center = ledCenter(side, round)
+            translate(left = center.x - crownSide / 2f, top = center.y - crownSide / 2f) {
+                drawPath(
+                    path = padCrownPath(crownSide),
+                    color = RudiColors.PadCrown.copy(alpha = RudiColors.PadCrown.alpha * total),
+                )
+            }
+        }
+    }
+}
+
+private const val PAD_STAR_COUNT = 3
+
+/** Five-pointed star inscribed in a square of [side]. Shared with the result screen. */
+internal fun padStarPath(side: Float): Path {
+    val path = Path()
+    val center = side / 2f
+    val outer = side / 2f
+    val inner = outer * 0.42f
+    for (point in 0 until 10) {
+        val radius = if (point % 2 == 0) outer else inner
+        val angle = (-90f + point * 36f) * (PI / 180f).toFloat()
+        val x = center + radius * cos(angle)
+        val y = center + radius * sin(angle)
+        if (point == 0) path.moveTo(x, y) else path.lineTo(x, y)
+    }
+    path.close()
+    return path
+}
+
+/** Three-peaked crown inscribed in a square of [side]. */
+internal fun padCrownPath(side: Float): Path {
+    val path = Path()
+    fun point(x: Float, y: Float) {
+        if (path.isEmpty) path.moveTo(x * side, y * side) else path.lineTo(x * side, y * side)
+    }
+    point(0.04f, 0.30f)
+    point(0.28f, 0.60f)
+    point(0.50f, 0.12f)
+    point(0.72f, 0.60f)
+    point(0.96f, 0.30f)
+    point(0.82f, 0.88f)
+    point(0.18f, 0.88f)
+    path.close()
+    return path
 }

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -92,7 +93,9 @@ class DataStoreLevelProgressRepository(
                         completed = preferences[Keys.completed(levelId, rank)] ?: false,
                         stars = preferences[Keys.stars(levelId, rank)] ?: 0,
                         bestBpm = preferences[Keys.bestBpm(levelId, rank)]?.takeUnless { it == NO_VALUE },
-                        bestScore = preferences[Keys.bestScore(levelId, rank)]?.takeUnless { it == NO_VALUE },
+                        bestAccuracy = preferences[Keys.bestAccuracy(levelId, rank)]
+                            ?.takeUnless { it < 0f },
+                        allPerfect = preferences[Keys.allPerfect(levelId, rank)] ?: false,
                     )
                 },
             )
@@ -110,7 +113,8 @@ class DataStoreLevelProgressRepository(
         this[Keys.completed(levelId, rank)] = progress.completed
         this[Keys.stars(levelId, rank)] = progress.clampedStars
         this[Keys.bestBpm(levelId, rank)] = progress.bestBpm ?: NO_VALUE
-        this[Keys.bestScore(levelId, rank)] = progress.bestScore ?: NO_VALUE
+        this[Keys.bestAccuracy(levelId, rank)] = progress.bestAccuracy ?: NO_ACCURACY
+        this[Keys.allPerfect(levelId, rank)] = progress.allPerfect
     }
 
     private object Keys {
@@ -127,11 +131,15 @@ class DataStoreLevelProgressRepository(
         fun bestBpm(levelId: String, rank: PracticeRank) =
             intPreferencesKey("level.$levelId.${rank.storageName}.best_bpm")
 
-        fun bestScore(levelId: String, rank: PracticeRank) =
-            intPreferencesKey("level.$levelId.${rank.storageName}.best_score")
+        fun bestAccuracy(levelId: String, rank: PracticeRank) =
+            floatPreferencesKey("level.$levelId.${rank.storageName}.best_accuracy")
+
+        fun allPerfect(levelId: String, rank: PracticeRank) =
+            booleanPreferencesKey("level.$levelId.${rank.storageName}.all_perfect")
     }
 
     companion object {
         private const val NO_VALUE = -1
+        private const val NO_ACCURACY = -1f
     }
 }

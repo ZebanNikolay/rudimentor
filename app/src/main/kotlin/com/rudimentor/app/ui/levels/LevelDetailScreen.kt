@@ -35,6 +35,7 @@ import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 /**
  * One level at the difficulty chosen on the map (decision 111). The screen no longer picks a
@@ -127,9 +128,14 @@ fun LevelDetailScreen(
                         modifier = Modifier.weight(1f),
                     )
                     MetricCard(
-                        label = stringResource(R.string.level_detail_best_score),
-                        value = rankProgress.bestScore
-                            ?.let { stringResource(R.string.level_detail_score_value, it) }
+                        label = stringResource(R.string.level_detail_best_accuracy),
+                        value = rankProgress.bestAccuracy
+                            ?.let {
+                                stringResource(
+                                    R.string.level_detail_accuracy_value,
+                                    (it * 100f).roundToInt(),
+                                )
+                            }
                             ?: stringResource(R.string.level_detail_no_score),
                         modifier = Modifier.weight(1f),
                     )

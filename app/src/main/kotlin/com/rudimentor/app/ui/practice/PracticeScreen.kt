@@ -92,7 +92,10 @@ fun PracticeScreen(
     // once here so the track, the click and the scoring all use the same number.
     val tempo = bpm.coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
     val notes = remember(level.id, rank, tempo) { buildPracticeNotes(level, rank, tempo) }
-    val attempt = remember(notes) { PracticeAttempt(notes) }
+    // Windows are a property of the note list, not of a hit: computed once, then used by
+    // the attempt, the expiry check and the deviation scale alike (decision 125).
+    val windows = remember(notes) { hitWindowsFor(notes) }
+    val attempt = remember(notes) { PracticeAttempt(notes, windows) }
     val beatMs = 60_000f / tempo
     val lastNoteMs = notes.lastOrNull()?.timeMs ?: 0f
     // The finish pad rides one beat behind the last note, so the last stroke is what
@@ -105,13 +108,13 @@ fun PracticeScreen(
     }
     // The attempt cannot end before the finish pad has arrived and held its glow.
     val endMs = maxOf(
-        lastNoteMs + PracticeScoring.OK_MS + TAIL_MS,
+        lastNoteMs + windows.okMs + TAIL_MS,
         finishMs + FINISH_HOLD_MS,
     )
 
     // Nothing before the first note counts: the count-in is played along with, not
     // judged (decision 87).
-    val firstJudgedMs = (notes.firstOrNull()?.timeMs ?: 0f) - PracticeScoring.OK_MS
+    val firstJudgedMs = (notes.firstOrNull()?.timeMs ?: 0f) - windows.okMs
 
     var running by remember(attempt) { mutableStateOf(false) }
     var positionMs by remember(attempt) { mutableFloatStateOf(0f) }
@@ -225,9 +228,9 @@ fun PracticeScreen(
                         practiceTarget(level, rank)?.hitsPerBeat ?: 1,
                     ),
                 ),
-                score = attempt.score,
-                combo = attempt.combo,
                 accuracy = attempt.liveAccuracy,
+                misses = attempt.misses,
+                extras = attempt.extras.size,
                 finished = finishMs > 0f && positionMs >= finishMs,
                 onBack = { leave() },
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
@@ -247,6 +250,7 @@ fun PracticeScreen(
             PracticeDeviationScale(
                 offsets = attempt.offsets,
                 modifier = Modifier.padding(horizontal = 18.dp),
+                windows = windows,
             )
             Row(
                 modifier = Modifier

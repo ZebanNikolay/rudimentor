@@ -18,18 +18,29 @@ class PracticeScoringTest {
     }
 
     @Test
-    fun `the combo multiplier grows slowly and stops at double`() {
-        assertEquals(1f, PracticeScoring.comboMultiplier(0), 0.001f)
-        assertEquals(1.2f, PracticeScoring.comboMultiplier(10), 0.001f)
-        assertEquals(2f, PracticeScoring.comboMultiplier(50), 0.001f)
-        assertEquals(2f, PracticeScoring.comboMultiplier(500), 0.001f)
+    fun `windows are clamped to half the shortest interval`() {
+        // Stage at 180 BPM with four hits per beat leaves 83 ms between notes.
+        val windows = HitWindows.forMinInterval(83f)
+        assertEquals(41.5f, windows.okMs, 0.001f)
+        assertEquals(41.5f, windows.goodMs, 0.001f)
+        assertEquals(PracticeScoring.PERFECT_MS, windows.perfectMs, 0.001f)
+        // A comfortable tempo is left alone.
+        assertEquals(HitWindows.Default, HitWindows.forMinInterval(500f))
     }
 
     @Test
-    fun `stars follow accuracy and the verdict is always milliseconds`() {
-        assertEquals(3, PracticeScoring.stars(0.96f))
-        assertEquals(2, PracticeScoring.stars(0.85f))
-        assertEquals(1, PracticeScoring.stars(0.4f))
+    fun `the third star needs a clean run, not only accuracy`() {
+        assertEquals(3, PracticeScoring.stars(0.97f, misses = 0, extras = 0))
+        // Same accuracy, one miss: the third star is FULL COMBO and cannot be bought.
+        assertEquals(2, PracticeScoring.stars(0.97f, misses = 1, extras = 0))
+        assertEquals(2, PracticeScoring.stars(0.97f, misses = 0, extras = 1))
+        assertEquals(2, PracticeScoring.stars(0.91f, misses = 0, extras = 0))
+        assertEquals(1, PracticeScoring.stars(0.82f, misses = 2, extras = 0))
+        assertEquals(0, PracticeScoring.stars(0.79f, misses = 3, extras = 0))
+    }
+
+    @Test
+    fun `the verdict is always milliseconds`() {
         assertEquals("+12 ms", PracticeScoring.verdictLabel(11.6f))
         assertEquals("-12 ms", PracticeScoring.verdictLabel(-11.6f))
         assertEquals("0 ms", PracticeScoring.verdictLabel(0f))
@@ -57,7 +68,22 @@ class PracticeScoringTest {
         assertEquals(8, attempt.maxCombo)
         assertEquals(1f, result.accuracy, 0.001f)
         assertEquals(3, result.stars)
+        assertTrue(result.fullCombo)
+        assertTrue(result.allPerfect)
         assertTrue(result.passed)
+    }
+
+    @Test
+    fun `a double trigger inside the debounce window is dropped, not charged`() {
+        val notes = notesEvery(count = 2, spacingMs = 1000f)
+        val attempt = PracticeAttempt(notes)
+        notes.forEach { note -> attempt.registerHit(note.timeMs) }
+        // The onset detector ringing right after a counted stroke: no extra, no miss.
+        attempt.registerHit(notes[1].timeMs + PracticeScoring.DEBOUNCE_MS - 1f)
+
+        val result = attempt.result()
+        assertEquals(0, result.extras)
+        assertEquals(1f, result.accuracy, 0.001f)
     }
 
     @Test
@@ -87,20 +113,21 @@ class PracticeScoringTest {
     }
 
     @Test
-    fun `a hit that belongs to no note is an extra and costs score and accuracy`() {
+    fun `a hit that belongs to no note grows the denominator`() {
         val notes = notesEvery(count = 2, spacingMs = 1000f)
         val attempt = PracticeAttempt(notes)
         notes.forEach { note -> attempt.registerHit(note.timeMs) }
-        val cleanScore = attempt.score
+        assertEquals(1f, attempt.liveAccuracy, 0.001f)
 
         attempt.registerHit(notes[1].timeMs + 400f)
-        assertTrue(attempt.score < cleanScore)
         assertEquals(0, attempt.combo)
 
         val result = attempt.result()
         assertEquals(1, result.extras)
-        assertEquals(0.75f, result.accuracy, 0.001f)
+        // Two perfect notes over three counted events: 2 / 3.
+        assertEquals(0.667f, result.accuracy, 0.001f)
         assertFalse(result.passed)
+        assertFalse(result.allPerfect)
     }
 
     private fun notesEvery(count: Int, spacingMs: Float): List<PracticeNote> =

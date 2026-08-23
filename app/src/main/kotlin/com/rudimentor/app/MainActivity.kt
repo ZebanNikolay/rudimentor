@@ -115,9 +115,10 @@ class MainActivity : ComponentActivity() {
                             levelId = level.id,
                             rank = rank,
                             bpm = bpm,
-                            score = result.score,
+                            accuracy = result.accuracy,
                             stars = result.stars,
                             passed = result.passed,
+                            allPerfect = result.allPerfect,
                         )
                     },
                 )

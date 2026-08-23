@@ -8,7 +8,9 @@ data class RankProgress(
     val completed: Boolean = false,
     val stars: Int = 0,
     val bestBpm: Int? = null,
-    val bestScore: Int? = null,
+    val bestAccuracy: Float? = null,
+    /** ALL PERFECT: every note judged perfect with no extra hits (decision 126). */
+    val allPerfect: Boolean = false,
 ) {
     val clampedStars: Int get() = stars.coerceIn(0, MAX_STARS)
 
@@ -27,7 +29,7 @@ data class LevelProgress(
     fun isCompleted(rank: PracticeRank): Boolean = forRank(rank).completed
 
     /** Whether the level was cleared at any rank at all: used for "seen it before" hints. */
-    val startedAnyRank: Boolean get() = ranks.values.any { it.completed || it.bestScore != null }
+    val startedAnyRank: Boolean get() = ranks.values.any { it.completed || it.bestAccuracy != null }
 }
 
 /**
