@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,12 +42,17 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
@@ -191,6 +197,11 @@ private fun NextLevelBar(
     }
 }
 
+/**
+ * One row, one slot per family: the tab set is fixed and small, so the tabs split the width
+ * evenly instead of sizing to their titles — a short title used to collapse into a chip
+ * next to the long ones.
+ */
 @Composable
 private fun FamilyTabs(
     tabs: List<CurriculumTab>,
@@ -199,17 +210,15 @@ private fun FamilyTabs(
     onSelectTab: (String) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         tabs.forEach { tab ->
             val enabled = tab.available && progress.isTabUnlocked(tab)
             val selected = tab.id == activeTabId
-            Text(
-                text = tab.title.uppercase(),
+            Box(
                 modifier = Modifier
+                    .weight(1f)
                     .background(
                         color = if (selected) RudiColors.SurfaceAlt else Color.Transparent,
                         shape = RoundedCornerShape(10.dp),
@@ -220,15 +229,23 @@ private fun FamilyTabs(
                         shape = RoundedCornerShape(10.dp),
                     )
                     .clickable(enabled = enabled || !selected) { onSelectTab(tab.id) }
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
-                style = RudiTextStyles.RowNumber,
-                color = when {
-                    selected -> RudiColors.Text
-                    enabled -> RudiColors.Muted
-                    else -> RudiColors.RowNumber
-                },
-                letterSpacing = 1.2.sp,
-            )
+                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = tab.title.uppercase(),
+                    style = RudiTextStyles.RowNumber,
+                    color = when {
+                        selected -> RudiColors.Text
+                        enabled -> RudiColors.Muted
+                        else -> RudiColors.RowNumber
+                    },
+                    letterSpacing = 0.8.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -342,25 +359,10 @@ private fun LevelMap(
     val horizontalScroll = rememberScrollState()
     val density = LocalDensity.current
     val mapHeight = MAP_VERTICAL_PADDING * 2 + MAP_ROW_HEIGHT * (catalog.lastRow + 1)
-    // The map is as wide as its widest branch, so every side level fits without overlap.
-    val mapWidth = MAP_COLUMN_WIDTH * (2 * catalog.lastLateral) + MAP_CENTER_WIDTH
     val currentLevel = progress.currentLevel(catalog, rank)
     val currentRow = currentLevel?.row ?: 0
 
-    LaunchedEffect(verticalScroll.maxValue, verticalScroll.viewportSize, catalog.family.id, rank) {
-        if (verticalScroll.maxValue == 0) return@LaunchedEffect
-        val currentY = with(density) {
-            (mapHeight - MAP_VERTICAL_PADDING - MAP_ROW_HEIGHT * currentRow - NODE_SIZE).roundToPx()
-        }
-        verticalScroll.scrollTo(
-            (currentY - verticalScroll.viewportSize / 2).coerceIn(0, verticalScroll.maxValue),
-        )
-    }
-    LaunchedEffect(horizontalScroll.maxValue, catalog.family.id) {
-        if (horizontalScroll.maxValue > 0) horizontalScroll.scrollTo(horizontalScroll.maxValue / 2)
-    }
-
-    Box(
+    BoxWithConstraints(
         modifier = modifier.background(
             brush = Brush.horizontalGradient(
                 0f to RudiColors.Bg,
@@ -371,11 +373,33 @@ private fun LevelMap(
             ),
         ),
     ) {
+        // The map needs room for its widest branch; when that fits on screen it simply fills
+        // the width, so there is nothing to pan sideways and no horizontal scroll is attached.
+        val neededWidth = MAP_COLUMN_WIDTH * (2 * catalog.lastLateral) + MAP_CENTER_WIDTH
+        val panning = neededWidth > maxWidth
+        val mapWidth = if (panning) neededWidth else maxWidth
+
+        LaunchedEffect(verticalScroll.maxValue, verticalScroll.viewportSize, catalog.family.id, rank) {
+            if (verticalScroll.maxValue == 0) return@LaunchedEffect
+            val currentY = with(density) {
+                (mapHeight - MAP_VERTICAL_PADDING - MAP_ROW_HEIGHT * currentRow - NODE_SIZE)
+                    .roundToPx()
+            }
+            verticalScroll.scrollTo(
+                (currentY - verticalScroll.viewportSize / 2).coerceIn(0, verticalScroll.maxValue),
+            )
+        }
+        LaunchedEffect(horizontalScroll.maxValue, catalog.family.id, panning) {
+            if (panning && horizontalScroll.maxValue > 0) {
+                horizontalScroll.scrollTo(horizontalScroll.maxValue / 2)
+            }
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(verticalScroll)
-                .horizontalScroll(horizontalScroll),
+                .then(if (panning) Modifier.horizontalScroll(horizontalScroll) else Modifier),
         ) {
             val states = remember(catalog, progress, rank) {
                 catalog.levels.associate { it.id to progress.stateOf(it, catalog, rank) }
@@ -386,52 +410,86 @@ private fun LevelMap(
                     .height(mapHeight)
                     .drawBehind {
                         val nodePx = NODE_SIZE.toPx()
+                        val halfNode = nodePx / 2f
                         val rowPx = MAP_ROW_HEIGHT.toPx()
                         val columnPx = MAP_COLUMN_WIDTH.toPx()
                         val bottomPx = MAP_VERTICAL_PADDING.toPx()
+                        val kinkPx = MAP_KINK.toPx()
 
                         fun centerOf(level: Level) = Offset(
                             x = size.width / 2f + level.column.direction * columnPx * level.lateral,
                             y = size.height - bottomPx - level.row * rowPx - nodePx / 2f,
                         )
 
-                        // One elbow per prerequisite: the required path draws as a straight
-                        // chain, a branch turns once towards its side.
+                        // Connectors follow decision 33: they start and end on the node edge,
+                        // never crossing the pad, and an offset step is a short diagonal kink
+                        // at mid height between two verticals. An LED dot marks both ends.
                         catalog.levels.forEach { level ->
-                            val to = centerOf(level)
+                            val toCenter = centerOf(level)
                             level.prerequisiteIds.mapNotNull(catalog::level).forEach { prerequisite ->
-                                val from = centerOf(prerequisite)
+                                val fromCenter = centerOf(prerequisite)
                                 val passed = states[prerequisite.id] == LevelNodeState.Completed
                                 val color = if (passed) RudiColors.Brick else RudiColors.Line
                                 val stroke = (if (passed) 2.dp else 1.5.dp).toPx()
-                                val dash = if (passed) {
-                                    null
-                                } else {
-                                    PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 3.dp.toPx()))
-                                }
-                                if (from.x != to.x) {
+                                val sideways = kotlin.math.abs(fromCenter.y - toCenter.y) < 1f
+
+                                val start: Offset
+                                val end: Offset
+                                if (sideways) {
+                                    // A branch on the same row leaves through the side edge.
+                                    val dir = if (toCenter.x >= fromCenter.x) 1f else -1f
+                                    start = Offset(fromCenter.x + dir * halfNode, fromCenter.y)
+                                    end = Offset(toCenter.x - dir * halfNode, toCenter.y)
                                     drawLine(
                                         color = color,
-                                        start = Offset(from.x, from.y),
-                                        end = Offset(from.x, to.y),
+                                        start = start,
+                                        end = end,
                                         strokeWidth = stroke,
-                                        pathEffect = dash,
+                                        cap = StrokeCap.Round,
+                                        pathEffect = if (passed) {
+                                            null
+                                        } else {
+                                            PathEffect.dashPathEffect(
+                                                floatArrayOf(2.dp.toPx(), 3.dp.toPx()),
+                                            )
+                                        },
                                     )
+                                } else {
+                                    val dirY = if (toCenter.y < fromCenter.y) -1f else 1f
+                                    start = Offset(fromCenter.x, fromCenter.y + dirY * halfNode)
+                                    end = Offset(toCenter.x, toCenter.y - dirY * halfNode)
+                                    if (kotlin.math.abs(start.x - end.x) < 1f) {
+                                        drawLine(
+                                            color = color,
+                                            start = start,
+                                            end = end,
+                                            strokeWidth = stroke,
+                                            cap = StrokeCap.Round,
+                                        )
+                                    } else {
+                                        val mid = (start.y + end.y) / 2f
+                                        val path = Path().apply {
+                                            moveTo(start.x, start.y)
+                                            lineTo(start.x, mid - dirY * kinkPx)
+                                            lineTo(end.x, mid + dirY * kinkPx)
+                                            lineTo(end.x, end.y)
+                                        }
+                                        drawPath(
+                                            path = path,
+                                            color = color,
+                                            style = Stroke(
+                                                width = stroke,
+                                                cap = StrokeCap.Round,
+                                                join = StrokeJoin.Round,
+                                            ),
+                                        )
+                                    }
                                 }
-                                drawLine(
-                                    color = color,
-                                    start = Offset(from.x, to.y),
-                                    end = Offset(to.x, to.y),
-                                    strokeWidth = stroke,
-                                    pathEffect = dash,
-                                )
-                                if (passed) {
-                                    drawCircle(
-                                        color = RudiColors.BrickLit,
-                                        radius = 2.6.dp.toPx(),
-                                        center = from,
-                                    )
-                                }
+
+                                val dotColor = if (passed) RudiColors.BrickLit else RudiColors.PadLed
+                                val dotRadius = (if (passed) 2.6.dp else 2.dp).toPx()
+                                drawCircle(color = dotColor, radius = dotRadius, center = start)
+                                drawCircle(color = dotColor, radius = dotRadius, center = end)
                             }
                         }
                     },
@@ -473,7 +531,7 @@ private fun LevelMapNode(
         ),
         label = "currentLevelGlow",
     )
-    val description = "${level.displayNumber}, ${level.mapCaption(rank)}, ${state.name.lowercase()}"
+    val description = "${level.displayCode}, ${level.mapCaption(rank)}, ${state.name.lowercase()}"
 
     Box(
         modifier = modifier
@@ -509,9 +567,11 @@ private fun LevelMapNode(
                 LevelNodeState.Locked -> PadTone.Mute
             },
             lit = state == LevelNodeState.Completed,
-            letter = level.displayNumber.toIntOrNull()?.toString() ?: level.displayNumber,
+            // The number alone repeats across tracks (`ST-01`, `RM-01`), so the node carries
+            // the level code at a smaller size.
+            letter = level.displayCode,
             pressed = false,
-            letterFraction = 0.32f,
+            letterFraction = 0.2f,
         )
     }
 }
@@ -529,3 +589,6 @@ private val MAP_ROW_HEIGHT = 78.dp
 private val MAP_COLUMN_WIDTH = 74.dp
 private val MAP_CENTER_WIDTH = 200.dp
 private val MAP_VERTICAL_PADDING = 30.dp
+
+/** Half height of the diagonal kink that offsets one column from the next (decision 33). */
+private val MAP_KINK = 6.dp

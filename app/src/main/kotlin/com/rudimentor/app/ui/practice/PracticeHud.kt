@@ -40,6 +40,9 @@ import kotlin.math.roundToInt
  * The top bar of the practice screen: back, what is being played, and the live
  * score. Progress is the 2 dp line under it -- there is no progress bar or beat
  * counter (decision 88).
+ *
+ * Once the finish pad is lit the rubric says so instead of naming the level: the run
+ * is over and the result screen is one moment away (decision 116).
  */
 @Composable
 fun PracticeHud(
@@ -48,6 +51,7 @@ fun PracticeHud(
     score: Int,
     combo: Int,
     accuracy: Float,
+    finished: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -58,13 +62,15 @@ fun PracticeHud(
     ) {
         BackButton(onClick = onBack)
         Text(
-            text = rubric,
+            text = if (finished) stringResource(R.string.practice_level_clear) else rubric,
             style = RudiTextStyles.Rubric,
-            color = RudiColors.Muted,
+            color = if (finished) RudiColors.BrickLit else RudiColors.Muted,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        chips.forEach { chip -> RudiChip(text = chip) }
+        if (!finished) {
+            chips.forEach { chip -> RudiChip(text = chip) }
+        }
         Spacer(modifier = Modifier.weight(1f))
         Column(horizontalAlignment = Alignment.End) {
             Text(

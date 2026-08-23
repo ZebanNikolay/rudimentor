@@ -67,6 +67,8 @@ fun PracticeResultScreen(
     buildInfo: BuildInfo,
     clickAudible: Boolean,
     onClickAudible: (Boolean) -> Unit,
+    clickFollowsHeadphones: Boolean,
+    onClickFollowsHeadphones: (Boolean) -> Unit,
     latencyMs: Float,
     onLatencyMs: (Float) -> Unit,
     onRetry: () -> Unit,
@@ -86,6 +88,8 @@ fun PracticeResultScreen(
             PracticeSettingsPanel(
                 clickAudible = clickAudible,
                 onClickAudible = onClickAudible,
+                clickFollowsHeadphones = clickFollowsHeadphones,
+                onClickFollowsHeadphones = onClickFollowsHeadphones,
                 latencyMs = latencyMs,
                 onLatencyMs = onLatencyMs,
                 buildInfo = buildInfo,

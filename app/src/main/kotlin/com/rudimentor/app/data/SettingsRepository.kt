@@ -52,6 +52,7 @@ class DataStoreSettingsRepository(
             activeRow = (preferences[Keys.ActiveRow] ?: 0).coerceIn(0, grid.rowCount - 1),
             showHandLetters = preferences[Keys.ShowHandLetters] ?: true,
             clickAudible = preferences[Keys.ClickAudible] ?: false,
+            clickFollowsHeadphones = preferences[Keys.ClickFollowsHeadphones] ?: true,
             inputLatencyMs = preferences[Keys.InputLatencyMs] ?: MicLab.DEFAULT_LATENCY_MS,
         ).sanitized()
     }
@@ -63,6 +64,7 @@ class DataStoreSettingsRepository(
         this[Keys.ActiveRow] = safe.activeRow
         this[Keys.ShowHandLetters] = safe.showHandLetters
         this[Keys.ClickAudible] = safe.clickAudible
+        this[Keys.ClickFollowsHeadphones] = safe.clickFollowsHeadphones
         this[Keys.InputLatencyMs] = safe.inputLatencyMs
     }
 
@@ -72,6 +74,8 @@ class DataStoreSettingsRepository(
         val ActiveRow = intPreferencesKey("active_row")
         val ShowHandLetters = booleanPreferencesKey("show_hand_letters")
         val ClickAudible = booleanPreferencesKey("practice_click_audible")
+        val ClickFollowsHeadphones =
+            booleanPreferencesKey("practice_click_follows_headphones")
         val InputLatencyMs = floatPreferencesKey("practice_input_latency_ms")
     }
 }

@@ -95,6 +95,19 @@ fun PracticeScreen(
     val attempt = remember(notes) { PracticeAttempt(notes) }
     val beatMs = 60_000f / tempo
     val lastNoteMs = notes.lastOrNull()?.timeMs ?: 0f
+    // The finish pad rides one beat behind the last note, so the last stroke is what
+    // drives it onto the hit line (decision 116). Clamped so a slow tempo does not
+    // leave a long empty lane and a fast one still gives the eye a moment.
+    val finishMs = if (lastNoteMs <= 0f) {
+        0f
+    } else {
+        lastNoteMs + beatMs.coerceIn(FINISH_GAP_MIN_MS, FINISH_GAP_MAX_MS)
+    }
+    // The attempt cannot end before the finish pad has arrived and held its glow.
+    val endMs = maxOf(
+        lastNoteMs + PracticeScoring.OK_MS + TAIL_MS,
+        finishMs + FINISH_HOLD_MS,
+    )
 
     // Nothing before the first note counts: the count-in is played along with, not
     // judged (decision 87).
@@ -109,6 +122,12 @@ fun PracticeScreen(
 
     DisposableEffect(session) {
         onDispose { session.stop() }
+    }
+
+    // Headphones can be plugged in or pulled out mid-attempt: the engine follows the
+    // new click state without restarting the run (decision 114).
+    LaunchedEffect(clickAudible, running) {
+        if (running) session.setClickAudible(clickAudible)
     }
 
     // Leaving the app does not dispose the screen, so the engine has to be stopped
@@ -161,7 +180,7 @@ fun PracticeScreen(
                 }
                 attempt.expireMissedNotes(now)
                 frame += 1
-                if (now > lastNoteMs + PracticeScoring.OK_MS + TAIL_MS) {
+                if (now > endMs) {
                     session.stop()
                     running = false
                     onFinished(attempt.result())
@@ -209,11 +228,12 @@ fun PracticeScreen(
                 score = attempt.score,
                 combo = attempt.combo,
                 accuracy = attempt.liveAccuracy,
+                finished = finishMs > 0f && positionMs >= finishMs,
                 onBack = { leave() },
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
             )
             PracticeProgressLine(
-                progress = if (lastNoteMs <= 0f) 0f else positionMs / lastNoteMs,
+                progress = if (finishMs <= 0f) 0f else positionMs / finishMs,
             )
             PracticeTrack(
                 notes = notes,
@@ -221,6 +241,7 @@ fun PracticeScreen(
                 positionMs = positionMs,
                 beatMs = beatMs,
                 frame = frame,
+                finishMs = finishMs,
                 modifier = Modifier.fillMaxWidth().weight(1f),
             )
             PracticeDeviationScale(
@@ -313,6 +334,11 @@ private fun PermissionGate(onRequest: () -> Unit, onBack: () -> Unit) {
 
 /** Extra time after the last note before the attempt closes itself. */
 private const val TAIL_MS = 300f
+
+/** Where the finish pad sits behind the last note, and how long its glow is held. */
+private const val FINISH_GAP_MIN_MS = 250f
+private const val FINISH_GAP_MAX_MS = 900f
+private const val FINISH_HOLD_MS = 450f
 
 /** Corner kept free for the floating transport button: its size plus its margin. */
 private val TRANSPORT_RESERVE = 82.dp

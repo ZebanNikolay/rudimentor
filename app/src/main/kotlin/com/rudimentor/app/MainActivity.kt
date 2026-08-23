@@ -108,6 +108,7 @@ class MainActivity : ComponentActivity() {
                     onSelectTab = viewModel::selectFamily,
                     onSelectRank = viewModel::selectRank,
                     onClickAudible = viewModel::setClickAudible,
+                    onClickFollowsHeadphones = viewModel::setClickFollowsHeadphones,
                     onInputLatencyMs = viewModel::setInputLatencyMs,
                     onAttemptFinished = { level, rank, bpm, result ->
                         viewModel.recordAttempt(

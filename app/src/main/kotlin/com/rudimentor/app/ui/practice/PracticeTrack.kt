@@ -3,9 +3,12 @@ package com.rudimentor.app.ui.practice
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -28,6 +31,11 @@ import com.rudimentor.app.ui.theme.RudiColors
  * one draw pass instead of a hundred composables while still looking identical to
  * the metronome pads.
  *
+ * A note has two looks only: ahead of the hit line it wears the accent frame, and
+ * once it is judged it falls back to the plain, dimmed face (decision 115). The
+ * accent tone is free for this because no lesson marks accented strokes yet -- when
+ * they arrive they will get a look of their own.
+ *
  * Geometry follows the approved concept: one lane line across the vertical centre
  * with the notes sitting on it, hit dots on a virtual rail below the pads, and the
  * verdict on the bottom edge under the hit line.
@@ -42,6 +50,7 @@ fun PracticeTrack(
     positionMs: Float,
     beatMs: Float,
     frame: Int,
+    finishMs: Float,
     modifier: Modifier = Modifier,
 ) {
     val measurer = rememberTextMeasurer()
@@ -89,6 +98,26 @@ fun PracticeTrack(
             style = letterStyle,
         )
 
+        // The finish pad closes the lane: the last stroke drives it onto the hit line,
+        // where it lights up and the run is over (decision 116). Drawn before the
+        // notes so the last note passes over it, not under it.
+        if (finishMs > 0f) {
+            val finishWidth = side * FINISH_WIDTH
+            val finishX = lineX + (finishMs - positionMs) * pxPerMs
+            if (finishX > -finishWidth && finishX < width + finishWidth) {
+                drawFinishPad(
+                    center = Offset(finishX, laneY),
+                    width = finishWidth,
+                    height = side,
+                    passed = positionMs >= finishMs,
+                    glow = ((positionMs - finishMs) / FINISH_GLOW_MS).coerceIn(0f, 1f),
+                    strokeWidth = with(density) { 1.dp.toPx() },
+                    measurer = measurer,
+                    style = letterStyle.copy(fontSize = with(density) { (side * 0.28f).toSp() }),
+                )
+            }
+        }
+
         notes.forEach { note ->
             val x = lineX + (note.timeMs - positionMs) * pxPerMs
             if (x < -side || x > width + side) return@forEach
@@ -104,27 +133,33 @@ fun PracticeTrack(
             }
             val fallY = fallProgress * fallProgress * side * 1.6f
             val alpha = if (missed) (1f - fallProgress * 0.85f).coerceAtLeast(0.15f) else 1f
-            val lit = judgement != null && judgement.window != HitWindow.Miss
+            // The note that is still coming is the one the eye needs: it wears the
+            // accent frame. A note already played drops back to the plain face and
+            // dims, so the lane ahead of the hit line always reads first
+            // (decision 115). Its result is on the dot below, not on the pad.
+            val played = judgement != null
+            val tone = if (played) PadTone.Normal else PadTone.Accent
             val palette = padPalette(
                 round = note.hand == PatternHand.Left,
-                tone = PadTone.Normal,
-                lit = lit,
+                tone = tone,
+                lit = false,
                 light = false,
             )
+            val fade = if (played && !missed) PLAYED_ALPHA else 1f
             drawPadFace(
                 topLeft = Offset(x - side / 2f, laneY - side / 2f + fallY),
                 side = side,
                 round = note.hand == PatternHand.Left,
-                tone = PadTone.Normal,
+                tone = tone,
                 palette = palette,
-                lit = lit,
+                lit = false,
                 strokeWidth = with(density) { 1.dp.toPx() },
                 light = false,
-                alpha = palette.alpha * alpha,
+                alpha = palette.alpha * alpha * fade,
             )
             val label = measurer.measure(
                 text = if (note.hand == PatternHand.Right) "R" else "L",
-                style = letterStyle.copy(color = palette.letter.copy(alpha = alpha)),
+                style = letterStyle.copy(color = palette.letter.copy(alpha = alpha * fade)),
             )
             drawText(
                 textLayoutResult = label,
@@ -177,6 +212,81 @@ fun PracticeTrack(
             )
         }
     }
+}
+
+/**
+ * The wide pad that ends the lane. Before the hit line it is an accent frame like
+ * the notes; once it crosses, it burns: lit body, thicker frame and a halo that
+ * rises with [glow], and the label turns from FINISH to CLEAR.
+ *
+ * Drawn by hand rather than through `drawPadFace`, which only knows squares.
+ */
+private fun DrawScope.drawFinishPad(
+    center: Offset,
+    width: Float,
+    height: Float,
+    passed: Boolean,
+    glow: Float,
+    strokeWidth: Float,
+    measurer: TextMeasurer,
+    style: TextStyle,
+) {
+    if (height <= 0f || width <= 0f) return
+    val palette = padPalette(round = false, tone = PadTone.Accent, lit = passed, light = false)
+    val radius = height * 0.22f
+    val left = center.x - width / 2f
+    val top = center.y - height / 2f
+
+    // Rings instead of a gradient brush: the halo stays inside the one draw pass the
+    // whole track is built on.
+    if (passed) {
+        for (ring in 1..FINISH_HALO_RINGS) {
+            val grow = height * 0.13f * ring * (0.6f + glow * 0.7f)
+            val ringAlpha = 0.20f * (1f - ring / (FINISH_HALO_RINGS + 1f)) * (0.35f + glow * 0.65f)
+            drawRoundRect(
+                color = RudiColors.BrickLit.copy(alpha = ringAlpha),
+                topLeft = Offset(left - grow, top - grow),
+                size = Size(width + grow * 2f, height + grow * 2f),
+                cornerRadius = CornerRadius(radius + grow, radius + grow),
+                style = Stroke(width = height * 0.09f),
+            )
+        }
+    }
+
+    if (palette.body != Color.Transparent) {
+        drawRoundRect(
+            color = palette.body,
+            topLeft = Offset(left, top),
+            size = Size(width, height),
+            cornerRadius = CornerRadius(radius, radius),
+        )
+    }
+    drawRoundRect(
+        color = palette.border,
+        topLeft = Offset(left, top),
+        size = Size(width, height),
+        cornerRadius = CornerRadius(radius, radius),
+        style = Stroke(width = if (passed) strokeWidth * 2f else strokeWidth),
+    )
+
+    // One LED per end, on the same top rail the square pads use.
+    val ledRadius = maxOf(height * 0.07f, 1.5f)
+    val ledY = top + height * 0.20f
+    listOf(left + height * 0.24f, left + width - height * 0.24f).forEach { ledX ->
+        drawCircle(color = palette.led, radius = ledRadius, center = Offset(ledX, ledY))
+    }
+
+    val label = measurer.measure(
+        text = if (passed) "CLEAR" else "FINISH",
+        style = style.copy(color = palette.letter),
+    )
+    drawText(
+        textLayoutResult = label,
+        topLeft = Offset(
+            center.x - label.size.width / 2f,
+            center.y - label.size.height / 2f,
+        ),
+    )
 }
 
 internal fun windowColor(window: HitWindow): Color = when (window) {
@@ -297,6 +407,14 @@ internal fun verdictText(judgement: NoteJudgement?): String? = when {
 private const val VISIBLE_MS = 2000f
 private const val LINE_FRACTION = 0.33f
 private const val MISS_FALL_MS = 420f
+
+/** How far a played note steps back once its verdict is on the rail. */
+private const val PLAYED_ALPHA = 0.45f
+
+/** The finish pad, as a multiple of the note side, and how its halo comes up. */
+private const val FINISH_WIDTH = 2.6f
+private const val FINISH_GLOW_MS = 220f
+private const val FINISH_HALO_RINGS = 4
 
 /** How long the verdict stays on screen after a note is judged. */
 private const val VERDICT_HOLD_MS = 380f

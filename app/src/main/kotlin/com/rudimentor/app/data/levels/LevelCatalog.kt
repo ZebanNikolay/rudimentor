@@ -281,6 +281,12 @@ data class Level(
     /** `singles.ST-07` is shown as `07` on the map. */
     val displayNumber: String = lesson.id.substringAfterLast('-')
 
+    /**
+     * The level code: track plus number, `singles.ST-07` -> `ST-07`. Numbers alone repeat
+     * across tracks (`ST-01`, `RM-01`, `DI-01`), so the map labels nodes with the code.
+     */
+    val displayCode: String = lesson.id.substringAfterLast('.')
+
     /** The package has no lead hand; the first step of the pattern decides the pad shape. */
     val leadHand: LeadHand = when (pattern.firstOrNull()?.hands?.singleOrNull()) {
         PatternHand.Left -> LeadHand.Left

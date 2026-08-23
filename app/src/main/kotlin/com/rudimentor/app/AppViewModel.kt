@@ -79,7 +79,18 @@ class AppViewModel(
 
     fun setShowHandLetters(show: Boolean) = update { copy(showHandLetters = show) }
 
-    fun setClickAudible(audible: Boolean) = update { copy(clickAudible = audible) }
+    /**
+     * A hand on the switch always wins: from here on the click stays where the
+     * learner put it and stops following the headphones (decision 114).
+     */
+    fun setClickAudible(audible: Boolean) = update {
+        copy(clickAudible = audible, clickFollowsHeadphones = false)
+    }
+
+    /** Hands the click back to the headphone detector. */
+    fun setClickFollowsHeadphones(follow: Boolean) = update {
+        copy(clickFollowsHeadphones = follow)
+    }
 
     fun setInputLatencyMs(latencyMs: Float) = update {
         copy(

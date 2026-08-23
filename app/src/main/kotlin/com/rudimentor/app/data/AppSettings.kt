@@ -21,9 +21,21 @@ data class AppSettings(
     val activeRow: Int = 0,
     val showHandLetters: Boolean = true,
     val clickAudible: Boolean = false,
+    val clickFollowsHeadphones: Boolean = true,
     val inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
 ) {
     val safeActiveRow: Int = activeRow.coerceIn(0, grid.rowCount - 1)
+
+    /**
+     * The click state the practice engine should actually use.
+     *
+     * While [clickFollowsHeadphones] is on the click simply follows the output:
+     * private on headphones, silent on the speaker, where the microphone would hear
+     * it and score it as a stroke (decision 88). Touching the switch by hand turns
+     * the following off and [clickAudible] wins from then on (decision 114).
+     */
+    fun clickAudibleWith(headphonesConnected: Boolean): Boolean =
+        if (clickFollowsHeadphones) headphonesConnected else clickAudible
 
     /**
      * Return a copy with every value forced into the domain-allowed range.

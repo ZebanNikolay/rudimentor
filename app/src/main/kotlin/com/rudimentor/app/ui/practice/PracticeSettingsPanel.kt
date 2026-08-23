@@ -20,14 +20,17 @@ import kotlin.math.roundToInt
  * Contents of the side settings drawer: the shared [SettingsPanel] with the rows
  * the practice screen owns (decision 101).
  *
- * The click is off by default and the headphone warning only shows when it is on:
- * with the speaker open the microphone hears the click and scores it as a stroke
- * (decision 88).
+ * The click follows the headphones on its own: with the speaker open the microphone
+ * hears the click and scores it as a stroke (decision 88), so it stays silent there.
+ * Touching the switch takes the click off automatic, and the panel then offers the
+ * way back (decision 114).
  */
 @Composable
 fun PracticeSettingsPanel(
     clickAudible: Boolean,
     onClickAudible: (Boolean) -> Unit,
+    clickFollowsHeadphones: Boolean,
+    onClickFollowsHeadphones: (Boolean) -> Unit,
     latencyMs: Float,
     onLatencyMs: (Float) -> Unit,
     buildInfo: BuildInfo,
@@ -42,8 +45,22 @@ fun PracticeSettingsPanel(
             checked = clickAudible,
             onCheckedChange = onClickAudible,
         )
-        if (clickAudible) {
-            SettingsNote(text = stringResource(R.string.practice_click_warning))
+        if (clickFollowsHeadphones) {
+            SettingsNote(text = stringResource(R.string.practice_click_auto_note))
+        } else {
+            val note = if (clickAudible) {
+                R.string.practice_click_warning
+            } else {
+                R.string.practice_click_manual_note
+            }
+            SettingsNote(text = stringResource(note))
+            SettingsGap()
+            RudiButton(
+                text = stringResource(R.string.practice_click_auto_restore),
+                onClick = { onClickFollowsHeadphones(true) },
+                style = RudiButtonStyle.Secondary,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         SettingsGap()
         SettingsSliderRow(

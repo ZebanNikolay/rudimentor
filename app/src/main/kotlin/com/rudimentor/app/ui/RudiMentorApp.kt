@@ -19,11 +19,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rudimentor.app.BuildConfig
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
+import com.rudimentor.app.audio.AudioOutputMonitor
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelCourse
@@ -68,9 +71,20 @@ fun RudiMentorApp(
     onSelectTab: (String) -> Unit,
     onSelectRank: (PracticeRank) -> Unit,
     onClickAudible: (Boolean) -> Unit,
+    onClickFollowsHeadphones: (Boolean) -> Unit,
     onInputLatencyMs: (Float) -> Unit,
     onAttemptFinished: (Level, PracticeRank, Int, PracticeResult) -> Unit,
 ) {
+    // The click follows the audio output until the learner overrides it by hand, so
+    // the effective value is decided here, once, for every screen that plays it
+    // (decision 114).
+    val context = LocalContext.current
+    val headphonesFlow = remember(context) { AudioOutputMonitor.connectedFlow(context) }
+    val headphonesConnected by headphonesFlow.collectAsStateWithLifecycle(
+        initialValue = AudioOutputMonitor.isConnected(context),
+    )
+    val clickAudible = settings.clickAudibleWith(headphonesConnected)
+
     var screenName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
     var selectedLevelId by rememberSaveable { mutableStateOf<String?>(null) }
     var metronomeBackTargetName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
@@ -174,7 +188,7 @@ fun RudiMentorApp(
                             family = family,
                             rank = practiceRank,
                             bpm = practiceBpm,
-                            clickAudible = settings.clickAudible,
+                            clickAudible = clickAudible,
                             latencyMs = settings.inputLatencyMs,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
@@ -214,8 +228,10 @@ fun RudiMentorApp(
                         bpm = practiceBpm,
                         result = result,
                         buildInfo = buildInfo,
-                        clickAudible = settings.clickAudible,
+                        clickAudible = clickAudible,
                         onClickAudible = onClickAudible,
+                        clickFollowsHeadphones = settings.clickFollowsHeadphones,
+                        onClickFollowsHeadphones = onClickFollowsHeadphones,
                         latencyMs = settings.inputLatencyMs,
                         onLatencyMs = onInputLatencyMs,
                         onRetry = {

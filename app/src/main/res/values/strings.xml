@@ -68,8 +68,12 @@
     <string name="practice_settings_done">Done</string>
     <string name="practice_click_label">Metronome click</string>
     <string name="practice_click_warning">Use headphones: the microphone hears the speaker and counts the click as a hit.</string>
+    <string name="practice_click_auto_note">Follows the output: on with headphones, off on the speaker.</string>
+    <string name="practice_click_manual_note">Set by hand. The headphones no longer switch it.</string>
+    <string name="practice_click_auto_restore">Follow headphones again</string>
     <string name="practice_latency_label">Input latency</string>
     <string name="practice_latency_value">%1$d ms</string>
+    <string name="practice_level_clear">LEVEL CLEAR</string>
     <string name="practice_bpm">%1$d BPM</string>
     <string name="practice_hits_per_beat">×%1$d</string>
     <string name="practice_combo">×%1$d · %2$d%%</string>
