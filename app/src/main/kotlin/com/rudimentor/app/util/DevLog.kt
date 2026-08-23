@@ -46,10 +46,15 @@ object DevLog {
     @Volatile
     private var file: File? = null
 
+    /** Build and device of the running session, stamped into a crash record. */
+    @Volatile
+    private var session: String = "unknown build"
+
     /** Call once from `Application`/`Activity` start, before anything is logged. */
     fun install(context: Context, sessionLabel: String) {
         if (file != null) return
         file = File(context.filesDir, FILE_NAME)
+        session = sessionLabel
         installCrashHandler()
         log("app", "--- session start · $sessionLabel ---")
     }
@@ -148,7 +153,7 @@ object DevLog {
             // background writer may never get scheduled again.
             runCatching {
                 file?.appendText(
-                    "${now()} crash: FATAL on ${thread.name}\n${stackTrace(error)}\n"
+                    "${now()} crash: FATAL on ${thread.name} · $session\n${stackTrace(error)}\n"
                 )
             }
             previous?.uncaughtException(thread, error)
