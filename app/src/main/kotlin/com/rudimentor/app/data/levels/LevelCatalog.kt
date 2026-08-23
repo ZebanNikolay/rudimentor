@@ -113,7 +113,19 @@ enum class WeakStrategy(val storageName: String) {
 data class PatternStep(
     val hands: Set<PatternHand>,
 ) {
-    val label: String = PatternHand.entries.filter(hands::contains).joinToString("") { it.storageName }
+    /** A step with no hands is a rest: the beat passes without a stroke. */
+    val rest: Boolean = hands.isEmpty()
+
+    val label: String = if (rest) {
+        REST_LABEL
+    } else {
+        PatternHand.entries.filter(hands::contains).joinToString("") { it.storageName }
+    }
+
+    companion object {
+        /** How a rest reads in a pattern line, e.g. `RL––`. */
+        const val REST_LABEL = "–"
+    }
 }
 
 data class Pattern(
@@ -275,6 +287,10 @@ data class Level(
         else -> LeadHand.Right
     }
 
+    /**
+     * A beat row holds one hand per beat, so a unison step and a rest both fall outside
+     * it: such a level is previewed until the engine can play them.
+     */
     val supportsBeatGrid: Boolean = pattern.isNotEmpty() && pattern.all { it.hands.size == 1 }
 
     /**
@@ -379,16 +395,19 @@ data class LevelCatalog(
             }
             val allSteps = steps ?: phases.orEmpty().flatMap { it.pattern.steps }
             require(allSteps.isNotEmpty()) { "${lesson.id}: pattern must not be empty" }
-            require(allSteps.all { it.hands.isNotEmpty() }) {
-                "${lesson.id}: every pattern step must contain at least one hand"
+            // A step without hands is a rest, exactly as `tools/validate_family.py` reads it.
+            // Only a pattern made of nothing but rests is data no lesson can be built from.
+            val struck = allSteps.filterNot(PatternStep::rest)
+            require(struck.isNotEmpty()) {
+                "${lesson.id}: a pattern needs at least one step with a hand"
             }
             require(
                 lesson.type != LevelType.Unison ||
-                    allSteps.all { it.hands == PatternHand.entries.toSet() },
+                    struck.all { it.hands == PatternHand.entries.toSet() },
             ) {
                 "${lesson.id}: every unison step must contain right and left hands"
             }
-            require(lesson.type == LevelType.Unison || allSteps.all { it.hands.size == 1 }) {
+            require(lesson.type == LevelType.Unison || struck.all { it.hands.size == 1 }) {
                 "${lesson.id}: multi-hand steps are reserved for unison levels"
             }
             phases?.forEach { phase ->

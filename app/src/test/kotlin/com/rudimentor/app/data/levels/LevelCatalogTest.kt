@@ -334,6 +334,42 @@ class LevelCatalogTest {
         assertThrows(IllegalArgumentException::class.java) { unison.toPracticeGrid() }
     }
 
+    @Test
+    fun `a rest keeps its slot in the pattern and is not played`() {
+        val level = catalog(
+            lessons = listOf(
+                lesson(
+                    id = "f.UN-01",
+                    type = LevelType.Unison,
+                    steps = listOf(
+                        PatternStep(setOf(PatternHand.Right, PatternHand.Left)),
+                        PatternStep(setOf(PatternHand.Right, PatternHand.Left)),
+                        PatternStep(emptySet()),
+                        PatternStep(emptySet()),
+                    ),
+                ),
+            ),
+            nodes = listOf(node("f.UN-01")),
+        ).levels.single()
+
+        assertEquals(4, level.pattern.size)
+        assertEquals(listOf(false, false, true, true), level.pattern.map(PatternStep::rest))
+        assertEquals("RL", level.pattern.first().label)
+        assertEquals(PatternStep.REST_LABEL, level.pattern.last().label)
+        assertFalse(level.supportsBeatGrid)
+        assertFalse(level.playable)
+    }
+
+    @Test
+    fun `catalog rejects a pattern made of rests only`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            catalog(
+                lessons = listOf(lesson("f.ST-01", steps = listOf(PatternStep(emptySet())))),
+                nodes = listOf(node("f.ST-01")),
+            )
+        }
+    }
+
     private fun catalog(lessons: List<Lesson>, nodes: List<MapNode>): LevelCatalog = LevelCatalog.build(
         schemaVersion = LevelCatalog.CURRENT_SCHEMA_VERSION,
         family = Family(id = "f", name = "Family", description = "Description."),

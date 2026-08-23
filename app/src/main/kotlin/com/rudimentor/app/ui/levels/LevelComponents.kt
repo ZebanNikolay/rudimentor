@@ -90,6 +90,16 @@ internal fun PatternPreview(
 private fun PatternStepPad(step: PatternStep) {
     // The package marks accents per lesson, not per step, so every step renders unaccented.
     val tone = PadTone.Normal
+    // A rest keeps the slot in the pattern, drawn as a dark pad with no letter.
+    if (step.rest) {
+        Pad(
+            size = 31.dp,
+            shape = PadShape.Square,
+            tone = PadTone.Mute,
+            showLetter = false,
+        )
+        return
+    }
     if (step.hands.size == 1) {
         val hand = step.hands.single()
         Pad(

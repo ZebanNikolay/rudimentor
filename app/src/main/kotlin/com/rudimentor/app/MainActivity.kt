@@ -15,6 +15,7 @@ import com.rudimentor.app.data.DataStoreSettingsRepository
 import com.rudimentor.app.data.levels.AssetCourseLoader
 import com.rudimentor.app.data.levels.DataStoreLevelProgressRepository
 import com.rudimentor.app.ui.RudiMentorApp
+import com.rudimentor.app.ui.dev.CrashReportScreen
 import com.rudimentor.app.ui.metronome.MetronomeActions
 import com.rudimentor.app.ui.theme.RudiMentorTheme
 import com.rudimentor.app.util.DevLog
@@ -32,15 +33,39 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        DevLog.install(
-            context = applicationContext,
-            sessionLabel = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · " +
-                "${Build.MANUFACTURER} ${Build.MODEL} · API ${Build.VERSION.SDK_INT}",
-        )
+        val buildLabel = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · " +
+            "${Build.MANUFACTURER} ${Build.MODEL} · API ${Build.VERSION.SDK_INT}"
+        DevLog.install(context = applicationContext, sessionLabel = buildLabel)
         // A non-null bundle means the activity was recreated. The practice flow is
         // built on the assumption that it is not, so it is worth seeing in the log.
         DevLog.log("activity", "onCreate restored=${savedInstanceState != null}")
         enableEdgeToEdge()
+        // A crash on startup would otherwise leave no way to report it: the developer
+        // screen is behind the UI that just died. So the course is built here, and any
+        // failure -- this launch or the previous one -- opens the report screen instead.
+        val startupFailure = runCatching { course }.exceptionOrNull()
+        if (startupFailure != null) {
+            DevLog.error("course", "startup load failed", startupFailure)
+            showCrashReport(
+                title = "STARTUP FAILED",
+                buildLabel = buildLabel,
+                report = startupFailure.stackTraceToString(),
+                onContinue = null,
+            )
+            return
+        }
+        DevLog.pendingCrash()?.let { report ->
+            showCrashReport(
+                title = "PREVIOUS RUN CRASHED",
+                buildLabel = buildLabel,
+                report = report,
+                onContinue = {
+                    DevLog.acknowledgeCrash()
+                    recreate()
+                },
+            )
+            return
+        }
         // Draw into the cutout area: the landscape stage paints its own background
         // there and insets the content instead of leaving a black band.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -94,6 +119,24 @@ class MainActivity : ComponentActivity() {
                             passed = result.passed,
                         )
                     },
+                )
+            }
+        }
+    }
+
+    private fun showCrashReport(
+        title: String,
+        buildLabel: String,
+        report: String,
+        onContinue: (() -> Unit)?,
+    ) {
+        setContent {
+            RudiMentorTheme {
+                CrashReportScreen(
+                    title = title,
+                    buildLabel = buildLabel,
+                    report = report,
+                    onContinue = onContinue,
                 )
             }
         }

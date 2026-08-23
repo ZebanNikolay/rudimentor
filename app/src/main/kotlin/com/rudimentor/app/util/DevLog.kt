@@ -31,6 +31,12 @@ object DevLog {
     /** How much of the tail the developer screen keeps in memory. */
     private const val MEMORY_LINES = 600
 
+    /** How much of a crash report the startup screen shows at most. */
+    private const val MAX_REPORT_CHARS = 20_000
+
+    private const val CRASH_MARKER = "crash: FATAL"
+    private const val ACKNOWLEDGED_MARKER = "report acknowledged"
+
     private val writer = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "DevLog").apply { isDaemon = true }
     }
@@ -77,6 +83,27 @@ object DevLog {
             source.copyTo(target, overwrite = true)
             target
         }.getOrNull()
+    }
+
+    /**
+     * The tail of the log file starting at the last fatal crash, or `null` when the
+     * last crash has already been acknowledged (or there was none). Read straight from
+     * the file, so a crash of the previous process is still reportable after a restart.
+     */
+    fun pendingCrash(): String? {
+        val source = file?.takeIf { it.exists() } ?: return null
+        val lines = runCatching { source.readLines() }.getOrNull() ?: return null
+        val start = lines.indexOfLast { it.contains(CRASH_MARKER) }
+        if (start < 0) return null
+        val tail = lines.subList(start, lines.size)
+        if (tail.any { it.contains(ACKNOWLEDGED_MARKER) }) return null
+        return tail.joinToString(separator = "\n").takeLast(MAX_REPORT_CHARS)
+    }
+
+    /** Marks the pending crash as seen, so the next launch opens the app again. */
+    fun acknowledgeCrash() {
+        log("crash", ACKNOWLEDGED_MARKER)
+        flush()
     }
 
     fun clear() {
