@@ -13,7 +13,9 @@
     <string name="levels_rank_button">%1$s ×%2$d</string>
     <string name="levels_rank_dialog_title">Difficulty</string>
     <string name="levels_rank_hits">%1$d hits per beat</string>
-    <string name="levels_rank_dismiss">Close</string>
+    <string name="levels_rank_confirm">Choose</string>
+    <string name="levels_rank_cancel">Cancel</string>
+    <string name="levels_rank_art_cd">%1$s difficulty illustration</string>
     <string name="levels_tab_locked">Pass level %1$s of %2$s at %3$s to open this map.</string>
     <string name="levels_tab_planned">This map is still being written. It arrives in a later release.</string>
     <string name="levels_next_level">Next level</string>

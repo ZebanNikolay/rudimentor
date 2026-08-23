@@ -1,11 +1,13 @@
 package com.rudimentor.app.ui.levels
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,7 +49,9 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -149,8 +153,8 @@ fun LevelsScreen(
     if (rankDialogVisible) {
         RankDialog(
             rank = rank,
-            onSelectRank = {
-                onSelectRank(it)
+            onConfirm = {
+                if (it != rank) onSelectRank(it)
                 rankDialogVisible = false
             },
             onDismiss = { rankDialogVisible = false },
@@ -294,12 +298,25 @@ private fun RankButton(rank: PracticeRank, onClick: () -> Unit) {
     )
 }
 
+/** Illustration of a rank, drawn on dark surfaces only (decision 110 cutout limitation). */
+@DrawableRes
+private fun rankArt(rank: PracticeRank): Int = when (rank) {
+    PracticeRank.Practice -> R.drawable.art_rank_practice
+    PracticeRank.Groove -> R.drawable.art_rank_groove
+    PracticeRank.Stage -> R.drawable.art_rank_stage
+}
+
+/**
+ * Difficulty picker. Tapping a row only moves the local highlight and swaps the illustration
+ * above the list; the choice is applied to the screen when the user confirms.
+ */
 @Composable
 private fun RankDialog(
     rank: PracticeRank,
-    onSelectRank: (PracticeRank) -> Unit,
+    onConfirm: (PracticeRank) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var pending by remember { mutableStateOf(rank) }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = RudiColors.SurfaceAlt,
@@ -311,37 +328,52 @@ private fun RankDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                PracticeRank.entries.forEach { option ->
-                    val selected = option == rank
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(
-                                width = 1.dp,
-                                color = if (selected) RudiColors.Brick else RudiColors.Line,
-                                shape = RoundedCornerShape(10.dp),
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Image(
+                    painter = painterResource(rankArt(pending)),
+                    contentDescription = stringResource(R.string.levels_rank_art_cd, pending.displayName),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(148.dp),
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    PracticeRank.entries.forEach { option ->
+                        val selected = option == pending
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    width = 1.dp,
+                                    color = if (selected) RudiColors.Brick else RudiColors.Line,
+                                    shape = RoundedCornerShape(10.dp),
+                                )
+                                .clickable { pending = option }
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                        ) {
+                            Text(
+                                text = option.displayName.uppercase(),
+                                style = RudiTextStyles.Timer,
+                                color = if (selected) RudiColors.Text else RudiColors.Muted,
                             )
-                            .clickable { onSelectRank(option) }
-                            .padding(horizontal = 12.dp, vertical = 9.dp),
-                    ) {
-                        Text(
-                            text = option.displayName.uppercase(),
-                            style = RudiTextStyles.Timer,
-                            color = if (selected) RudiColors.Text else RudiColors.Muted,
-                        )
-                        Text(
-                            text = stringResource(R.string.levels_rank_hits, option.hitsPerBeat),
-                            style = RudiTextStyles.RowNumber,
-                            color = RudiColors.Muted,
-                        )
+                            Text(
+                                text = stringResource(R.string.levels_rank_hits, option.hitsPerBeat),
+                                style = RudiTextStyles.RowNumber,
+                                color = RudiColors.Muted,
+                            )
+                        }
                     }
                 }
             }
         },
         confirmButton = {
+            TextButton(onClick = { onConfirm(pending) }) {
+                Text(text = stringResource(R.string.levels_rank_confirm), color = RudiColors.Brick)
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.levels_rank_dismiss), color = RudiColors.Muted)
+                Text(text = stringResource(R.string.levels_rank_cancel), color = RudiColors.Muted)
             }
         },
     )
