@@ -252,7 +252,7 @@ data class MapNode(
  * required center levels, and the map is exactly three columns wide — the required path plus
  * one optional column per side. An optional level sits on the row of the level it branches
  * from; when that cell is taken it steps one row forward along its own column, so a branch
- * never widens the map (decision 120).
+ * never widens the map (decision 121).
  */
 data class Level(
     val lesson: Lesson,
@@ -488,7 +488,7 @@ data class LevelCatalog(
          * lands in its own column — on the anchor's row when that comes from the required
          * path, one row further when it continues an optional chain. If the cell is taken the
          * level steps forward along the same column (then backward, when forward is full), so
-         * the map stays three columns wide (decision 120).
+         * the map stays three columns wide (decision 121).
          */
         private fun deriveLayout(nodes: List<MapNode>): Map<String, Int> {
             val byId = nodes.associateBy(MapNode::lessonId)

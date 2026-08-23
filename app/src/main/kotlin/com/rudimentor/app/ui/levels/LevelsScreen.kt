@@ -452,7 +452,7 @@ private fun LevelMap(
 
                         // Connectors follow decision 33: they start and end on the node edge,
                         // never crossing the pad, and an LED dot marks both ends. The layout
-                        // only ever links neighbouring cells (decision 120), so a connector is
+                        // only ever links neighbouring cells (decision 121), so a connector is
                         // either vertical along a column or a straight line into the cell beside
                         // it — on the same row or one row further along.
                         catalog.levels.forEach { level ->
