@@ -1,18 +1,15 @@
 package com.rudimentor.app.ui.component
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -23,12 +20,12 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
 /**
- * The Material 3 tab row in brandbook clothes.
+ * The Material 3 secondary tab row in brandbook colours — and nothing else.
  *
- * Material owns the parts that are easy to get wrong by hand: it splits the width into equal
- * slots (decision 117), reports `Role.Tab` and the selected state to accessibility services,
- * and animates the selection. What it must not own is the look, so the indicator line and the
- * divider are switched off and every tab draws itself as a bordered card instead.
+ * The look is the stock one: bare text with the selected tab underlined in the accent colour.
+ * No card, no border, no rounded corners, no background behind a tab. Material owns the parts
+ * that are easy to get wrong by hand: equal slots for a small fixed tab set (decision 117), the
+ * animated indicator, and the `Role.Tab` plus selected state it reports to accessibility.
  */
 @Composable
 fun RudiTabRow(
@@ -40,8 +37,19 @@ fun RudiTabRow(
         selectedTabIndex = selectedTabIndex,
         modifier = modifier.fillMaxWidth(),
         containerColor = Color.Transparent,
-        contentColor = RudiColors.Text,
-        indicator = {},
+        contentColor = RudiColors.Brick,
+        // The one piece of decoration: the accent underline under the selected tab.
+        indicator = { tabPositions ->
+            tabPositions.getOrNull(selectedTabIndex)?.let { position ->
+                with(TabRowDefaults) {
+                    SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(position),
+                        height = 2.dp,
+                        color = RudiColors.Brick,
+                    )
+                }
+            }
+        },
         divider = {},
         tabs = tabs,
     )
@@ -65,7 +73,6 @@ fun RudiTab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(TAB_CORNER)
     val titleColor = when {
         selected -> RudiColors.Brick
         enabled -> RudiColors.Muted
@@ -78,25 +85,13 @@ fun RudiTab(
         selected = selected,
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier
-            .padding(horizontal = TAB_GAP / 2)
-            .clip(shape),
+        modifier = modifier,
         selectedContentColor = titleColor,
         unselectedContentColor = titleColor,
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = if (selected) RudiColors.SurfaceAlt else Color.Transparent,
-                    shape = shape,
-                )
-                .border(
-                    width = 1.dp,
-                    color = if (selected) RudiColors.Brick else RudiColors.Line,
-                    shape = shape,
-                )
-                .padding(horizontal = 4.dp, vertical = 6.dp)
+                .padding(horizontal = 4.dp, vertical = 8.dp)
                 .clearAndSetSemantics { contentDescription = description },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -119,7 +114,3 @@ fun RudiTab(
         }
     }
 }
-
-/** Material fills the row edge to edge, so the gap between tabs is padding inside each slot. */
-private val TAB_GAP = 6.dp
-private val TAB_CORNER = 10.dp

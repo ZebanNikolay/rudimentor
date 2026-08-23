@@ -11,8 +11,14 @@ val developmentKeyAlias = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY_AL
     .orElse("androiddebugkey")
 val developmentKeyPassword = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY_PASSWORD")
     .orElse(developmentKeystorePassword)
-val appVersionName = "0.1.0-dev.28"
-val appVersionCode = 28
+
+// Escape hatch for a throwaway local build (a fresh emulator, a machine without the keystore):
+// `./gradlew assembleDebug -Prudimentor.localDebugSigning=true`.
+val allowLocalDebugSigning = providers.gradleProperty("rudimentor.localDebugSigning")
+    .map(String::toBoolean)
+    .orElse(false)
+val appVersionName = "0.1.0-dev.29"
+val appVersionCode = 29
 
 base {
     archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")
@@ -48,6 +54,25 @@ android {
                     storePassword = developmentKeystorePassword.get()
                     keyAlias = developmentKeyAlias.get()
                     keyPassword = developmentKeyPassword.get()
+                }
+            } else {
+                // Without the shared keystore Gradle quietly falls back to its own generated
+                // debug key. Such an APK installs only on a clean device: over an existing
+                // RudiMentor it fails with INSTALL_FAILED_UPDATE_INCOMPATIBLE and the only way
+                // out is uninstalling the app together with the learner's progress. So the
+                // build breaks instead — at packaging time, to keep IDE sync working.
+                tasks.matching { it.name == "packageDebug" }.configureEach {
+                    doFirst {
+                        if (!allowLocalDebugSigning.get()) {
+                            throw GradleException(
+                                "RUDIMENTOR_DEBUG_KEYSTORE is not set, so this APK would be " +
+                                    "signed with a throwaway debug key and could not be " +
+                                    "installed over an existing RudiMentor. Export the shared " +
+                                    "keystore (see the rudimentor-build skill), or pass " +
+                                    "-Prudimentor.localDebugSigning=true for a throwaway build.",
+                            )
+                        }
+                    }
                 }
             }
         }

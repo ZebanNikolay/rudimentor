@@ -76,8 +76,9 @@ import com.rudimentor.app.ui.theme.RudiTextStyles
 
 /**
  * All maps of the curriculum behind one tab row (decision 111). The tabs come from the
- * curriculum package, and so do their gates: a locked tab explains what opens it instead of
- * showing a map. Difficulty is chosen once for the whole screen from the toolbar, not per level.
+ * curriculum package, and so do their gates: a locked tab still draws its whole map so the
+ * learner can scroll it and see what is coming, and states the gate on a banner over it
+ * (decision 123). Difficulty is chosen once for the whole screen from the toolbar, not per level.
  */
 @Composable
 fun LevelsScreen(
@@ -120,8 +121,9 @@ fun LevelsScreen(
             )
             Spacer(modifier = Modifier.height(6.dp))
 
-            if (catalog == null || !unlocked) {
-                LockedMap(
+            if (catalog == null) {
+                // Nothing to look at yet: the map of this family is still being written.
+                MissingMap(
                     tab = activeTab,
                     course = course,
                     modifier = Modifier
@@ -129,21 +131,36 @@ fun LevelsScreen(
                         .weight(1f),
                 )
             } else {
-                LevelMap(
-                    catalog = catalog,
-                    progress = progress,
-                    rank = rank,
-                    onOpenLevel = onOpenLevel,
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                )
-                NextLevelBar(
-                    catalog = catalog,
-                    progress = progress,
-                    rank = rank,
-                    onOpenLevel = onOpenLevel,
-                )
+                ) {
+                    LevelMap(
+                        catalog = catalog,
+                        progress = progress,
+                        rank = rank,
+                        locked = !unlocked,
+                        onOpenLevel = onOpenLevel,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    if (!unlocked) {
+                        LockedBanner(
+                            text = gateText(activeTab, course),
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 8.dp),
+                        )
+                    }
+                }
+                if (unlocked) {
+                    NextLevelBar(
+                        catalog = catalog,
+                        progress = progress,
+                        rank = rank,
+                        onOpenLevel = onOpenLevel,
+                    )
+                }
             }
         }
     }
@@ -243,14 +260,10 @@ private fun tabDescription(tab: CurriculumTab): String {
     return stringResource(R.string.levels_tab_description, tab.title, hands)
 }
 
-/** A tab the learner has not earned yet, or one whose map is still being written. */
+/** What opens this family, in one sentence. */
 @Composable
-private fun LockedMap(
-    tab: CurriculumTab,
-    course: LevelCourse,
-    modifier: Modifier = Modifier,
-) {
-    val text = when (val unlock = tab.unlock) {
+private fun gateText(tab: CurriculumTab, course: LevelCourse): String =
+    when (val unlock = tab.unlock) {
         UnlockRule.Always -> stringResource(R.string.levels_tab_planned)
         UnlockRule.Never -> stringResource(R.string.levels_tab_planned)
         is UnlockRule.LessonRank -> stringResource(
@@ -260,10 +273,52 @@ private fun LockedMap(
             unlock.rank.displayName,
         )
     }
+
+/** A tab whose map is still being written: there is no tree to look at. */
+@Composable
+private fun MissingMap(
+    tab: CurriculumTab,
+    course: LevelCourse,
+    modifier: Modifier = Modifier,
+) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Text(
-            text = text,
+            text = gateText(tab, course),
             modifier = Modifier.padding(horizontal = 32.dp),
+            style = RudiTextStyles.RowNumber,
+            color = RudiColors.Muted,
+            textAlign = TextAlign.Center,
+            letterSpacing = 0.8.sp,
+        )
+    }
+}
+
+/**
+ * The gate of a locked family, stated over its map (decision 123). The map underneath stays
+ * whole and scrollable — the banner only says that nothing can be started yet, so the learner
+ * can still look through what is coming. It sits at the top so it never covers the first rows,
+ * which is where the map opens.
+ */
+@Composable
+private fun LockedBanner(text: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .background(RudiColors.SurfaceAlt.copy(alpha = 0.94f), RoundedCornerShape(12.dp))
+            .border(1.dp, RudiColors.Line, RoundedCornerShape(12.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.levels_tab_locked_badge).uppercase(),
+            style = RudiTextStyles.RowNumber,
+            color = RudiColors.Brick,
+            letterSpacing = 1.6.sp,
+        )
+        Spacer(modifier = Modifier.height(3.dp))
+        Text(
+            text = text,
             style = RudiTextStyles.RowNumber,
             color = RudiColors.Muted,
             textAlign = TextAlign.Center,
@@ -375,12 +430,15 @@ private fun LevelMap(
     rank: PracticeRank,
     onOpenLevel: (String) -> Unit,
     modifier: Modifier = Modifier,
+    locked: Boolean = false,
 ) {
     val verticalScroll = rememberScrollState()
     val horizontalScroll = rememberScrollState()
     val density = LocalDensity.current
     val mapHeight = MAP_VERTICAL_PADDING * 2 + MAP_ROW_HEIGHT * (catalog.lastRow + 1)
-    val currentLevel = progress.currentLevel(catalog, rank)
+    // A locked family has no level to start, so no node is highlighted as the current one and
+    // every pad reads as locked — the map is there to be read, not to be played.
+    val currentLevel = if (locked) null else progress.currentLevel(catalog, rank)
     val currentRow = currentLevel?.row ?: 0
 
     BoxWithConstraints(
@@ -423,8 +481,14 @@ private fun LevelMap(
                 .verticalScroll(verticalScroll)
                 .then(if (panning) Modifier.horizontalScroll(horizontalScroll) else Modifier),
         ) {
-            val states = remember(catalog, progress, rank) {
-                catalog.levels.associate { it.id to progress.stateOf(it, catalog, rank) }
+            val states = remember(catalog, progress, rank, locked) {
+                catalog.levels.associate {
+                    it.id to if (locked) {
+                        LevelNodeState.Locked
+                    } else {
+                        progress.stateOf(it, catalog, rank)
+                    }
+                }
             }
             Box(
                 modifier = Modifier

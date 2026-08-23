@@ -21,6 +21,7 @@
     <string name="levels_tab_hand_left">left</string>
     <string name="levels_tab_description">%1$s, %2$s</string>
     <string name="levels_tab_locked">Pass level %1$s of %2$s at %3$s to open this map.</string>
+    <string name="levels_tab_locked_badge">Locked</string>
     <string name="levels_tab_planned">This map is still being written. It arrives in a later release.</string>
     <string name="levels_next_level">Next level</string>
     <string name="levels_family_complete">Family complete</string>
