@@ -218,7 +218,7 @@ class LevelCatalogTest {
     }
 
     @Test
-    fun `a transition lesson previews its first phase and is not playable`() {
+    fun `a transition lesson previews its first phase and plays its blocks`() {
         val level = catalog(
             lessons = listOf(
                 Lesson(
@@ -242,7 +242,28 @@ class LevelCatalogTest {
 
         assertEquals("RLRL", level.pattern.joinToString("") { it.label })
         assertTrue(level.supportsBeatGrid)
-        assertFalse(level.playable)
+        assertTrue(level.phased)
+        assertEquals(4, level.phaseRepeats)
+        assertEquals(listOf(8, 8), level.phases.map(PracticePhase::beatCount))
+        assertEquals(
+            listOf("RLRL", "RRLL"),
+            level.phases.map { phase -> phase.steps.joinToString("") { it.label } },
+        )
+        // Phase levels are played since decision 141.
+        assertTrue(level.playable)
+    }
+
+    @Test
+    fun `a one-pattern lesson is a single block repeated once`() {
+        val level = catalog(
+            lessons = listOf(lesson("f.ST-01")),
+            nodes = listOf(node("f.ST-01")),
+        ).levels.single()
+
+        assertFalse(level.phased)
+        assertEquals(1, level.phaseRepeats)
+        assertEquals(listOf(64), level.phases.map(PracticePhase::beatCount))
+        assertEquals(level.pattern, level.phases.single().steps)
     }
 
     @Test

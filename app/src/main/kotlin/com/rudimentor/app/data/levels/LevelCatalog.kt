@@ -209,6 +209,19 @@ data class TransitionPlan(
     val phases: List<TransitionPhase>,
 )
 
+/**
+ * One block of an attempt: [beatCount] beats played on [steps].
+ *
+ * A one-pattern lesson is a single block. A transition lesson is a chain of them, and the
+ * whole chain repeats [TransitionPlan.repeatCount] times inside one attempt, so the practice
+ * engine walks the same loop for both kinds of level (decision 141).
+ */
+data class PracticePhase(
+    val index: Int,
+    val beatCount: Int,
+    val steps: List<PatternStep>,
+)
+
 data class WeakFocus(
     val strategy: WeakStrategy,
     val authoredWeakHand: PatternHand,
@@ -278,6 +291,19 @@ data class Level(
         ?: lesson.transitionPlan?.phases?.firstOrNull()?.pattern?.mode
         ?: PatternMode.Repeat
 
+    /** True when the lesson cycles through several patterns inside one attempt. */
+    val phased: Boolean = lesson.transitionPlan != null
+
+    /** The blocks one pass of an attempt plays, in order. */
+    val phases: List<PracticePhase> = lesson.transitionPlan?.phases
+        ?.mapIndexed { index, phase ->
+            PracticePhase(index = index, beatCount = phase.beatCount, steps = phase.pattern.steps)
+        }
+        ?: listOf(PracticePhase(index = 0, beatCount = lesson.execution.beatCount ?: 0, steps = pattern))
+
+    /** How many times the chain of [phases] repeats inside one attempt. */
+    val phaseRepeats: Int = lesson.transitionPlan?.repeatCount ?: 1
+
     /** `singles.ST-07` is shown as `07` on the map. */
     val displayNumber: String = lesson.id.substringAfterLast('-')
 
@@ -295,19 +321,18 @@ data class Level(
 
     /**
      * A beat row holds one hand per beat, so a unison step and a rest both fall outside
-     * it: such a level is previewed until the engine can play them.
+     * it: such a level is previewed until the engine can play them. Every phase counts —
+     * a level is only played when all of its blocks fit one hand per note.
      */
-    val supportsBeatGrid: Boolean = pattern.isNotEmpty() && pattern.all { it.hands.size == 1 }
+    val supportsBeatGrid: Boolean = phases.isNotEmpty() &&
+        phases.all { phase -> phase.steps.isNotEmpty() && phase.steps.all { it.hands.size == 1 } }
 
     /**
-     * Whether the practice engine can run this level today. Transition lessons need phase
-     * switching, timed lessons need a duration-driven attempt, and unison lessons need two
+     * Whether the practice engine can run this level today. Phase levels are played since
+     * decision 141; timed lessons still need a duration-driven attempt and unison lessons two
      * hands on one position — until then those levels are previewed, not played.
      */
-    val playable: Boolean = supportsBeatGrid &&
-        lesson.transitionPlan == null &&
-        !lesson.execution.timed &&
-        beatCount > 0
+    val playable: Boolean = supportsBeatGrid && !lesson.execution.timed && beatCount > 0
 
     fun target(rank: PracticeRank): RankTarget = rankTargets.single { it.rank == rank }
 }

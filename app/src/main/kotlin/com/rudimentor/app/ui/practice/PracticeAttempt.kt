@@ -18,37 +18,58 @@ data class PracticeNote(
     val index: Int,
     val hand: PatternHand,
     val timeMs: Float,
+    /** Which block of a phase level the note belongs to; always 0 on a one-pattern level. */
+    val phaseIndex: Int = 0,
+    /** True on the first note of a block of a phase level, so the track can mark the switch. */
+    val phaseStart: Boolean = false,
 )
 
 /**
  * Builds the note list of one attempt.
  *
- * The pattern repeats until `beatCount * attemptRepeats * hitsPerBeat` notes are laid out
- * (a tempo ramp plays its pass several times per attempt), and the
- * count-in beats sit before note 0, so `timeMs` is already the time on the shared
- * clock the audio engine reports.
+ * The attempt walks the blocks of the level ([Level.phases]) and plays that chain
+ * `phaseRepeats * attemptRepeats` times: a one-pattern level is a single block repeated once,
+ * a transition level is a chain of sticking blocks, and a tempo ramp plays its pass several
+ * times per attempt (decision 141). Inside a block the pattern repeats until the block has
+ * `beatCount * hitsPerBeat` notes, and every block starts its sticking from the top — the
+ * package authors each phase to fit its own beats, so carrying a cycle across a switch would
+ * shift the hands of the next block.
+ *
+ * The notes sit on one even grid: the count-in beats come before note 0, so `timeMs` is
+ * already the time on the shared clock the audio engine reports.
  */
 fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<PracticeNote> {
     val target = practiceTarget(level, rank) ?: return emptyList()
-    val steps = level.pattern
-    if (steps.isEmpty() || bpm <= 0) return emptyList()
+    if (bpm <= 0) return emptyList()
     val beatMs = 60_000f / bpm
     val noteMs = beatMs / target.hitsPerBeat
     val countInMs = PracticeScoring.COUNT_IN_BEATS * beatMs
-    val total = level.beatCount * target.attemptRepeats * target.hitsPerBeat
-    return List(total) { index ->
-        val step = steps[index % steps.size]
-        PracticeNote(
-            index = index,
-            // Multi-hand steps (unison) are drawn as the lead hand: one pad, one hit.
-            hand = if (step.hands.contains(PatternHand.Right)) {
-                PatternHand.Right
-            } else {
-                PatternHand.Left
-            },
-            timeMs = countInMs + index * noteMs,
-        )
+    val notes = ArrayList<PracticeNote>()
+    repeat(level.phaseRepeats * target.attemptRepeats) {
+        level.phases.forEach { phase ->
+            val steps = phase.steps
+            if (steps.isEmpty()) return@forEach
+            val count = phase.beatCount * target.hitsPerBeat
+            for (position in 0 until count) {
+                val step = steps[position % steps.size]
+                notes.add(
+                    PracticeNote(
+                        index = notes.size,
+                        // Multi-hand steps (unison) are drawn as the lead hand: one pad, one hit.
+                        hand = if (step.hands.contains(PatternHand.Right)) {
+                            PatternHand.Right
+                        } else {
+                            PatternHand.Left
+                        },
+                        timeMs = countInMs + notes.size * noteMs,
+                        phaseIndex = phase.index,
+                        phaseStart = level.phased && position == 0,
+                    ),
+                )
+            }
+        }
     }
+    return notes
 }
 
 /**

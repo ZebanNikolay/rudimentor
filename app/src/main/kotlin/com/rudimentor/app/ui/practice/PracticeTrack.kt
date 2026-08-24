@@ -127,6 +127,12 @@ fun PracticeTrack(
         notes.forEach { note ->
             val x = lineX + (note.timeMs - positionMs) * pxPerMs
             if (x < -side || x > width + side) return@forEach
+            // A phase level changes its sticking mid-attempt: the switch is announced by a
+            // mark in front of the first note of the new block, so it is seen coming instead
+            // of being discovered on the hit line (decision 141).
+            if (note.phaseStart && note.index > 0) {
+                drawPhaseSwitch(x = x - side * PHASE_MARK_GAP, height = height)
+            }
             val judgement = attempt.judgementAt(note.index)
             val missed = judgement?.window == HitWindow.Miss
             // A missed note drops out of the lane and fades instead of being crossed
@@ -306,6 +312,20 @@ private fun DrawScope.drawFinishLine(
     )
 }
 
+/**
+ * Where a phase level swaps its sticking: one brick hairline across the lane, thinner and
+ * shorter than the finish line so it reads as a switch and never as an end.
+ */
+private fun DrawScope.drawPhaseSwitch(x: Float, height: Float) {
+    if (height <= 0f) return
+    drawLine(
+        color = RudiColors.BrickBright.copy(alpha = PHASE_MARK_ALPHA),
+        start = Offset(x, height * PHASE_TOP_FRACTION),
+        end = Offset(x, height * (1f - PHASE_TOP_FRACTION)),
+        strokeWidth = 2f,
+    )
+}
+
 internal fun windowColor(window: HitWindow): Color = when (window) {
     HitWindow.Perfect -> RudiColors.WindowPerfect
     HitWindow.Good -> RudiColors.WindowGood
@@ -448,6 +468,11 @@ private const val VERDICT_GROW = 0.18f
 private const val VERDICT_FADE_FROM = 0.45f
 private const val VERDICT_WORD_FRACTION = 0.30f
 private const val VERDICT_MS_FRACTION = 0.15f
+
+/** The phase switch mark: how far in front of the note it stands, how tall and how loud. */
+private const val PHASE_MARK_GAP = 0.66f
+private const val PHASE_TOP_FRACTION = 0.26f
+private const val PHASE_MARK_ALPHA = 0.55f
 
 /** Concept geometry, as fractions of the note side (44 px in the concept). */
 private const val HIT_DOT_OFFSET = 0.74f
