@@ -288,16 +288,32 @@ private fun MainMenu(
             Spacer(modifier = Modifier.height(40.dp))
             MenuCard(
                 title = stringResource(R.string.menu_metronome),
-                letter = stringResource(R.string.menu_metronome_letter),
+                iconRes = R.drawable.ic_menu_metronome,
                 enabled = true,
                 onClick = onOpenMetronome,
             )
             Spacer(modifier = Modifier.height(12.dp))
             MenuCard(
                 title = stringResource(R.string.menu_levels),
-                letter = stringResource(R.string.menu_levels_letter),
+                iconRes = R.drawable.ic_menu_levels,
                 enabled = true,
                 onClick = onOpenLevels,
+            )
+            // Settings and About have their icons and their place in the menu, but no
+            // screens yet: they stay grey and untappable until those screens land.
+            Spacer(modifier = Modifier.height(12.dp))
+            MenuCard(
+                title = stringResource(R.string.menu_settings),
+                iconRes = R.drawable.ic_menu_settings,
+                enabled = false,
+                onClick = {},
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            MenuCard(
+                title = stringResource(R.string.menu_about),
+                iconRes = R.drawable.ic_menu_info,
+                enabled = false,
+                onClick = {},
             )
             if (BuildConfig.DEBUG) {
                 Spacer(modifier = Modifier.height(12.dp))

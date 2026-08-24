@@ -4,9 +4,9 @@
 
     <!-- Main menu tiles -->
     <string name="menu_metronome">Metronome</string>
-    <string name="menu_metronome_letter">M</string>
     <string name="menu_levels">Levels</string>
-    <string name="menu_levels_letter">L</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_about">About</string>
 
     <!-- Levels map -->
     <string name="levels_title">LEVELS</string>
