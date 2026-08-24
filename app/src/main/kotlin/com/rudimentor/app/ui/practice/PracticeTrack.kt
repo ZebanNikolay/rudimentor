@@ -36,8 +36,10 @@ import com.rudimentor.app.ui.theme.RudiDimens
  *
  * Geometry follows the approved concept: one lane line across the vertical centre
  * with the notes sitting on it and hit dots on a virtual rail below the pads. The
- * verdict is no longer parked on the bottom edge: it flies up over the hit line as a
- * word in the colour of its window (decision 130).
+ * verdict of a stroke is written under its own note, in the colour of its window, and
+ * rides away with the note instead of flying over the hit line (decision 143): a word
+ * that climbs over the hit line collides with the line itself and is gone before it can
+ * be read, while a word parked under the note leaves a readable trail of the attempt.
  *
  * The note side comes from the pad size library ([RudiDimens.TrackNoteSize]) and is
  * read from arm's length over a practice pad, which is also why the lane shows less
@@ -76,6 +78,8 @@ fun PracticeTrack(
         val laneY = height / 2f
         val hitDotY = laneY + side * HIT_DOT_OFFSET
         val extraDotY = laneY + side * EXTRA_DOT_OFFSET
+        // The verdict block starts below the hit dot rail and stays inside the canvas.
+        val verdictY = minOf(laneY + side * VERDICT_TOP_OFFSET, height - side * 0.5f)
 
         drawBarLines(
             positionMs = positionMs,
@@ -190,6 +194,26 @@ fun PracticeTrack(
                     center = Offset(x + judgement.offsetMs * pxPerMs, hitDotY),
                 )
             }
+
+            // The verdict sits under the stroke that earned it and scrolls away with it:
+            // it never fades and never moves on its own, so a glance back down the lane
+            // still reads the last few strokes (decision 143).
+            if (judgement != null) {
+                val hitX = if (judgement.window == HitWindow.Miss) {
+                    x
+                } else {
+                    x + judgement.offsetMs * pxPerMs
+                }
+                drawVerdictLabel(
+                    x = hitX,
+                    topY = verdictY,
+                    side = side,
+                    judgement = judgement,
+                    showOffsetMs = showOffsetMs,
+                    measurer = measurer,
+                    style = letterStyle,
+                )
+            }
         }
 
         attempt.extras.forEach { hitMs ->
@@ -201,80 +225,44 @@ fun PracticeTrack(
                 center = Offset(x, extraDotY),
             )
         }
-
-        // The verdict of the last judged note flies up over the hit line: one word in
-        // the colour of its window, growing and fading as it goes (decision 130). It
-        // stays inside the lane, clear of the HUD above and of the notes below.
-        val judged = attempt.lastJudged
-        val age = positionMs - attempt.lastJudgedAtMs
-        if (judged != null && age in 0f..VERDICT_FLOAT_MS) {
-            drawVerdictFloater(
-                x = lineX,
-                laneY = laneY,
-                side = side,
-                judgement = judged,
-                progress = age / VERDICT_FLOAT_MS,
-                showOffsetMs = showOffsetMs,
-                measurer = measurer,
-                style = letterStyle,
-            )
-        }
     }
 }
 
 /**
- * The verdict floater: the word of the window rises above the lane, grows a little
- * and fades out. Milliseconds are an opt-in second line — the dot on the rail
- * already shows which side of the note the stroke landed on (decision 130).
+ * The verdict of one stroke: the word of its window under the hit dot, optionally with
+ * the milliseconds under it. Bigger than the old parked label (decision 143) because it
+ * is read at arm's length over a pad, and drawn at full opacity — the lane scrolls it
+ * out on its own, nothing has to fade it.
  */
-private fun DrawScope.drawVerdictFloater(
+private fun DrawScope.drawVerdictLabel(
     x: Float,
-    laneY: Float,
+    topY: Float,
     side: Float,
     judgement: NoteJudgement,
-    progress: Float,
     showOffsetMs: Boolean,
     measurer: TextMeasurer,
     style: TextStyle,
 ) {
-    val eased = progress.coerceIn(0f, 1f)
-    val alpha = if (eased <= VERDICT_FADE_FROM) {
-        1f
-    } else {
-        (1f - (eased - VERDICT_FADE_FROM) / (1f - VERDICT_FADE_FROM)).coerceIn(0f, 1f)
-    }
-    val color = windowColor(judgement.window).copy(alpha = alpha)
-    val grow = 1f + VERDICT_GROW * eased
+    val color = windowColor(judgement.window)
     val word = measurer.measure(
         text = verdictWord(judgement),
-        style = style.copy(
-            fontSize = (side * VERDICT_WORD_FRACTION * grow).toSp(),
-            color = color,
-        ),
+        style = style.copy(fontSize = (side * VERDICT_WORD_FRACTION).toSp(), color = color),
     )
-    val offsets = if (showOffsetMs && judgement.window != HitWindow.Miss) {
-        measurer.measure(
-            text = PracticeScoring.verdictLabel(judgement.offsetMs),
-            style = style.copy(
-                fontSize = (side * VERDICT_MS_FRACTION * grow).toSp(),
-                color = color.copy(alpha = alpha * 0.8f),
-            ),
-        )
-    } else {
-        null
-    }
-    // The block hangs above the lane and climbs from there.
-    val bottom = laneY - side * (VERDICT_RISE_START + VERDICT_RISE * eased)
-    val blockHeight = word.size.height + (offsets?.size?.height ?: 0)
-    val top = (bottom - blockHeight).coerceAtLeast(0f)
     drawText(
         textLayoutResult = word,
-        topLeft = Offset(x - word.size.width / 2f, top),
+        topLeft = Offset(x - word.size.width / 2f, topY),
     )
-    if (offsets != null) {
+    if (showOffsetMs && judgement.window != HitWindow.Miss) {
+        val offsets = measurer.measure(
+            text = PracticeScoring.verdictLabel(judgement.offsetMs),
+            style = style.copy(
+                fontSize = (side * VERDICT_MS_FRACTION).toSp(),
+                color = color.copy(alpha = 0.8f),
+            ),
+        )
         drawText(
             textLayoutResult = offsets,
-            topLeft = Offset(x - offsets.size.width / 2f, top + word.size.height),
+            topLeft = Offset(x - offsets.size.width / 2f, topY + word.size.height),
         )
     }
 }
@@ -434,7 +422,7 @@ private fun DrawScope.drawCountIn(
     }
 }
 
-/** The word of a window: what the floater shouts over the hit line. */
+/** The word of a window: what is written under the stroke that earned it. */
 internal fun verdictWord(judgement: NoteJudgement): String = when (judgement.window) {
     HitWindow.Perfect -> "PERFECT"
     HitWindow.Good -> "GOOD"
@@ -460,14 +448,14 @@ private const val FINISH_LABEL_FRACTION = 0.26f
 private const val FINISH_LABEL_GAP = 0.03f
 private val FINISH_STROKE = 4.dp
 
-/** The verdict floater: how long it flies, how far it climbs, how it grows and fades. */
-private const val VERDICT_FLOAT_MS = 620f
-private const val VERDICT_RISE_START = 0.45f
-private const val VERDICT_RISE = 0.26f
-private const val VERDICT_GROW = 0.18f
-private const val VERDICT_FADE_FROM = 0.45f
-private const val VERDICT_WORD_FRACTION = 0.30f
-private const val VERDICT_MS_FRACTION = 0.15f
+/**
+ * The verdict label under a stroke: how big the word is, how big the optional
+ * milliseconds are, and how far below the hit dot the block starts. All fractions of the
+ * note side, so the label scales with the pads (decision 143).
+ */
+private const val VERDICT_WORD_FRACTION = 0.40f
+private const val VERDICT_MS_FRACTION = 0.20f
+private const val VERDICT_TOP_OFFSET = 1.02f
 
 /** The phase switch mark: how far in front of the note it stands, how tall and how loud. */
 private const val PHASE_MARK_GAP = 0.66f
