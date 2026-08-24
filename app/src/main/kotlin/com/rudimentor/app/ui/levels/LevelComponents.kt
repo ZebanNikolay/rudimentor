@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rudimentor.app.R
 import com.rudimentor.app.data.levels.LeadHand
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelModifier
@@ -141,6 +143,9 @@ internal fun LevelTags(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        // A level the engine cannot run yet says so first: the play button is disabled and the
+        // reason used to live only in the notes below the fold (decision 131).
+        if (!level.playable) LevelTag(stringResource(R.string.level_detail_preview_tag))
         LevelTag(level.type.displayName)
         level.modifiers.forEach { LevelTag(it.displayName) }
         LevelTag(level.technique.strokeStyle.replace('_', ' '))

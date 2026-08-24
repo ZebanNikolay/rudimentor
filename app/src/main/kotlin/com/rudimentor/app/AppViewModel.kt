@@ -92,6 +92,12 @@ class AppViewModel(
         copy(clickFollowsHeadphones = follow)
     }
 
+    /**
+     * The millisecond numbers on the verdict floater. Lives next to the click and the
+     * latency for now and will move to the app settings screen with them (decision 130).
+     */
+    fun setShowOffsetMs(show: Boolean) = update { copy(showOffsetMs = show) }
+
     fun setInputLatencyMs(latencyMs: Float) = update {
         copy(
             inputLatencyMs = latencyMs.coerceIn(

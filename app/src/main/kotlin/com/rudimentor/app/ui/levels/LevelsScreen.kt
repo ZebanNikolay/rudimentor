@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,7 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -54,6 +55,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
 import com.rudimentor.app.data.levels.CurriculumTab
@@ -236,7 +239,9 @@ private fun FamilyTabs(
             val enabled = tab.available && progress.isTabUnlocked(tab)
             val selected = tab.id == activeTabId
             RudiTab(
-                title = tab.title.uppercase(),
+                // The strip prints the short label when the family has one; the full
+                // name still reaches the screen reader through [tabDescription].
+                title = tab.tabTitle.uppercase(),
                 subtitle = tab.sticking ?: noSticking,
                 selected = selected,
                 // A locked tab still opens its own gate explanation, so it stays clickable.
@@ -362,68 +367,83 @@ private fun RankDialog(
     onDismiss: () -> Unit,
 ) {
     var pending by remember { mutableStateOf(rank) }
-    AlertDialog(
+    // A hand-built dialog, not `AlertDialog`: the illustration is the point of this screen and
+    // the platform width kept it postage-stamp sized (decision 131). The window fills the width
+    // minus the Material dialog margin, and the art takes the whole width above the rows.
+    Dialog(
         onDismissRequest = onDismiss,
-        containerColor = RudiColors.SurfaceAlt,
-        title = {
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = DIALOG_MARGIN)
+                .clip(RoundedCornerShape(20.dp))
+                .background(RudiColors.SurfaceAlt)
+                .border(1.dp, RudiColors.Line, RoundedCornerShape(20.dp))
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Text(
                 text = stringResource(R.string.levels_rank_dialog_title).uppercase(),
                 style = RudiTextStyles.Timer,
                 color = RudiColors.Text,
             )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Image(
-                    painter = painterResource(rankArt(pending)),
-                    contentDescription = stringResource(R.string.levels_rank_art_cd, pending.displayName),
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(148.dp),
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    PracticeRank.entries.forEach { option ->
-                        val selected = option == pending
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(
-                                    width = 1.dp,
-                                    color = if (selected) RudiColors.Brick else RudiColors.Line,
-                                    shape = RoundedCornerShape(10.dp),
-                                )
-                                .clickable { pending = option }
-                                .padding(horizontal = 12.dp, vertical = 9.dp),
-                        ) {
-                            Text(
-                                text = option.displayName.uppercase(),
-                                style = RudiTextStyles.Timer,
-                                color = if (selected) RudiColors.Text else RudiColors.Muted,
+            Image(
+                painter = painterResource(rankArt(pending)),
+                contentDescription = stringResource(R.string.levels_rank_art_cd, pending.displayName),
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                PracticeRank.entries.forEach { option ->
+                    val selected = option == pending
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                width = if (selected) 1.5.dp else 1.dp,
+                                color = if (selected) RudiColors.BrickBright else RudiColors.Line,
+                                shape = RoundedCornerShape(10.dp),
                             )
-                            Text(
-                                text = stringResource(R.string.levels_rank_hits, option.hitsPerBeat),
-                                style = RudiTextStyles.RowNumber,
-                                color = RudiColors.Muted,
-                            )
-                        }
+                            .clickable { pending = option }
+                            .padding(horizontal = 12.dp, vertical = 9.dp),
+                    ) {
+                        Text(
+                            text = option.displayName.uppercase(),
+                            style = RudiTextStyles.Timer,
+                            color = if (selected) RudiColors.Text else RudiColors.Muted,
+                        )
+                        Text(
+                            text = stringResource(R.string.levels_rank_hits, option.hitsPerBeat),
+                            style = RudiTextStyles.RowNumber,
+                            color = RudiColors.Muted,
+                        )
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(pending) }) {
-                Text(text = stringResource(R.string.levels_rank_confirm), color = RudiColors.Brick)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(R.string.levels_rank_cancel), color = RudiColors.Muted)
+                }
+                TextButton(onClick = { onConfirm(pending) }) {
+                    Text(
+                        text = stringResource(R.string.levels_rank_confirm),
+                        color = RudiColors.BrickBright,
+                    )
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.levels_rank_cancel), color = RudiColors.Muted)
-            }
-        },
-    )
+        }
+    }
 }
 
+/** Material keeps 28.dp between a dialog and the screen edge; the window keeps the rest. */
+private val DIALOG_MARGIN = 24.dp
 @Composable
 private fun LevelMap(
     catalog: LevelCatalog,
@@ -551,12 +571,15 @@ private fun LevelMap(
                                     end = end,
                                     strokeWidth = stroke,
                                     cap = StrokeCap.Round,
-                                    pathEffect = if (passed || !branching) {
-                                        null
-                                    } else {
+                                    // The dash means "optional", not "not reached yet": a branch
+                                    // stays dashed after the prerequisite is passed and only
+                                    // turns brick red (decision 131).
+                                    pathEffect = if (branching) {
                                         PathEffect.dashPathEffect(
                                             floatArrayOf(2.dp.toPx(), 3.dp.toPx()),
                                         )
+                                    } else {
+                                        null
                                     },
                                 )
 

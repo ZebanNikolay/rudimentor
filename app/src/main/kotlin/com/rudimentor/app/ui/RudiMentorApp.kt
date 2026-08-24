@@ -74,6 +74,7 @@ fun RudiMentorApp(
     onClickAudible: (Boolean) -> Unit,
     onClickFollowsHeadphones: (Boolean) -> Unit,
     onInputLatencyMs: (Float) -> Unit,
+    onShowOffsetMs: (Boolean) -> Unit,
     onAttemptFinished: (Level, PracticeRank, Int, PracticeResult) -> Unit,
 ) {
     // The click follows the audio output until the learner overrides it by hand, so
@@ -191,6 +192,7 @@ fun RudiMentorApp(
                             bpm = practiceBpm,
                             clickAudible = clickAudible,
                             latencyMs = settings.inputLatencyMs,
+                            showOffsetMs = settings.showOffsetMs,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
                                 DevLog.log(
@@ -236,6 +238,8 @@ fun RudiMentorApp(
                         onClickFollowsHeadphones = onClickFollowsHeadphones,
                         latencyMs = settings.inputLatencyMs,
                         onLatencyMs = onInputLatencyMs,
+                        showOffsetMs = settings.showOffsetMs,
+                        onShowOffsetMs = onShowOffsetMs,
                         onRetry = {
                             practiceRunId += 1
                             screenName = Screen.Practice.name

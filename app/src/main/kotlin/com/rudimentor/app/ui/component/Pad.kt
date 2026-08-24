@@ -137,20 +137,31 @@ fun Pad(
         }
 
         if (showLetter && !letter.isNullOrEmpty()) {
-            // Stars take the bottom band of the face, so the letter shrinks a little and
-            // moves up to keep the pad balanced instead of colliding with them.
+            // Stars take the bottom band of the face, so the letter sits in the optical
+            // middle of what is left above them rather than in the middle of the pad.
+            // The band comes from the star tokens, so moving the stars moves the letter
+            // with them (decision 130).
             val crowded = stars > 0
+            val letterShift = if (crowded) {
+                RudiDimens.PAD_STAR_TOP_FRACTION / 2f - 0.5f
+            } else {
+                0f
+            }
             Text(
                 text = letter,
                 modifier = if (crowded) {
-                    Modifier.offset(y = -size * 0.12f)
+                    Modifier.offset(y = size * letterShift)
                 } else {
                     Modifier
                 },
                 color = palette.letter,
                 fontFamily = JetBrainsMono,
                 fontWeight = FontWeight.Bold,
-                fontSize = maxOf(9f, size.value * letterFraction * if (crowded) 0.85f else 1f).sp,
+                fontSize = maxOf(
+                    9f,
+                    size.value * letterFraction *
+                        if (crowded) RudiDimens.PAD_LETTER_CROWDED_SCALE else 1f,
+                ).sp,
                 // A muted pad is told apart by the dashed outline and the dimmed letter
                 // only — the letter is never struck through.
             )

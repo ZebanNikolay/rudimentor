@@ -3,12 +3,9 @@ package com.rudimentor.app.ui.practice
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -22,6 +19,7 @@ import com.rudimentor.app.ui.component.drawPadFace
 import com.rudimentor.app.ui.component.padPalette
 import com.rudimentor.app.ui.theme.JetBrainsMono
 import com.rudimentor.app.ui.theme.RudiColors
+import com.rudimentor.app.ui.theme.RudiDimens
 
 /**
  * The scrolling note track: notes are pads, drawn right to left onto the hit line.
@@ -37,8 +35,13 @@ import com.rudimentor.app.ui.theme.RudiColors
  * they arrive they will get a look of their own.
  *
  * Geometry follows the approved concept: one lane line across the vertical centre
- * with the notes sitting on it, hit dots on a virtual rail below the pads, and the
- * verdict on the bottom edge under the hit line.
+ * with the notes sitting on it and hit dots on a virtual rail below the pads. The
+ * verdict is no longer parked on the bottom edge: it flies up over the hit line as a
+ * word in the colour of its window (decision 130).
+ *
+ * The note side comes from the pad size library ([RudiDimens.TrackNoteSize]) and is
+ * read from arm's length over a practice pad, which is also why the lane shows less
+ * time at once than the concept did: the notes have to keep their air.
  *
  * [frame] is the poll counter: reading it inside the draw lambda is what makes the
  * track redraw on every engine poll.
@@ -52,6 +55,7 @@ fun PracticeTrack(
     frame: Int,
     finishMs: Float,
     modifier: Modifier = Modifier,
+    showOffsetMs: Boolean = false,
 ) {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
@@ -64,7 +68,10 @@ fun PracticeTrack(
         if (width <= 0f || height <= 0f) return@Canvas
         val pxPerMs = width / VISIBLE_MS
         val lineX = width * LINE_FRACTION
-        val side = minOf(with(density) { NOTE_SIDE.toPx() }, height * 0.34f)
+        val side = minOf(
+            with(density) { RudiDimens.TrackNoteSize.toPx() },
+            height * RudiDimens.TRACK_NOTE_HEIGHT_FRACTION,
+        )
         // The lane sits on the vertical centre and the notes are centred on it.
         val laneY = height / 2f
         val hitDotY = laneY + side * HIT_DOT_OFFSET
@@ -98,22 +105,21 @@ fun PracticeTrack(
             style = letterStyle,
         )
 
-        // The finish pad closes the lane: the last stroke drives it onto the hit line,
-        // where it lights up and the run is over (decision 116). Drawn before the
-        // notes so the last note passes over it, not under it.
+        // The finish is a line across the lane, not a pad: a pad shape says "hit me",
+        // and on the first live run it did exactly that (decision 130 replaces 116).
+        // Drawn before the notes so the last note passes over it, not under it.
         if (finishMs > 0f) {
-            val finishWidth = side * FINISH_WIDTH
             val finishX = lineX + (finishMs - positionMs) * pxPerMs
-            if (finishX > -finishWidth && finishX < width + finishWidth) {
-                drawFinishPad(
-                    center = Offset(finishX, laneY),
-                    width = finishWidth,
-                    height = side,
+            if (finishX > -side && finishX < width + side) {
+                drawFinishLine(
+                    x = finishX,
+                    height = height,
                     passed = positionMs >= finishMs,
-                    glow = ((positionMs - finishMs) / FINISH_GLOW_MS).coerceIn(0f, 1f),
-                    strokeWidth = with(density) { 1.dp.toPx() },
+                    strokeWidth = with(density) { FINISH_STROKE.toPx() },
                     measurer = measurer,
-                    style = letterStyle.copy(fontSize = with(density) { (side * 0.28f).toSp() }),
+                    style = letterStyle.copy(
+                        fontSize = with(density) { (side * FINISH_LABEL_FRACTION).toSp() },
+                    ),
                 )
             }
         }
@@ -190,101 +196,112 @@ fun PracticeTrack(
             )
         }
 
-        // The verdict of the last judged note sits on the bottom edge under the hit
-        // line and fades out shortly after, as in the concept (decision 101).
+        // The verdict of the last judged note flies up over the hit line: one word in
+        // the colour of its window, growing and fading as it goes (decision 130). It
+        // stays inside the lane, clear of the HUD above and of the notes below.
         val judged = attempt.lastJudged
-        val verdict = verdictText(judged)
         val age = positionMs - attempt.lastJudgedAtMs
-        if (verdict != null && age in 0f..VERDICT_HOLD_MS) {
-            val layout = measurer.measure(
-                text = verdict,
-                style = letterStyle.copy(
-                    fontSize = with(density) { (side * 0.30f).toSp() },
-                    color = windowColor(judged?.window ?: HitWindow.Miss),
-                ),
-            )
-            drawText(
-                textLayoutResult = layout,
-                topLeft = Offset(
-                    lineX - layout.size.width / 2f,
-                    height - layout.size.height - with(density) { 6.dp.toPx() },
-                ),
+        if (judged != null && age in 0f..VERDICT_FLOAT_MS) {
+            drawVerdictFloater(
+                x = lineX,
+                laneY = laneY,
+                side = side,
+                judgement = judged,
+                progress = age / VERDICT_FLOAT_MS,
+                showOffsetMs = showOffsetMs,
+                measurer = measurer,
+                style = letterStyle,
             )
         }
     }
 }
 
 /**
- * The wide pad that ends the lane. Before the hit line it is an accent frame like
- * the notes; once it crosses, it burns: lit body, thicker frame and a halo that
- * rises with [glow], and the label turns from FINISH to CLEAR.
- *
- * Drawn by hand rather than through `drawPadFace`, which only knows squares.
+ * The verdict floater: the word of the window rises above the lane, grows a little
+ * and fades out. Milliseconds are an opt-in second line — the dot on the rail
+ * already shows which side of the note the stroke landed on (decision 130).
  */
-private fun DrawScope.drawFinishPad(
-    center: Offset,
-    width: Float,
+private fun DrawScope.drawVerdictFloater(
+    x: Float,
+    laneY: Float,
+    side: Float,
+    judgement: NoteJudgement,
+    progress: Float,
+    showOffsetMs: Boolean,
+    measurer: TextMeasurer,
+    style: TextStyle,
+) {
+    val eased = progress.coerceIn(0f, 1f)
+    val alpha = if (eased <= VERDICT_FADE_FROM) {
+        1f
+    } else {
+        (1f - (eased - VERDICT_FADE_FROM) / (1f - VERDICT_FADE_FROM)).coerceIn(0f, 1f)
+    }
+    val color = windowColor(judgement.window).copy(alpha = alpha)
+    val grow = 1f + VERDICT_GROW * eased
+    val word = measurer.measure(
+        text = verdictWord(judgement),
+        style = style.copy(
+            fontSize = (side * VERDICT_WORD_FRACTION * grow).toSp(),
+            color = color,
+        ),
+    )
+    val offsets = if (showOffsetMs && judgement.window != HitWindow.Miss) {
+        measurer.measure(
+            text = PracticeScoring.verdictLabel(judgement.offsetMs),
+            style = style.copy(
+                fontSize = (side * VERDICT_MS_FRACTION * grow).toSp(),
+                color = color.copy(alpha = alpha * 0.8f),
+            ),
+        )
+    } else {
+        null
+    }
+    // The block hangs above the lane and climbs from there.
+    val bottom = laneY - side * (VERDICT_RISE_START + VERDICT_RISE * eased)
+    val blockHeight = word.size.height + (offsets?.size?.height ?: 0)
+    val top = (bottom - blockHeight).coerceAtLeast(0f)
+    drawText(
+        textLayoutResult = word,
+        topLeft = Offset(x - word.size.width / 2f, top),
+    )
+    if (offsets != null) {
+        drawText(
+            textLayoutResult = offsets,
+            topLeft = Offset(x - offsets.size.width / 2f, top + word.size.height),
+        )
+    }
+}
+
+/**
+ * The end of the lane: one heavy vertical line with FINISH written over it. A pad
+ * shape here read as "hit me" and earned an extra stroke on the first live run, so
+ * the finish carries no pad geometry at all (decision 130). Once it crosses the hit
+ * line it turns brick; LEVEL CLEAR is announced by the HUD, not by the label.
+ */
+private fun DrawScope.drawFinishLine(
+    x: Float,
     height: Float,
     passed: Boolean,
-    glow: Float,
     strokeWidth: Float,
     measurer: TextMeasurer,
     style: TextStyle,
 ) {
-    if (height <= 0f || width <= 0f) return
-    val palette = padPalette(round = false, tone = PadTone.Accent, lit = passed, light = false)
-    val radius = height * 0.22f
-    val left = center.x - width / 2f
-    val top = center.y - height / 2f
-
-    // Rings instead of a gradient brush: the halo stays inside the one draw pass the
-    // whole track is built on.
-    if (passed) {
-        for (ring in 1..FINISH_HALO_RINGS) {
-            val grow = height * 0.13f * ring * (0.6f + glow * 0.7f)
-            val ringAlpha = 0.20f * (1f - ring / (FINISH_HALO_RINGS + 1f)) * (0.35f + glow * 0.65f)
-            drawRoundRect(
-                color = RudiColors.BrickLit.copy(alpha = ringAlpha),
-                topLeft = Offset(left - grow, top - grow),
-                size = Size(width + grow * 2f, height + grow * 2f),
-                cornerRadius = CornerRadius(radius + grow, radius + grow),
-                style = Stroke(width = height * 0.09f),
-            )
-        }
-    }
-
-    if (palette.body != Color.Transparent) {
-        drawRoundRect(
-            color = palette.body,
-            topLeft = Offset(left, top),
-            size = Size(width, height),
-            cornerRadius = CornerRadius(radius, radius),
-        )
-    }
-    drawRoundRect(
-        color = palette.border,
-        topLeft = Offset(left, top),
-        size = Size(width, height),
-        cornerRadius = CornerRadius(radius, radius),
-        style = Stroke(width = if (passed) strokeWidth * 2f else strokeWidth),
+    if (height <= 0f) return
+    val top = height * FINISH_TOP_FRACTION
+    val bottom = height * (1f - FINISH_TOP_FRACTION)
+    drawLine(
+        color = if (passed) RudiColors.BrickLit else RudiColors.Text,
+        start = Offset(x, top),
+        end = Offset(x, bottom),
+        strokeWidth = strokeWidth,
     )
-
-    // One LED per end, on the same top rail the square pads use.
-    val ledRadius = maxOf(height * 0.07f, 1.5f)
-    val ledY = top + height * 0.20f
-    listOf(left + height * 0.24f, left + width - height * 0.24f).forEach { ledX ->
-        drawCircle(color = palette.led, radius = ledRadius, center = Offset(ledX, ledY))
-    }
-
-    val label = measurer.measure(
-        text = if (passed) "CLEAR" else "FINISH",
-        style = style.copy(color = palette.letter),
-    )
+    val label = measurer.measure(text = "FINISH", style = style.copy(color = RudiColors.Text))
     drawText(
         textLayoutResult = label,
         topLeft = Offset(
-            center.x - label.size.width / 2f,
-            center.y - label.size.height / 2f,
+            x - label.size.width / 2f,
+            (top - label.size.height - height * FINISH_LABEL_GAP).coerceAtLeast(0f),
         ),
     )
 }
@@ -397,32 +414,43 @@ private fun DrawScope.drawCountIn(
     }
 }
 
-/** Verdict text of the last judged note, always in milliseconds. */
-internal fun verdictText(judgement: NoteJudgement?): String? = when {
-    judgement == null -> null
-    judgement.window == HitWindow.Miss -> "MISS"
-    else -> PracticeScoring.verdictLabel(judgement.offsetMs)
+/** The word of a window: what the floater shouts over the hit line. */
+internal fun verdictWord(judgement: NoteJudgement): String = when (judgement.window) {
+    HitWindow.Perfect -> "PERFECT"
+    HitWindow.Good -> "GOOD"
+    HitWindow.Ok -> "OK"
+    HitWindow.Miss -> "MISS"
 }
 
-private const val VISIBLE_MS = 2000f
+/**
+ * How much time the lane shows at once. Shorter than the concept's two seconds: the
+ * notes grew by half (decision 130), so the lane has to spread them out to keep the
+ * air between them at the fast ranks.
+ */
+private const val VISIBLE_MS = 1400f
 private const val LINE_FRACTION = 0.33f
 private const val MISS_FALL_MS = 420f
 
 /** How far a played note steps back once its verdict is on the rail. */
 private const val PLAYED_ALPHA = 0.45f
 
-/** The finish pad, as a multiple of the note side, and how its halo comes up. */
-private const val FINISH_WIDTH = 2.6f
-private const val FINISH_GLOW_MS = 220f
-private const val FINISH_HALO_RINGS = 4
+/** The finish line: how tall it stands, how heavy it is, where its label sits. */
+private const val FINISH_TOP_FRACTION = 0.18f
+private const val FINISH_LABEL_FRACTION = 0.26f
+private const val FINISH_LABEL_GAP = 0.03f
+private val FINISH_STROKE = 4.dp
 
-/** How long the verdict stays on screen after a note is judged. */
-private const val VERDICT_HOLD_MS = 380f
+/** The verdict floater: how long it flies, how far it climbs, how it grows and fades. */
+private const val VERDICT_FLOAT_MS = 620f
+private const val VERDICT_RISE_START = 0.45f
+private const val VERDICT_RISE = 0.26f
+private const val VERDICT_GROW = 0.18f
+private const val VERDICT_FADE_FROM = 0.45f
+private const val VERDICT_WORD_FRACTION = 0.30f
+private const val VERDICT_MS_FRACTION = 0.15f
 
 /** Concept geometry, as fractions of the note side (44 px in the concept). */
 private const val HIT_DOT_OFFSET = 0.74f
 private const val HIT_DOT_SIZE = 0.25f
 private const val EXTRA_DOT_OFFSET = 0.58f
 private const val EXTRA_DOT_SIZE = 0.16f
-
-private val NOTE_SIDE = 44.dp

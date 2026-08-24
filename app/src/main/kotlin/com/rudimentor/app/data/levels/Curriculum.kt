@@ -44,8 +44,17 @@ data class CurriculumTab(
      * family, not to the composable. `null` on a map that mixes figures, such as Mix.
      */
     val sticking: String? = null,
+    /**
+     * Short label for the tab strip, for a family whose name does not fit four equal
+     * columns: Paradiddles is spelled PARAS on the tab (decision 130). The full
+     * [title] stays everywhere else — level names, gates and the spoken description.
+     */
+    val shortTitle: String? = null,
 ) {
     val available: Boolean get() = status == FamilyStatus.Available
+
+    /** What the tab strip prints. */
+    val tabTitle: String get() = shortTitle ?: title
 }
 
 data class Curriculum(
@@ -87,6 +96,9 @@ data class Curriculum(
                 val sticking = tab.sticking
                 require(sticking == null || STICKING.matches(sticking)) {
                     "${tab.id}: a sticking pattern is 2 to 8 R/L letters, got '$sticking'"
+                }
+                require(tab.shortTitle?.isNotBlank() != false) {
+                    "${tab.id}: a short title must not be blank"
                 }
             }
             return Curriculum(schemaVersion = schemaVersion, id = id, name = name, tabs = tabs)

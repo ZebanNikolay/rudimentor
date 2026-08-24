@@ -21,6 +21,13 @@ object RudiColors {
     val Brick = Color(0xFFC92A2A)
     val BrickLit = Color(0xFFE03131)
 
+    /**
+     * Brick as text or as a thin mark on the dark surfaces: `Brick` on `SurfaceAlt` measures
+     * 3.1:1 and reads as brown, this one measures 5.7:1 and still belongs to the family
+     * (decision 131). Never use it as a fill — the fills stay [Brick].
+     */
+    val BrickBright = Color(0xFFFF5F52)
+
     /** Pad internals. */
     val PadLed = Color(0xFF3C3C3C)
     val PadLedRound = Color(0xFF5F5F5F)
@@ -53,9 +60,12 @@ object RudiColors {
     val TrackLane = Color(0xFF1E1E1E)
     val TrackBarStrong = Color(0xFF2E2E2E)
     val TrackBar = Color(0xFF232323)
+    // The three windows read as one heat scale away from the target: brick for
+    // PERFECT, orange for GOOD, yellow for OK (decision 130). The other order made
+    // the wider window look hotter than the tighter one.
     val WindowPerfect = BrickLit
-    val WindowGood = Color(0xFFE0C948)
-    val WindowOk = Color(0xFFE38A2B)
+    val WindowGood = Color(0xFFE38A2B)
+    val WindowOk = Color(0xFFE0C948)
     val WindowMiss = Color(0xFF4A4A4A)
     val TrackExtraHit = Color(0xFF6A6A68)
 
@@ -86,7 +96,7 @@ object RudiDimens {
     // Result marks drawn inside a node, as fractions of its side.
     const val PAD_STAR_FRACTION = 0.19f
     const val PAD_STAR_GAP_FRACTION = 0.025f
-    const val PAD_STAR_BOTTOM_FRACTION = 0.09f
+    const val PAD_STAR_BOTTOM_FRACTION = 0.07f
     const val PAD_CROWN_FRACTION = 0.23f
 
     /** Hand letter size inside a pad (brandbook: 0.42 * S). */
@@ -94,6 +104,26 @@ object RudiDimens {
 
     /** Smaller letters read better on the dense metronome grid. */
     const val PAD_LETTER_FRACTION_GRID = 0.32f
+
+    /**
+     * A node carrying stars keeps the letter almost full size: it is only trimmed
+     * enough to sit in the optical middle of the band above the star row, which is
+     * derived from the star tokens rather than guessed (decision 130).
+     */
+    const val PAD_LETTER_CROWDED_SCALE = 0.92f
+
+    /** Top edge of the star row as a fraction of the pad side. */
+    const val PAD_STAR_TOP_FRACTION = 1f - PAD_STAR_BOTTOM_FRACTION - PAD_STAR_FRACTION
+
+    /**
+     * Note side on the practice track. Read from arm's length over a practice pad,
+     * so it is one and a half times the concept size (decision 130) and lives in the
+     * pad size library instead of inside the track.
+     */
+    val TrackNoteSize: Dp = 66.dp
+
+    /** Ceiling of the track note side as a fraction of the track height. */
+    const val TRACK_NOTE_HEIGHT_FRACTION = 0.36f
 
     val PadBorder: Dp = 1.dp
     val PadMinSize: Dp = 16.dp

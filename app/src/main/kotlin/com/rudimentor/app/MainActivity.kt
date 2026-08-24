@@ -110,6 +110,7 @@ class MainActivity : ComponentActivity() {
                     onClickAudible = viewModel::setClickAudible,
                     onClickFollowsHeadphones = viewModel::setClickFollowsHeadphones,
                     onInputLatencyMs = viewModel::setInputLatencyMs,
+                    onShowOffsetMs = viewModel::setShowOffsetMs,
                     onAttemptFinished = { level, rank, bpm, result ->
                         viewModel.recordAttempt(
                             levelId = level.id,

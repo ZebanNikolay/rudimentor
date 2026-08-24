@@ -38,6 +38,7 @@
     <string name="level_detail_no_score">—</string>
     <string name="level_detail_mode">Mode</string>
     <string name="level_detail_start">Start level practice</string>
+    <string name="level_detail_preview_tag">Preview</string>
     <string name="level_detail_preview_only">Practice for this level is not available yet</string>
     <string name="level_detail_preview_body">Preview only for now: this level needs phase switching, a timed attempt or two hands on one position. Practice unlocks when the engine supports it.</string>
     <string name="level_detail_approximation_body">The engine plays the entry tempo and density of this level: the authored plan changes them mid-attempt and is not followed yet.</string>
@@ -80,6 +81,8 @@
     <string name="practice_click_auto_restore">Follow headphones again</string>
     <string name="practice_latency_label">Input latency</string>
     <string name="practice_latency_value">%1$d ms</string>
+    <string name="practice_offset_ms_label">Show timing in ms</string>
+    <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>
     <string name="practice_level_clear">LEVEL CLEAR</string>
     <string name="practice_bpm">%1$d BPM</string>
     <string name="practice_hits_per_beat">×%1$d</string>

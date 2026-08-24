@@ -72,6 +72,7 @@ fun PracticeScreen(
     bpm: Int,
     clickAudible: Boolean,
     latencyMs: Float,
+    showOffsetMs: Boolean,
     onExit: () -> Unit,
     onFinished: (PracticeResult) -> Unit,
 ) {
@@ -98,15 +99,15 @@ fun PracticeScreen(
     val attempt = remember(notes) { PracticeAttempt(notes, windows) }
     val beatMs = 60_000f / tempo
     val lastNoteMs = notes.lastOrNull()?.timeMs ?: 0f
-    // The finish pad rides one beat behind the last note, so the last stroke is what
-    // drives it onto the hit line (decision 116). Clamped so a slow tempo does not
+    // The finish line rides one beat behind the last note, so the last stroke is what
+    // drives it onto the hit line (decision 116, line since decision 130). Clamped so a slow tempo does not
     // leave a long empty lane and a fast one still gives the eye a moment.
     val finishMs = if (lastNoteMs <= 0f) {
         0f
     } else {
         lastNoteMs + beatMs.coerceIn(FINISH_GAP_MIN_MS, FINISH_GAP_MAX_MS)
     }
-    // The attempt cannot end before the finish pad has arrived and held its glow.
+    // The attempt cannot end before the finish line has arrived and held its glow.
     val endMs = maxOf(
         lastNoteMs + windows.okMs + TAIL_MS,
         finishMs + FINISH_HOLD_MS,
@@ -245,6 +246,7 @@ fun PracticeScreen(
                 beatMs = beatMs,
                 frame = frame,
                 finishMs = finishMs,
+                showOffsetMs = showOffsetMs,
                 modifier = Modifier.fillMaxWidth().weight(1f),
             )
             PracticeDeviationScale(
@@ -339,7 +341,7 @@ private fun PermissionGate(onRequest: () -> Unit, onBack: () -> Unit) {
 /** Extra time after the last note before the attempt closes itself. */
 private const val TAIL_MS = 300f
 
-/** Where the finish pad sits behind the last note, and how long its glow is held. */
+/** Where the finish line sits behind the last note, and how long its glow is held. */
 private const val FINISH_GAP_MIN_MS = 250f
 private const val FINISH_GAP_MAX_MS = 900f
 private const val FINISH_HOLD_MS = 450f

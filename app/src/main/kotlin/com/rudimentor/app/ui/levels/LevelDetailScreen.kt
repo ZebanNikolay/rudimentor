@@ -63,7 +63,9 @@ fun LevelDetailScreen(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
             AppToolbar(
-                title = stringResource(R.string.level_detail_title, level.displayNumber),
+                // The code, not the bare number: `01` repeats across tracks, so every level
+                // read `LEVEL 01` in the header (decision 131).
+                title = stringResource(R.string.level_detail_title, level.displayCode),
                 onBack = onBack,
                 rightContent = {
                     Text(

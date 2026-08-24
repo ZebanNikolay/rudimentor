@@ -71,6 +71,8 @@ fun PracticeResultScreen(
     onClickFollowsHeadphones: (Boolean) -> Unit,
     latencyMs: Float,
     onLatencyMs: (Float) -> Unit,
+    showOffsetMs: Boolean,
+    onShowOffsetMs: (Boolean) -> Unit,
     onRetry: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
@@ -92,6 +94,8 @@ fun PracticeResultScreen(
                 onClickFollowsHeadphones = onClickFollowsHeadphones,
                 latencyMs = latencyMs,
                 onLatencyMs = onLatencyMs,
+                showOffsetMs = showOffsetMs,
+                onShowOffsetMs = onShowOffsetMs,
                 buildInfo = buildInfo,
                 onDone = { settingsOpen = false },
             )

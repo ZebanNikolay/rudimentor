@@ -23,6 +23,12 @@ data class AppSettings(
     val clickAudible: Boolean = false,
     val clickFollowsHeadphones: Boolean = true,
     val inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
+    /**
+     * Whether the verdict floater spells the deviation in milliseconds under its word.
+     * Off by default: the dot on the rail already shows which side of the note the
+     * stroke landed on, and the numbers pulled the eye off the lane (decision 130).
+     */
+    val showOffsetMs: Boolean = false,
 ) {
     val safeActiveRow: Int = activeRow.coerceIn(0, grid.rowCount - 1)
 

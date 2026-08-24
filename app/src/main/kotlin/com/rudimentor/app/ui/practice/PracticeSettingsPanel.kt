@@ -33,6 +33,8 @@ fun PracticeSettingsPanel(
     onClickFollowsHeadphones: (Boolean) -> Unit,
     latencyMs: Float,
     onLatencyMs: (Float) -> Unit,
+    showOffsetMs: Boolean,
+    onShowOffsetMs: (Boolean) -> Unit,
     buildInfo: BuildInfo,
     onDone: () -> Unit,
 ) {
@@ -70,6 +72,15 @@ fun PracticeSettingsPanel(
             valueRange = AppSettings.LATENCY_MIN_MS..AppSettings.LATENCY_MAX_MS,
             onValueChange = onLatencyMs,
         )
+        SettingsGap()
+        // The verdict word is the default; the millisecond offset is for tuning the ear
+        // and the latency, so it is opt-in (decision 130).
+        SettingsSwitchRow(
+            label = stringResource(R.string.practice_offset_ms_label),
+            checked = showOffsetMs,
+            onCheckedChange = onShowOffsetMs,
+        )
+        SettingsNote(text = stringResource(R.string.practice_offset_ms_note))
         SettingsGap()
         RudiButton(
             text = stringResource(R.string.practice_settings_done),

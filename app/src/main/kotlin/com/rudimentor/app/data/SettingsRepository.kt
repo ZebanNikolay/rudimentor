@@ -54,6 +54,7 @@ class DataStoreSettingsRepository(
             clickAudible = preferences[Keys.ClickAudible] ?: false,
             clickFollowsHeadphones = preferences[Keys.ClickFollowsHeadphones] ?: true,
             inputLatencyMs = preferences[Keys.InputLatencyMs] ?: MicLab.DEFAULT_LATENCY_MS,
+            showOffsetMs = preferences[Keys.ShowOffsetMs] ?: false,
         ).sanitized()
     }
 
@@ -66,6 +67,7 @@ class DataStoreSettingsRepository(
         this[Keys.ClickAudible] = safe.clickAudible
         this[Keys.ClickFollowsHeadphones] = safe.clickFollowsHeadphones
         this[Keys.InputLatencyMs] = safe.inputLatencyMs
+        this[Keys.ShowOffsetMs] = safe.showOffsetMs
     }
 
     private object Keys {
@@ -77,5 +79,6 @@ class DataStoreSettingsRepository(
         val ClickFollowsHeadphones =
             booleanPreferencesKey("practice_click_follows_headphones")
         val InputLatencyMs = floatPreferencesKey("practice_input_latency_ms")
+        val ShowOffsetMs = booleanPreferencesKey("practice_show_offset_ms")
     }
 }
