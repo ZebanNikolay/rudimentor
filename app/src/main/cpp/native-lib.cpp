@@ -119,6 +119,39 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeSnapshot(
     env->SetIntArrayRegion(out, 0, 12, values);
 }
 
+// Stream info layout for Kotlin: static stream facts plus health counters.
+//   [0] sampleRate            [7] inputExclusive (0/1)
+//   [1] outputBurstFrames     [8] inputPreset (raw oboe value, -1 unknown)
+//   [2] outputBufferFrames    [9] outputXRuns (-1 unsupported)
+//   [3] inputBurstFrames     [10] inputXRuns (-1 unsupported)
+//   [4] inputBufferFrames    [11] errorCount
+//   [5] inputCapacityFrames  [12] lastErrorCode
+//   [6] outputExclusive (0/1)[13] running (0/1)
+extern "C" JNIEXPORT void JNICALL
+Java_com_rudimentor_app_audio_NativeMicLab_nativeStreamInfo(
+        JNIEnv *env, jobject, jintArray out) {
+    if (out == nullptr || env->GetArrayLength(out) < 14) {
+        return;
+    }
+    const MicLabEngine::StreamInfo s = micLab.streamInfo();
+    jint values[14];
+    values[0] = s.sampleRate;
+    values[1] = s.outputBurstFrames;
+    values[2] = s.outputBufferFrames;
+    values[3] = s.inputBurstFrames;
+    values[4] = s.inputBufferFrames;
+    values[5] = s.inputCapacityFrames;
+    values[6] = s.outputExclusive ? 1 : 0;
+    values[7] = s.inputExclusive ? 1 : 0;
+    values[8] = s.inputPreset;
+    values[9] = s.outputXRuns;
+    values[10] = s.inputXRuns;
+    values[11] = s.errorCount;
+    values[12] = s.lastErrorCode;
+    values[13] = s.running ? 1 : 0;
+    env->SetIntArrayRegion(out, 0, 14, values);
+}
+
 // Hit / tick event layouts, packed as long triples / doubles to keep the
 // number of JNI round-trips tiny. Each hit needs (frame, envelope*1e6,
 // threshold*1e6); each tick needs (frame, index).

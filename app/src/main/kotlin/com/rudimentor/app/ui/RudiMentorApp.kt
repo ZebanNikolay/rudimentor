@@ -36,6 +36,7 @@ import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.ui.component.MenuCard
 import com.rudimentor.app.ui.component.RudiMentorLogo
 import com.rudimentor.app.ui.dev.DevScreen
+import com.rudimentor.app.ui.dev.PracticeLogScreen
 import com.rudimentor.app.ui.levels.LevelDetailScreen
 import com.rudimentor.app.ui.levels.LevelsScreen
 import com.rudimentor.app.ui.metronome.MetronomeActions
@@ -59,6 +60,7 @@ private enum class Screen {
     Metronome,
     Dev,
     MicLab,
+    PracticeLog,
 }
 
 @Composable
@@ -193,6 +195,8 @@ fun RudiMentorApp(
                             clickAudible = clickAudible,
                             latencyMs = settings.inputLatencyMs,
                             showOffsetMs = settings.showOffsetMs,
+                            buildInfo = buildInfo,
+                            headphonesConnected = headphonesConnected,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
                                 DevLog.log(
@@ -264,9 +268,13 @@ fun RudiMentorApp(
                 buildInfo = buildInfo,
                 onBack = { screenName = Screen.Menu.name },
                 onOpenMicLab = { screenName = Screen.MicLab.name },
+                onOpenPracticeLog = { screenName = Screen.PracticeLog.name },
             )
             Screen.MicLab -> MicLabScreen(
                 buildInfo = buildInfo,
+                onBack = { screenName = Screen.Dev.name },
+            )
+            Screen.PracticeLog -> PracticeLogScreen(
                 onBack = { screenName = Screen.Dev.name },
             )
         }

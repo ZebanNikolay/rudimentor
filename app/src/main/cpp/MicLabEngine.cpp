@@ -43,6 +43,8 @@ bool MicLabEngine::start() {
     clickFrame_ = kClickFrames;
     phase_ = 0.0;
     tickCount_.store(0, std::memory_order_release);
+    errorCount_.store(0, std::memory_order_release);
+    lastErrorCode_.store(0, std::memory_order_release);
     hitsWrite_.store(0, std::memory_order_release);
     hitsRead_.store(0, std::memory_order_release);
     ticksWrite_.store(0, std::memory_order_release);
@@ -166,6 +168,41 @@ MicLabEngine::Snapshot MicLabEngine::snapshot() const {
     };
 }
 
+MicLabEngine::StreamInfo MicLabEngine::streamInfo() const {
+    std::lock_guard<std::mutex> lock(streamMutex_);
+    StreamInfo info{};
+    info.sampleRate = sampleRate_;
+    info.errorCount = errorCount_.load(std::memory_order_acquire);
+    info.lastErrorCode = lastErrorCode_.load(std::memory_order_acquire);
+    info.running = running_.load(std::memory_order_acquire);
+    info.inputPreset = -1;
+    info.outputXRuns = -1;
+    info.inputXRuns = -1;
+    if (outputStream_) {
+        info.outputBurstFrames = outputStream_->getFramesPerBurst();
+        info.outputBufferFrames = outputStream_->getBufferSizeInFrames();
+        info.outputExclusive =
+                outputStream_->getSharingMode() == oboe::SharingMode::Exclusive;
+        const auto xRuns = outputStream_->getXRunCount();
+        if (xRuns) {
+            info.outputXRuns = xRuns.value();
+        }
+    }
+    if (inputStream_) {
+        info.inputBurstFrames = inputStream_->getFramesPerBurst();
+        info.inputBufferFrames = inputStream_->getBufferSizeInFrames();
+        info.inputCapacityFrames = inputStream_->getBufferCapacityInFrames();
+        info.inputExclusive =
+                inputStream_->getSharingMode() == oboe::SharingMode::Exclusive;
+        info.inputPreset = static_cast<int32_t>(inputStream_->getInputPreset());
+        const auto xRuns = inputStream_->getXRunCount();
+        if (xRuns) {
+            info.inputXRuns = xRuns.value();
+        }
+    }
+    return info;
+}
+
 void MicLabEngine::publishHit(const OnsetDetector::Onset &onset) {
     const uint32_t write = hitsWrite_.load(std::memory_order_relaxed);
     hits_[write % kEventCapacity] = HitEvent{onset.frame, onset.envelope, onset.threshold};
@@ -270,6 +307,8 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
 
 void MicLabEngine::onErrorAfterClose(oboe::AudioStream *, oboe::Result error) {
     running_.store(false, std::memory_order_release);
+    errorCount_.fetch_add(1, std::memory_order_acq_rel);
+    lastErrorCode_.store(static_cast<int>(error), std::memory_order_release);
     __android_log_print(ANDROID_LOG_ERROR, kLogTag, "stream closed: %s",
                         oboe::convertToText(error));
 }

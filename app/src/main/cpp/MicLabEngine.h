@@ -39,6 +39,35 @@ public:
         int64_t index;
     };
 
+    /**
+     * Everything about the two streams that does not change while they run,
+     * plus the two counters that say whether the audio path is healthy.
+     *
+     * Read from the UI thread only, and only at the start and the end of an
+     * attempt: it takes the stream lock and asks Oboe for the xrun counters,
+     * which is far too heavy for the poll loop.
+     */
+    struct StreamInfo {
+        int32_t sampleRate;
+        int32_t outputBurstFrames;
+        int32_t outputBufferFrames;
+        int32_t inputBurstFrames;
+        int32_t inputBufferFrames;
+        int32_t inputCapacityFrames;
+        // Exclusive means the stream owns the device: the low-latency path.
+        bool outputExclusive;
+        bool inputExclusive;
+        // oboe::InputPreset the device actually granted, as its raw value.
+        int32_t inputPreset;
+        // Dropped buffers since the streams opened, or -1 when unsupported.
+        int32_t outputXRuns;
+        int32_t inputXRuns;
+        // Stream errors reported to the error callback, with the last code.
+        int32_t errorCount;
+        int32_t lastErrorCode;
+        bool running;
+    };
+
     struct Snapshot {
         int32_t sampleRate;
         int64_t inputFrame;
@@ -71,6 +100,8 @@ public:
     int drainTicks(TickEvent *outTicks, int maxTicks);
 
     Snapshot snapshot() const;
+
+    StreamInfo streamInfo() const;
 
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream *audioStream,
                                           void *audioData, int32_t numFrames) override;
@@ -121,6 +152,8 @@ private:
     int clickFrame_ = kClickFrames;
     double phase_ = 0.0;
     std::atomic<int64_t> tickCount_{0};
+    std::atomic<int> errorCount_{0};
+    std::atomic<int> lastErrorCode_{0};
 
     OnsetDetector detector_{};
 

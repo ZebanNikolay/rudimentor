@@ -54,6 +54,7 @@ fun DevScreen(
     buildInfo: BuildInfo,
     onBack: () -> Unit,
     onOpenMicLab: () -> Unit,
+    onOpenPracticeLog: () -> Unit,
 ) {
     val context = LocalContext.current
     // Bumped by every action so the tail is re-read instead of being cached.
@@ -84,6 +85,13 @@ fun DevScreen(
                 letter = "M",
                 enabled = true,
                 onClick = onOpenMicLab,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            MenuCard(
+                title = "Practice logs · attempts",
+                letter = "P",
+                enabled = true,
+                onClick = onOpenPracticeLog,
             )
             Spacer(modifier = Modifier.height(16.dp))
 

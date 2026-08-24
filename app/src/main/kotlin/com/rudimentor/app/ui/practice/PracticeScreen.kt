@@ -1,7 +1,9 @@
 package com.rudimentor.app.ui.practice
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,12 +37,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.MicLab
+import com.rudimentor.app.audio.NativeMicLab
 import com.rudimentor.app.audio.PracticeSession
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.PracticeRank
+import com.rudimentor.app.telemetry.PracticeLogStore
+import com.rudimentor.app.telemetry.PracticeTelemetry
+import com.rudimentor.app.telemetry.TelemetryAudio
+import com.rudimentor.app.telemetry.TelemetryHeader
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.TransportButton
@@ -50,6 +59,9 @@ import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
 import com.rudimentor.app.util.DevLog
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -63,6 +75,11 @@ import kotlin.math.roundToInt
  * There is no pause and no settings here (decision 106). Back leaves for the level
  * at once, without a question; Stop closes the attempt and hands it to the result
  * screen, which is where the click and the latency are tuned before the next try.
+ *
+ * Every run that started the engine is also written to the practice log: the audio
+ * path of the phone, every detector trigger with its envelope, and the result. That
+ * is the only way a timing complaint from a real session can be told apart from a
+ * detector that fired twice (decision 133).
  */
 @Composable
 fun PracticeScreen(
@@ -73,6 +90,8 @@ fun PracticeScreen(
     clickAudible: Boolean,
     latencyMs: Float,
     showOffsetMs: Boolean,
+    buildInfo: BuildInfo,
+    headphonesConnected: Boolean,
     onExit: () -> Unit,
     onFinished: (PracticeResult) -> Unit,
 ) {
@@ -97,6 +116,10 @@ fun PracticeScreen(
     // the attempt, the expiry check and the deviation scale alike (decision 125).
     val windows = remember(notes) { hitWindowsFor(notes) }
     val attempt = remember(notes) { PracticeAttempt(notes, windows) }
+    val minIntervalMs = remember(notes) { minNoteIntervalMs(notes) ?: 0f }
+    // One collector per attempt, created when the engine starts and written once the
+    // run is over: a screen that is only opened and left behind logs nothing.
+    val telemetry = remember(attempt) { mutableStateOf<PracticeTelemetry?>(null) }
     val beatMs = 60_000f / tempo
     val lastNoteMs = notes.lastOrNull()?.timeMs ?: 0f
     // The finish line rides one beat behind the last note, so the last stroke is what
@@ -128,6 +151,16 @@ fun PracticeScreen(
         onDispose { session.stop() }
     }
 
+    // A headphone change mid-attempt moves the click in or out of the microphone, so
+    // it belongs in the log next to the strokes it changed the meaning of.
+    LaunchedEffect(headphonesConnected) {
+        telemetry.value?.audioEvent(
+            atMs = positionMs,
+            kind = "headphones",
+            detail = if (headphonesConnected) "connected" else "disconnected",
+        )
+    }
+
     // Headphones can be plugged in or pulled out mid-attempt: the engine follows the
     // new click state without restarting the run (decision 114).
     LaunchedEffect(clickAudible, running) {
@@ -141,6 +174,7 @@ fun PracticeScreen(
     OnBackgrounded {
         if (running) {
             DevLog.log("practice", "backgrounded at ${positionMs.roundToInt()} ms, dropped")
+            closeTelemetry(context, telemetry, session, attempt, positionMs, aborted = true)
             session.stop()
             running = false
             onExit()
@@ -179,15 +213,36 @@ fun PracticeScreen(
                 }
                 val now = poll.positionMs
                 positionMs = now
-                poll.hits.forEach { hitMs ->
-                    if (hitMs >= firstJudgedMs) attempt.registerHit(hitMs)
+                val log = telemetry.value
+                poll.hits.forEach { hit ->
+                    if (hit.positionMs < firstJudgedMs) return@forEach
+                    val outcome = attempt.registerHit(hit.positionMs)
+                    log?.hit(
+                        atMs = hit.positionMs,
+                        outcome = outcome,
+                        envelope = hit.envelope,
+                        threshold = hit.threshold,
+                        peak = poll.peak,
+                    )
                 }
-                attempt.expireMissedNotes(now)
+                attempt.expireMissedNotes(now).forEach { index ->
+                    log?.miss(atMs = now, noteIndex = index)
+                }
                 frame += 1
                 if (now > endMs) {
+                    val result = attempt.result()
+                    closeTelemetry(
+                        context = context,
+                        telemetry = telemetry,
+                        session = session,
+                        attempt = attempt,
+                        positionMs = now,
+                        aborted = false,
+                        result = result,
+                    )
                     session.stop()
                     running = false
-                    onFinished(attempt.result())
+                    onFinished(result)
                     return@LaunchedEffect
                 }
             } else {
@@ -200,6 +255,7 @@ fun PracticeScreen(
     // Leaving mid-attempt drops it without a question (decision 106): the score is
     // only worth keeping once the attempt reaches the result screen.
     fun leave() {
+        closeTelemetry(context, telemetry, session, attempt, positionMs, aborted = true)
         session.stop()
         running = false
         onExit()
@@ -289,9 +345,19 @@ fun PracticeScreen(
                 if (running) {
                     // Stop closes the attempt: the result screen is where the run is
                     // reviewed and the settings are tuned (decision 106).
+                    val result = attempt.result()
+                    closeTelemetry(
+                        context = context,
+                        telemetry = telemetry,
+                        session = session,
+                        attempt = attempt,
+                        positionMs = positionMs,
+                        aborted = false,
+                        result = result,
+                    )
                     session.stop()
                     running = false
-                    onFinished(attempt.result())
+                    onFinished(result)
                 } else {
                     val started = session.start(
                         bpm = tempo,
@@ -301,6 +367,32 @@ fun PracticeScreen(
                     if (!started) DevLog.error("practice", "audio engine refused to start")
                     audioFailed = !started
                     running = started
+                    if (started) {
+                        telemetry.value = PracticeTelemetry(
+                            header = TelemetryHeader(
+                                startedAt = logStamp(),
+                                device = "${Build.MANUFACTURER} ${Build.MODEL}",
+                                androidVersion = "${Build.VERSION.RELEASE} " +
+                                    "(sdk ${Build.VERSION.SDK_INT})",
+                                build = buildInfo.displayLabel,
+                                levelId = level.id,
+                                levelLabel = level.displayNumber,
+                                family = family.name,
+                                rank = rank.name,
+                                bpm = tempo,
+                                noteCount = notes.size,
+                                minIntervalMs = minIntervalMs,
+                                perfectMs = windows.perfectMs,
+                                goodMs = windows.goodMs,
+                                okMs = windows.okMs,
+                                latencyMs = latencyMs,
+                                sensitivity = MicLab.DEFAULT_SENSITIVITY,
+                                clickAudible = clickAudible,
+                                headphones = headphonesConnected,
+                                audio = session.streamInfo().toTelemetry(),
+                            ),
+                        )
+                    }
                 }
             },
             modifier = Modifier
@@ -337,6 +429,56 @@ private fun PermissionGate(onRequest: () -> Unit, onBack: () -> Unit) {
         }
     }
 }
+
+/**
+ * Closes the collector of the attempt and hands it to the store.
+ *
+ * Called from the finish, from Stop, from back and from backgrounding, and it has to be
+ * safe in all four: the collector is cleared first, so a second call writes nothing.
+ * The final stream read happens here, off the poll loop, and the file itself is written
+ * on the store's own thread.
+ */
+private fun closeTelemetry(
+    context: Context,
+    telemetry: MutableState<PracticeTelemetry?>,
+    session: PracticeSession,
+    attempt: PracticeAttempt,
+    positionMs: Float,
+    aborted: Boolean,
+    result: PracticeResult? = null,
+) {
+    val log = telemetry.value ?: return
+    telemetry.value = null
+    val audio = runCatching { session.streamInfo().toTelemetry() }.getOrNull()
+    log.finish(
+        atMs = positionMs,
+        result = result ?: attempt.result(),
+        debouncedTotal = attempt.debounced,
+        audio = audio,
+        aborted = aborted,
+    )
+    PracticeLogStore.save(context, log)
+}
+
+private fun NativeMicLab.StreamInfo.toTelemetry(): TelemetryAudio = TelemetryAudio(
+    sampleRate = sampleRate,
+    outputBurstFrames = outputBurstFrames,
+    outputBufferFrames = outputBufferFrames,
+    inputBurstFrames = inputBurstFrames,
+    inputBufferFrames = inputBufferFrames,
+    inputCapacityFrames = inputCapacityFrames,
+    outputExclusive = outputExclusive,
+    inputExclusive = inputExclusive,
+    inputPreset = inputPresetName,
+    outputXRuns = outputXRuns,
+    inputXRuns = inputXRuns,
+    errorCount = errorCount,
+    lastErrorCode = lastErrorCode,
+)
+
+/** Wall-clock stamp of the attempt, the one line a human reads first. */
+private fun logStamp(): String =
+    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
 
 /** Extra time after the last note before the attempt closes itself. */
 private const val TAIL_MS = 300f

@@ -17,6 +17,18 @@ class PracticeSession(
     private val native: NativeMicLab = NativeMicLab(),
 ) {
 
+    /**
+     * One detected stick hit: when it landed on the attempt clock, plus the
+     * detector state that let it through. The detector numbers are diagnostics --
+     * scoring only uses [positionMs] -- but they are what makes a practice log
+     * useful when a stroke is missed or a ghost hit appears.
+     */
+    data class Hit(
+        val positionMs: Float,
+        val envelope: Float,
+        val threshold: Float,
+    )
+
     /** Everything one poll produced. */
     data class Poll(
         /** True once the first tick arrived and [positionMs] is meaningful. */
@@ -24,9 +36,11 @@ class PracticeSession(
         /** Time since the first count-in beat, on the same clock as the note list. */
         val positionMs: Float,
         /** Stick hits detected since the previous poll, in the same milliseconds. */
-        val hits: List<Float>,
+        val hits: List<Hit>,
         val envelope: Float,
         val threshold: Float,
+        /** Loudest envelope value the detector has seen since the last reset. */
+        val peak: Float,
         val running: Boolean,
         /**
          * Difference between the input and the output frame counter in
@@ -45,7 +59,7 @@ class PracticeSession(
     private var anchorFrame: Long? = null
     private val hitScratch = ArrayList<NativeMicLab.HitEvent>(32)
     private val tickScratch = ArrayList<NativeMicLab.TickEvent>(32)
-    private val hitPositions = ArrayList<Float>(8)
+    private val hitPositions = ArrayList<Hit>(8)
 
     /**
      * Starts the engine. The click is silent by default: without headphones the
@@ -84,6 +98,12 @@ class PracticeSession(
 
     fun setSensitivity(value: Float) = native.setSensitivity(value.coerceIn(0f, 1f))
 
+    /**
+     * Audio stream parameters and fault counters. This takes the engine lock, so
+     * it is meant for the start and the end of an attempt, never for the poll loop.
+     */
+    fun streamInfo(): NativeMicLab.StreamInfo = native.streamInfo()
+
     fun poll(): Poll {
         tickScratch.clear()
         hitScratch.clear()
@@ -112,12 +132,19 @@ class PracticeSession(
                 hits = emptyList(),
                 envelope = snapshot.envelope,
                 threshold = snapshot.threshold,
+                peak = snapshot.peak,
                 running = snapshot.running,
             )
         }
 
         for (hit in hitScratch) {
-            hitPositions.add((hit.frame - anchor) / framesPerMs)
+            hitPositions.add(
+                Hit(
+                    positionMs = (hit.frame - anchor) / framesPerMs,
+                    envelope = hit.envelope,
+                    threshold = hit.threshold,
+                ),
+            )
         }
         // The position runs on the output clock, the same clock the ticks -- and so
         // the anchor, and the hit frames after their re-anchoring -- are stamped on.
@@ -130,6 +157,7 @@ class PracticeSession(
             hits = if (hitPositions.isEmpty()) emptyList() else ArrayList(hitPositions),
             envelope = snapshot.envelope,
             threshold = snapshot.threshold,
+            peak = snapshot.peak,
             running = snapshot.running,
             clockSkewMs = (snapshot.inputFrame - snapshot.outputFrame) / framesPerMs,
         )

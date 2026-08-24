@@ -19,6 +19,15 @@ class NativeMicLab {
 
         private const val HIT_DRAIN_CAPACITY = 32
         private const val TICK_DRAIN_CAPACITY = 32
+
+        // Raw Oboe InputPreset values, so a log line can name the preset the
+        // device actually granted instead of printing a bare number.
+        private const val PRESET_GENERIC = 1
+        private const val PRESET_CAMCORDER = 5
+        private const val PRESET_VOICE_RECOGNITION = 6
+        private const val PRESET_VOICE_COMMUNICATION = 7
+        private const val PRESET_UNPROCESSED = 9
+        private const val PRESET_VOICE_PERFORMANCE = 10
     }
 
     /** Snapshot of the running engine. Fields are decoded from a native int array. */
@@ -35,6 +44,42 @@ class NativeMicLab {
         val running: Boolean,
     )
 
+    /**
+     * Stream facts that hold for a whole run, plus the counters that say whether the
+     * audio path is healthy. Meant for the log at the start and the end of an attempt,
+     * not for the poll loop: the native side takes the stream lock to build it.
+     */
+    data class StreamInfo(
+        val sampleRate: Int,
+        val outputBurstFrames: Int,
+        val outputBufferFrames: Int,
+        val inputBurstFrames: Int,
+        val inputBufferFrames: Int,
+        val inputCapacityFrames: Int,
+        val outputExclusive: Boolean,
+        val inputExclusive: Boolean,
+        /** Raw Oboe input preset the device granted, or -1 when unknown. */
+        val inputPreset: Int,
+        /** Dropped buffers since the streams opened, or -1 when unsupported. */
+        val outputXRuns: Int,
+        val inputXRuns: Int,
+        val errorCount: Int,
+        val lastErrorCode: Int,
+        val running: Boolean,
+    ) {
+        /** Name of the granted input preset, for the log line. */
+        val inputPresetName: String
+            get() = when (inputPreset) {
+                PRESET_GENERIC -> "generic"
+                PRESET_CAMCORDER -> "camcorder"
+                PRESET_VOICE_RECOGNITION -> "voiceRecognition"
+                PRESET_VOICE_COMMUNICATION -> "voiceCommunication"
+                PRESET_UNPROCESSED -> "unprocessed"
+                PRESET_VOICE_PERFORMANCE -> "voicePerformance"
+                else -> "unknown"
+            }
+    }
+
     /** Onset event drained from the native ring buffer. */
     data class HitEvent(
         val frame: Long,
@@ -49,6 +94,7 @@ class NativeMicLab {
     )
 
     private val snapshotBuffer = IntArray(12)
+    private val streamInfoBuffer = IntArray(14)
     private val hitBuffer = LongArray(HIT_DRAIN_CAPACITY * 3)
     private val tickBuffer = LongArray(TICK_DRAIN_CAPACITY * 2)
 
@@ -78,6 +124,26 @@ class NativeMicLab {
             peak = snapshotBuffer[7] / 1_000_000f,
             clickAudible = snapshotBuffer[8] != 0,
             running = snapshotBuffer[9] != 0,
+        )
+    }
+
+    fun streamInfo(): StreamInfo {
+        nativeStreamInfo(streamInfoBuffer)
+        return StreamInfo(
+            sampleRate = streamInfoBuffer[0],
+            outputBurstFrames = streamInfoBuffer[1],
+            outputBufferFrames = streamInfoBuffer[2],
+            inputBurstFrames = streamInfoBuffer[3],
+            inputBufferFrames = streamInfoBuffer[4],
+            inputCapacityFrames = streamInfoBuffer[5],
+            outputExclusive = streamInfoBuffer[6] != 0,
+            inputExclusive = streamInfoBuffer[7] != 0,
+            inputPreset = streamInfoBuffer[8],
+            outputXRuns = streamInfoBuffer[9],
+            inputXRuns = streamInfoBuffer[10],
+            errorCount = streamInfoBuffer[11],
+            lastErrorCode = streamInfoBuffer[12],
+            running = streamInfoBuffer[13] != 0,
         )
     }
 
@@ -113,6 +179,7 @@ class NativeMicLab {
     private external fun nativeSetSensitivity(sensitivity: Float)
     private external fun nativeSetInputLatencyMillis(millis: Float)
     private external fun nativeSnapshot(out: IntArray)
+    private external fun nativeStreamInfo(out: IntArray)
     private external fun nativeDrainHits(out: LongArray): Int
     private external fun nativeDrainTicks(out: LongArray): Int
 

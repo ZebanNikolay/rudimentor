@@ -58,14 +58,38 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
  * of windows, so the grading does not shift inside a track.
  */
 fun hitWindowsFor(notes: List<PracticeNote>): HitWindows {
-    if (notes.size < 2) return HitWindows.Default
+    val minInterval = minNoteIntervalMs(notes) ?: return HitWindows.Default
+    return HitWindows.forMinInterval(minInterval)
+}
+
+/**
+ * Shortest positive gap between two consecutive notes, or null when the list is too
+ * short to have one. Shared by [hitWindowsFor] and the practice log, which records
+ * the interval the windows were derived from.
+ */
+fun minNoteIntervalMs(notes: List<PracticeNote>): Float? {
+    if (notes.size < 2) return null
     var minInterval = Float.MAX_VALUE
     for (index in 1 until notes.size) {
         val gap = notes[index].timeMs - notes[index - 1].timeMs
         if (gap > 0f && gap < minInterval) minInterval = gap
     }
-    if (minInterval == Float.MAX_VALUE) return HitWindows.Default
-    return HitWindows.forMinInterval(minInterval)
+    return if (minInterval == Float.MAX_VALUE) null else minInterval
+}
+
+/** What became of one detected stick hit. */
+sealed interface HitOutcome {
+    /** The hit was matched to a note and graded. */
+    data class Judged(val noteIndex: Int, val judgement: NoteJudgement) : HitOutcome
+
+    /** The hit landed too far from any open note and was charged as an extra. */
+    data class Extra(val positionMs: Float) : HitOutcome
+
+    /**
+     * The hit arrived [gapMs] after the previous one and was dropped as detector
+     * ringing, so it neither scored nor counted against the attempt.
+     */
+    data class Debounced(val gapMs: Float) : HitOutcome
 }
 
 /**
@@ -130,20 +154,28 @@ class PracticeAttempt(
     fun judgementAt(index: Int): NoteJudgement? =
         if (index in judgementsInternal.indices) judgementsInternal[index] else null
 
+    /** Hits dropped by the debounce filter, for diagnostics only. */
+    var debounced: Int = 0
+        private set
+
     /**
-     * Registers a stick hit at [positionMs] and returns its judgement, or null when
-     * the hit belongs to no note and is counted as an extra.
+     * Registers a stick hit at [positionMs] and reports what became of it, so the
+     * caller can log the hits the score itself never sees.
      */
-    fun registerHit(positionMs: Float): NoteJudgement? {
+    fun registerHit(positionMs: Float): HitOutcome {
         // A second trigger inside the debounce window is the onset detector ringing,
         // not a stroke: dropped before it can be judged or charged as an extra.
-        if (positionMs - lastHitMs < PracticeScoring.DEBOUNCE_MS) return null
+        val gap = positionMs - lastHitMs
+        if (gap < PracticeScoring.DEBOUNCE_MS) {
+            debounced += 1
+            return HitOutcome.Debounced(gapMs = gap)
+        }
         lastHitMs = positionMs
         val note = nearestOpenNote(positionMs)
         if (note == null) {
             extrasInternal.add(positionMs)
             combo = 0
-            return null
+            return HitOutcome.Extra(positionMs = positionMs)
         }
         val offset = positionMs - note.timeMs
         val window = windows.window(offset)
@@ -157,7 +189,7 @@ class PracticeAttempt(
         combo += 1
         maxCombo = maxOf(maxCombo, combo)
         advanceCursor()
-        return judgement
+        return HitOutcome.Judged(noteIndex = note.index, judgement = judgement)
     }
 
     /**
