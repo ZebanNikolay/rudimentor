@@ -165,9 +165,9 @@ private fun ResultBody(
                 Spacer(modifier = Modifier.width(12.dp))
                 RudiChip(text = stringResource(R.string.practice_result_full_combo), accent = true)
             }
-            if (result.allPerfect) {
+            if (result.crown) {
                 Spacer(modifier = Modifier.width(6.dp))
-                RudiChip(text = stringResource(R.string.practice_result_all_perfect), accent = true)
+                RudiChip(text = stringResource(R.string.practice_result_crown), accent = true)
             }
         }
 
@@ -221,6 +221,7 @@ private fun ResultBody(
         // a fixed height left it as a strip in the middle of an empty screen.
         OffsetHistogram(
             offsets = result.offsets,
+            windows = result.windows,
             modifier = Modifier.fillMaxWidth().weight(1f),
         )
 
@@ -311,7 +312,11 @@ private fun StarRow(stars: Int) {
  * by the window each bin falls into.
  */
 @Composable
-private fun OffsetHistogram(offsets: List<Float>, modifier: Modifier = Modifier) {
+private fun OffsetHistogram(
+    offsets: List<Float>,
+    windows: HitWindows,
+    modifier: Modifier = Modifier,
+) {
     val cd = stringResource(R.string.practice_result_histogram_cd)
     val bins = IntArray(PracticeScoring.HISTOGRAM_BINS)
     offsets.forEach { offset ->
@@ -351,7 +356,7 @@ private fun OffsetHistogram(offsets: List<Float>, modifier: Modifier = Modifier)
                 val centreMs = -PracticeScoring.SCALE_MS + msPerBin * (index + 0.5f)
                 val height = ceiling * (count.toFloat() / peak)
                 drawRect(
-                    color = windowColor(PracticeScoring.window(centreMs)).copy(alpha = 0.8f),
+                    color = windowColor(windows.window(centreMs)).copy(alpha = 0.8f),
                     topLeft = Offset(index * (binWidth + gap), size.height - height),
                     size = Size(binWidth, height),
                 )

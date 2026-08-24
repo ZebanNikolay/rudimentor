@@ -9,8 +9,8 @@ data class RankProgress(
     val stars: Int = 0,
     val bestBpm: Int? = null,
     val bestAccuracy: Float? = null,
-    /** ALL PERFECT: every note judged perfect with no extra hits (decision 126). */
-    val allPerfect: Boolean = false,
+    /** The crown: three stars with most notes dead on and next to no extra hits. */
+    val crown: Boolean = false,
 ) {
     val clampedStars: Int get() = stars.coerceIn(0, MAX_STARS)
 

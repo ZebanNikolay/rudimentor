@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
                             accuracy = result.accuracy,
                             stars = result.stars,
                             passed = result.passed,
-                            allPerfect = result.allPerfect,
+                            crown = result.crown,
                         )
                     },
                 )

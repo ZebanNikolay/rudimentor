@@ -101,7 +101,7 @@
     <string name="practice_result_good">Good</string>
     <string name="practice_result_ok">Ok</string>
     <string name="practice_result_full_combo">FULL COMBO</string>
-    <string name="practice_result_all_perfect">ALL PERFECT</string>
+    <string name="practice_result_crown">CROWN</string>
     <string name="practice_result_count_value">%1$d/%2$d</string>
     <string name="practice_result_misses">Misses</string>
     <string name="practice_result_extras">Extra hits</string>

@@ -119,7 +119,7 @@ class AppViewModel(
         accuracy: Float,
         stars: Int,
         passed: Boolean,
-        allPerfect: Boolean,
+        crown: Boolean,
     ) {
         viewModelScope.launch {
             val current = learningProgress.value.forLevel(levelId, rank)
@@ -132,7 +132,7 @@ class AppViewModel(
                     bestBpm = maxOf(current.bestBpm ?: 0, if (passed) bpm else 0)
                         .takeIf { it > 0 } ?: current.bestBpm,
                     bestAccuracy = maxOf(current.bestAccuracy ?: 0f, accuracy),
-                    allPerfect = current.allPerfect || allPerfect,
+                    crown = current.crown || crown,
                 ),
             )
         }

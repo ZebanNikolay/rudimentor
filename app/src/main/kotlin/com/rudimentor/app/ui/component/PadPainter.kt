@@ -190,7 +190,7 @@ private fun ledCenter(side: Float, round: Boolean): Offset {
 
 /**
  * The result of a level drawn on its own node: three stars in the bottom band of the
- * pad and, for ALL PERFECT, a crown standing where the LED dot would be.
+ * pad and, for the crown result, a crown standing where the LED dot would be.
  *
  * Four states in all (decision 126): one, two, three stars -- the third one *is* FULL
  * COMBO -- plus the crown on top of three stars. Both marks are white; gold fought

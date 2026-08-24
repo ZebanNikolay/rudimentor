@@ -672,9 +672,9 @@ private fun LevelMapNode(
             pressed = false,
             letterFraction = 0.2f,
             // The result of the level lives on the node itself: stars in the bottom band,
-            // and the ALL PERFECT crown where the LED dot sits (decision 126).
+            // and the crown where the LED dot sits (decision 126).
             stars = rankProgress.clampedStars,
-            crown = rankProgress.allPerfect,
+            crown = rankProgress.crown,
         )
     }
 }

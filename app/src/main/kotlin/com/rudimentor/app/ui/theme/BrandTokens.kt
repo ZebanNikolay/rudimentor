@@ -38,7 +38,7 @@ object RudiColors {
     val PadLetterMute = Color(0xFF4A4A48)
     val PadLetterLit = Color(0xFFFFFFFF)
 
-    // Level result marks on a node: three stars plus the ALL PERFECT crown. Both are
+    // Level result marks on a node: three stars plus the crown. Both are
     // white — gold fought with the brick face of a lit pad (decision 126).
     val PadStar = Color(0xFFFFFFFF)
     val PadStarOff = Color(0x42FFFFFF)

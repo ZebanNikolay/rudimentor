@@ -95,7 +95,7 @@ class DataStoreLevelProgressRepository(
                         bestBpm = preferences[Keys.bestBpm(levelId, rank)]?.takeUnless { it == NO_VALUE },
                         bestAccuracy = preferences[Keys.bestAccuracy(levelId, rank)]
                             ?.takeUnless { it < 0f },
-                        allPerfect = preferences[Keys.allPerfect(levelId, rank)] ?: false,
+                        crown = preferences[Keys.crown(levelId, rank)] ?: false,
                     )
                 },
             )
@@ -114,7 +114,7 @@ class DataStoreLevelProgressRepository(
         this[Keys.stars(levelId, rank)] = progress.clampedStars
         this[Keys.bestBpm(levelId, rank)] = progress.bestBpm ?: NO_VALUE
         this[Keys.bestAccuracy(levelId, rank)] = progress.bestAccuracy ?: NO_ACCURACY
-        this[Keys.allPerfect(levelId, rank)] = progress.allPerfect
+        this[Keys.crown(levelId, rank)] = progress.crown
     }
 
     private object Keys {
@@ -134,8 +134,8 @@ class DataStoreLevelProgressRepository(
         fun bestAccuracy(levelId: String, rank: PracticeRank) =
             floatPreferencesKey("level.$levelId.${rank.storageName}.best_accuracy")
 
-        fun allPerfect(levelId: String, rank: PracticeRank) =
-            booleanPreferencesKey("level.$levelId.${rank.storageName}.all_perfect")
+        fun crown(levelId: String, rank: PracticeRank) =
+            booleanPreferencesKey("level.$levelId.${rank.storageName}.crown")
     }
 
     companion object {

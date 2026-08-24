@@ -54,9 +54,8 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
 /**
  * Windows of an attempt, derived from the shortest gap between its notes.
  *
- * Called once next to [buildPracticeNotes]: the clamp exists for the fast ranks, where
- * the interval between notes drops under twice the OK window (Stage at 180 BPM leaves
- * 83 ms), and is a no-op at ordinary tempos.
+ * Called once next to [buildPracticeNotes]: the whole attempt is judged against one set
+ * of windows, so the grading does not shift inside a track.
  */
 fun hitWindowsFor(notes: List<PracticeNote>): HitWindows {
     if (notes.size < 2) return HitWindows.Default
@@ -115,13 +114,14 @@ class PracticeAttempt(
     /**
      * Accuracy over what has happened so far, cheap enough to read every frame. Same
      * formula as the final number, just over the notes judged up to now: an extra hit
-     * grows the denominator instead of subtracting a penalty (decision 125).
+     * grows the denominator instead of subtracting a penalty (decision 132).
      */
     val liveAccuracy: Float
-        get() {
-            val denominator = judgedCount + extrasInternal.size
-            return if (denominator == 0) 0f else (weightedSum / denominator).coerceIn(0f, 1f)
-        }
+        get() = PracticeScoring.accuracy(
+            weightedNotes = weightedSum,
+            noteCount = judgedCount,
+            extras = extrasInternal.size,
+        )
 
     val judgements: List<NoteJudgement?> get() = judgementsInternal.asList()
     val extras: List<Float> get() = extrasInternal
@@ -211,12 +211,11 @@ class PracticeAttempt(
         val noteCount = notes.size
         // Extra hits grow the denominator instead of subtracting points, so flamming
         // through a level cannot read as clean and the number stays inside 0…100 %.
-        val denominator = noteCount + extrasInternal.size
-        val accuracy = if (denominator == 0) {
-            0f
-        } else {
-            (weighted / denominator).coerceIn(0f, 1f)
-        }
+        val accuracy = PracticeScoring.accuracy(
+            weightedNotes = weighted,
+            noteCount = noteCount,
+            extras = extrasInternal.size,
+        )
         return PracticeResult(
             noteCount = noteCount,
             perfect = perfect,
@@ -232,6 +231,7 @@ class PracticeAttempt(
                 offsetsInternal.average().toFloat()
             },
             offsets = offsetsInternal.toList(),
+            windows = windows,
         )
     }
 
