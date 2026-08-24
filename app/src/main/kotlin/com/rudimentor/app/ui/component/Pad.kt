@@ -1,12 +1,13 @@
 package com.rudimentor.app.ui.component
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
@@ -53,6 +55,10 @@ enum class PadVariant {
  * so border weight, inner shadow and LED dot never drift apart. The face itself
  * is painted by [drawPadFace], which the practice track reuses inside its own
  * Canvas.
+ *
+ * The centre of the face carries either a hand [letter] or an [iconRes] of the same
+ * size and tint (decision 129): a menu tile keeps the pad as the container and only
+ * swaps the glyph inside it.
  */
 @Composable
 fun Pad(
@@ -62,6 +68,7 @@ fun Pad(
     modifier: Modifier = Modifier,
     lit: Boolean = false,
     letter: String? = null,
+    @DrawableRes iconRes: Int? = null,
     showLetter: Boolean = true,
     pressed: Boolean = false,
     letterFraction: Float = RudiDimens.PAD_LETTER_FRACTION,
@@ -136,32 +143,24 @@ fun Pad(
             }
         }
 
-        if (showLetter && !letter.isNullOrEmpty()) {
-            // Stars take the bottom band of the face, so the letter sits in the optical
-            // middle of what is left above them rather than in the middle of the pad.
-            // The band comes from the star tokens, so moving the stars moves the letter
-            // with them (decision 130).
-            val crowded = stars > 0
-            val letterShift = if (crowded) {
-                RudiDimens.PAD_STAR_TOP_FRACTION / 2f - 0.5f
-            } else {
-                0f
-            }
+        // The glyph is a layer of its own, centred on the pad and nothing else: stars
+        // and the crown are painted by the Canvas above and never move it or resize it
+        // (decision 139).
+        if (showLetter && iconRes != null) {
+            Icon(
+                painter = painterResource(iconRes),
+                // Decorative: whatever labels the pad names the destination already.
+                contentDescription = null,
+                tint = palette.letter,
+                modifier = Modifier.size(size * letterFraction),
+            )
+        } else if (showLetter && !letter.isNullOrEmpty()) {
             Text(
                 text = letter,
-                modifier = if (crowded) {
-                    Modifier.offset(y = size * letterShift)
-                } else {
-                    Modifier
-                },
                 color = palette.letter,
                 fontFamily = JetBrainsMono,
                 fontWeight = FontWeight.Bold,
-                fontSize = maxOf(
-                    9f,
-                    size.value * letterFraction *
-                        if (crowded) RudiDimens.PAD_LETTER_CROWDED_SCALE else 1f,
-                ).sp,
+                fontSize = maxOf(9f, size.value * letterFraction).sp,
                 // A muted pad is told apart by the dashed outline and the dimmed letter
                 // only — the letter is never struck through.
             )

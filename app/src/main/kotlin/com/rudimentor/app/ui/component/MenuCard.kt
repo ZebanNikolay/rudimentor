@@ -11,30 +11,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /**
- * A tile on the main menu: a large tappable card with the destination icon on the
- * left and its title next to it. The icons are the Material Design Icons menu set
- * (decisions 127 and 128): brick tint on a live destination, muted grey on one that
- * is not open yet.
- *
- * Debug-only tiles may pass [letter] instead and keep the old pad face: the pad
- * shape and its lit states belong to the practice language and are not spent on
- * menu chrome.
+ * A tile on the main menu: a large tappable card with a square pad on the left and
+ * the destination title next to it. The pad is always the container (decision 139);
+ * inside it sits either a Material Design Icons glyph (decisions 127 and 128) or,
+ * for debug tiles, a hand letter. Its lit and tone states carry whether the
+ * destination is open, exactly as they do for a letter.
  */
 @Composable
 fun MenuCard(
@@ -61,25 +55,15 @@ fun MenuCard(
                 .padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (iconRes != null) {
-                Icon(
-                    painter = painterResource(iconRes),
-                    // Decorative: the title next to it already names the destination.
-                    contentDescription = null,
-                    tint = if (enabled) RudiColors.BrickLit else RudiColors.Muted,
-                    modifier = Modifier.size(30.dp),
-                )
-                Spacer(modifier = Modifier.width(20.dp))
-            } else {
-                Pad(
-                    size = 44.dp,
-                    shape = PadShape.Square,
-                    tone = if (enabled) PadTone.Accent else PadTone.Normal,
-                    lit = enabled,
-                    letter = letter.orEmpty(),
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-            }
+            Pad(
+                size = 44.dp,
+                shape = PadShape.Square,
+                tone = if (enabled) PadTone.Accent else PadTone.Normal,
+                lit = enabled,
+                letter = letter,
+                iconRes = iconRes,
+            )
+            Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = title,
                 color = if (enabled) RudiColors.Text else RudiColors.Muted,

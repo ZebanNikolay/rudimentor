@@ -105,13 +105,6 @@ object RudiDimens {
     /** Smaller letters read better on the dense metronome grid. */
     const val PAD_LETTER_FRACTION_GRID = 0.32f
 
-    /**
-     * A node carrying stars keeps the letter almost full size: it is only trimmed
-     * enough to sit in the optical middle of the band above the star row, which is
-     * derived from the star tokens rather than guessed (decision 130).
-     */
-    const val PAD_LETTER_CROWDED_SCALE = 0.92f
-
     /** Top edge of the star row as a fraction of the pad side. */
     const val PAD_STAR_TOP_FRACTION = 1f - PAD_STAR_BOTTOM_FRACTION - PAD_STAR_FRACTION
 
