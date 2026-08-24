@@ -96,7 +96,14 @@ object RudiDimens {
     // Result marks drawn inside a node, as fractions of its side.
     const val PAD_STAR_FRACTION = 0.19f
     const val PAD_STAR_GAP_FRACTION = 0.025f
-    const val PAD_STAR_BOTTOM_FRACTION = 0.07f
+    const val PAD_STAR_BOTTOM_FRACTION = 0.09f
+
+    /**
+     * The same row on a round node needs more air: the circle pulls away from the corners,
+     * so at the width of the star row its edge is already at 89% of the side and the star
+     * points touched it (decision 144). The gap is measured to the circle, not to the box.
+     */
+    const val PAD_STAR_BOTTOM_FRACTION_ROUND = 0.15f
     const val PAD_CROWN_FRACTION = 0.23f
 
     /** Hand letter size inside a pad (brandbook: 0.42 * S). */
@@ -105,8 +112,9 @@ object RudiDimens {
     /** Smaller letters read better on the dense metronome grid. */
     const val PAD_LETTER_FRACTION_GRID = 0.32f
 
-    /** Top edge of the star row as a fraction of the pad side. */
-    const val PAD_STAR_TOP_FRACTION = 1f - PAD_STAR_BOTTOM_FRACTION - PAD_STAR_FRACTION
+    /** Bottom gap of the star row for a node of the given shape. */
+    fun padStarBottomFraction(round: Boolean): Float =
+        if (round) PAD_STAR_BOTTOM_FRACTION_ROUND else PAD_STAR_BOTTOM_FRACTION
 
     /**
      * Note side on the practice track. Read from arm's length over a practice pad,

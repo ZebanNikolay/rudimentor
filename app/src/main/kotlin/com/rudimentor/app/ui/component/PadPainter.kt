@@ -214,7 +214,11 @@ internal fun DrawScope.drawPadMarkers(
             val gap = side * RudiDimens.PAD_STAR_GAP_FRACTION
             val rowWidth = starSide * PAD_STAR_COUNT + gap * (PAD_STAR_COUNT - 1)
             val left = (side - rowWidth) / 2f
-            val top = side * (1f - RudiDimens.PAD_STAR_BOTTOM_FRACTION) - starSide
+            // A round node needs a bigger gap than a square one: at the width of the row the
+            // circle has already curved inwards, so the same gap glued the stars to its edge
+            // (decision 144).
+            val bottomGap = RudiDimens.padStarBottomFraction(round)
+            val top = side * (1f - bottomGap) - starSide
             for (index in 0 until PAD_STAR_COUNT) {
                 val color = if (index < filled) RudiColors.PadStar else RudiColors.PadStarOff
                 translate(left = left + index * (starSide + gap), top = top) {
