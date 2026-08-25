@@ -57,12 +57,14 @@ import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
+import com.rudimentor.app.ui.util.formatElapsed
 import com.rudimentor.app.util.DevLog
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 /**
@@ -136,6 +138,13 @@ fun PracticeScreen(
         0f
     } else {
         lastNoteMs + beatMs.coerceIn(FINISH_GAP_MIN_MS, FINISH_GAP_MAX_MS)
+    }
+    // A timed level states its duration as a floor: the attempt plays on to the end of the
+    // sticking cycle that floor lands in, so the HUD counts down to it and then says what it
+    // is waiting for (decision 154).
+    val timedFloorMs = level.durationSeconds?.let { seconds ->
+        val startMs = beatTimesMs.getOrNull(PracticeScoring.COUNT_IN_BEATS) ?: return@let null
+        startMs + seconds * 1000f
     }
     // The attempt cannot end before the finish line has arrived and held its glow.
     val endMs = maxOf(
@@ -306,6 +315,13 @@ fun PracticeScreen(
                         practiceTarget(level, rank)?.hitsPerBeat ?: 1,
                     ),
                 ),
+                countdown = timedFloorMs?.let { floorMs ->
+                    if (positionMs >= floorMs) {
+                        stringResource(R.string.practice_finishing_cycle)
+                    } else {
+                        formatElapsed(ceil((floorMs - positionMs) / 1000f).toInt())
+                    }
+                },
                 accuracy = attempt.liveAccuracy,
                 misses = attempt.misses,
                 extras = attempt.extras.size,

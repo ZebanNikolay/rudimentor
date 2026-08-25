@@ -47,7 +47,7 @@
     <string name="level_detail_start">Start level practice</string>
     <string name="level_detail_preview_tag">Preview</string>
     <string name="level_detail_preview_only">Practice for this level is not available yet</string>
-    <string name="level_detail_preview_body">Preview only for now: this level needs phase switching, a timed attempt or two hands on one position. Practice unlocks when the engine supports it.</string>
+    <string name="level_detail_preview_body">Preview only for now: this level needs two hands on one position. Practice unlocks when the engine supports it.</string>
     <string name="level_detail_plan">Plan</string>
     <string name="level_detail_kind_steady">Steady tempo</string>
     <string name="level_detail_kind_isolation">Weak-hand isolation</string>
@@ -109,6 +109,7 @@
     <string name="practice_offset_ms_label">Show timing in ms</string>
     <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>
     <string name="practice_level_clear">LEVEL CLEAR</string>
+    <string name="practice_finishing_cycle">finishing the cycle</string>
     <string name="practice_bpm">%1$d BPM</string>
     <string name="practice_hits_per_beat">×%1$d</string>
     <string name="practice_hud_accuracy">%1$d%%</string>
