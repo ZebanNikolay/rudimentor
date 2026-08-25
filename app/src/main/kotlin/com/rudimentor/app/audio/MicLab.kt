@@ -80,14 +80,21 @@ class MicLab(
     private val hitScratch = ArrayList<NativeMicLab.HitEvent>(32)
     private val tickScratch = ArrayList<NativeMicLab.TickEvent>(32)
 
-    fun start(scope: CoroutineScope) {
+    /**
+     * Opens the stream and starts polling it.
+     *
+     * Returns whether the engine came up, the same way [PracticeSession.start] does: the
+     * calibration screen has to tell the learner that the microphone is busy instead of
+     * waiting for strokes that can never arrive (decision 154).
+     */
+    fun start(scope: CoroutineScope): Boolean {
         if (pollJob != null) {
-            return
+            return true
         }
         val ok = native.start()
         if (!ok) {
             _status.value = _status.value.copy(running = false)
-            return
+            return false
         }
         pollJob = scope.launch(Dispatchers.Default) {
             while (true) {
@@ -95,6 +102,7 @@ class MicLab(
                 delay(POLL_INTERVAL_MS)
             }
         }
+        return true
     }
 
     fun stop() {

@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
+import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.PracticeRank
@@ -53,9 +56,10 @@ import kotlin.math.roundToInt
  * The pass bar is accuracy only for now (decision 89) -- the level tree does not
  * gate on score yet, so a clean run at a slow tempo still opens the next node.
  *
- * Settings are reachable here through the same drawer as during an attempt, so the
- * latency can be trimmed right after seeing the timing spread that motivated it
- * (decision 102).
+ * Settings are reachable here through the same drawer as during an attempt, so the click
+ * or the millisecond readout can be changed right after seeing the run that motivated it
+ * (decision 102). The drawer commits on Done only: closing it by swipe drops the edits,
+ * which is what the `key` around the panel is for (decision 154).
  */
 @Composable
 fun PracticeResultScreen(
@@ -65,14 +69,9 @@ fun PracticeResultScreen(
     bpm: Int,
     result: PracticeResult,
     buildInfo: BuildInfo,
-    clickAudible: Boolean,
-    onClickAudible: (Boolean) -> Unit,
-    clickFollowsHeadphones: Boolean,
-    onClickFollowsHeadphones: (Boolean) -> Unit,
-    latencyMs: Float,
-    onLatencyMs: (Float) -> Unit,
-    showOffsetMs: Boolean,
-    onShowOffsetMs: (Boolean) -> Unit,
+    settings: AppSettings,
+    headphonesConnected: Boolean,
+    onApplyDraft: (SettingsDraft) -> Unit,
     onRetry: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
@@ -87,18 +86,17 @@ fun PracticeResultScreen(
         open = settingsOpen,
         onOpenChange = { settingsOpen = it },
         panel = {
-            PracticeSettingsPanel(
-                clickAudible = clickAudible,
-                onClickAudible = onClickAudible,
-                clickFollowsHeadphones = clickFollowsHeadphones,
-                onClickFollowsHeadphones = onClickFollowsHeadphones,
-                latencyMs = latencyMs,
-                onLatencyMs = onLatencyMs,
-                showOffsetMs = showOffsetMs,
-                onShowOffsetMs = onShowOffsetMs,
-                buildInfo = buildInfo,
-                onDone = { settingsOpen = false },
-            )
+            // A fresh draft every time the drawer opens: an abandoned edit is gone
+            // rather than waiting to be committed by the next Done.
+            key(settingsOpen) {
+                PracticeSettingsPanel(
+                    settings = settings,
+                    headphonesConnected = headphonesConnected,
+                    buildInfo = buildInfo,
+                    onApply = onApplyDraft,
+                    onDone = { settingsOpen = false },
+                )
+            }
         },
     ) {
         ResultBody(

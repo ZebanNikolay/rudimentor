@@ -24,6 +24,13 @@ data class AppSettings(
     val clickFollowsHeadphones: Boolean = true,
     val inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
     /**
+     * True once the latency above was measured by the calibration screen instead of
+     * guessed. A measured value is the whole round trip -- click written, sound heard,
+     * stick hit, onset detected -- so the engine must not add the output latency on top
+     * of it a second time (decision 154).
+     */
+    val latencyCalibrated: Boolean = false,
+    /**
      * Whether the verdict floater spells the deviation in milliseconds under its word.
      * Off by default: the dot on the rail already shows which side of the note the
      * stroke landed on, and the numbers pulled the eye off the lane (decision 130).
@@ -54,9 +61,13 @@ data class AppSettings(
     )
 
     companion object {
-        /** The slider range of the input-latency compensation, in milliseconds. */
+        /**
+         * Range of the latency compensation, in milliseconds. The ceiling has to hold a
+         * full Bluetooth round trip: A2DP headphones measured 230 ms on the device, and
+         * the old 80 ms ceiling made the calibrated value unreachable (decision 154).
+         */
         const val LATENCY_MIN_MS = 0f
-        const val LATENCY_MAX_MS = 80f
+        const val LATENCY_MAX_MS = 400f
     }
 }
 

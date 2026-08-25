@@ -108,6 +108,8 @@
     <string name="practice_latency_value">%1$d ms</string>
     <string name="practice_offset_ms_label">Show timing in ms</string>
     <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>
+    <string name="practice_latency_settings_note">Measured in Settings. Calibrate it there.</string>
+
     <string name="practice_level_clear">LEVEL CLEAR</string>
     <string name="practice_finishing_cycle">finishing the cycle</string>
     <string name="practice_bpm">%1$d BPM</string>
@@ -118,6 +120,37 @@
     <string name="practice_permission_body">Practice needs the microphone to hear your strokes.</string>
     <string name="practice_permission_button">Allow microphone</string>
     <string name="practice_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">SETTINGS</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_unsaved_note">Not saved yet. Save keeps these changes, Cancel drops them.</string>
+    <string name="settings_latency_label">Latency compensation</string>
+    <string name="settings_latency_measured">Measured on this device and output.</string>
+    <string name="settings_latency_guessed">Not measured yet: a guess for the speaker path.</string>
+    <string name="settings_calibrate">Calibrate…</string>
+
+    <!-- Calibration screen -->
+    <string name="calibration_title">CALIBRATION</string>
+    <string name="calibration_intro">Wear the headphones you practise with. Press Start and play one stroke on every click, evenly, for about half a minute. The first few strokes are ignored while you settle in.</string>
+    <string name="calibration_click_note">The click plays out loud here on purpose: it is what is being measured.</string>
+    <string name="calibration_start">Start</string>
+    <string name="calibration_stop">Stop</string>
+    <string name="calibration_reset">Reset</string>
+    <string name="calibration_apply">Use this value</string>
+    <string name="calibration_strokes_label">Strokes</string>
+    <string name="calibration_strokes_value">%1$d of %2$d</string>
+    <string name="calibration_roundtrip_label">Round trip</string>
+    <string name="calibration_spread_label">Spread</string>
+    <string name="calibration_spread_value">±%1$d ms</string>
+    <string name="calibration_pending">—</string>
+    <string name="calibration_need_more">%1$d more strokes needed.</string>
+    <string name="calibration_ready">Steady enough. Use this value, or keep playing to tighten it.</string>
+    <string name="calibration_wide_spread">The strokes scatter a lot. Play more evenly, or reset and try again.</string>
+    <string name="calibration_skipped">%1$d warm-up strokes ignored.</string>
+    <string name="calibration_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
+    <string name="calibration_permission_body">Calibration needs the microphone to hear your strokes.</string>
 
     <!-- Practice result screen -->
     <string name="practice_result_passed">LEVEL PASSED</string>

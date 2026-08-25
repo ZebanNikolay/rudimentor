@@ -207,6 +207,24 @@ fun minNoteIntervalMs(notes: List<PracticeNote>): Float? {
     return if (minInterval == Float.MAX_VALUE) null else minInterval
 }
 
+/**
+ * Signed distance from [atMs] to the closest note in [notes]: negative when the hit
+ * landed early, positive when it landed late. Returns [Float.NaN] when there is no
+ * note to compare against. Used by the practice log to describe extra strokes, which
+ * carry no note of their own (decision 154).
+ */
+fun nearestNoteOffsetMs(notes: List<PracticeNote>, atMs: Float): Float {
+    if (notes.isEmpty()) return Float.NaN
+    var nearest = Float.NaN
+    for (note in notes) {
+        val offset = atMs - note.timeMs
+        if (nearest.isNaN() || kotlin.math.abs(offset) < kotlin.math.abs(nearest)) {
+            nearest = offset
+        }
+    }
+    return nearest
+}
+
 /** What became of one detected stick hit. */
 sealed interface HitOutcome {
     /** The hit was matched to a note and graded. */
