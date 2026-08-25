@@ -92,6 +92,7 @@ class DataStoreLevelProgressRepository(
                     RankProgress(
                         completed = preferences[Keys.completed(levelId, rank)] ?: false,
                         stars = preferences[Keys.stars(levelId, rank)] ?: 0,
+                        bestBpm = preferences[Keys.bestBpm(levelId, rank)]?.takeUnless { it == NO_VALUE },
                         bestAccuracy = preferences[Keys.bestAccuracy(levelId, rank)]
                             ?.takeUnless { it < 0f },
                         crown = preferences[Keys.crown(levelId, rank)] ?: false,
@@ -111,6 +112,7 @@ class DataStoreLevelProgressRepository(
     private fun MutablePreferences.write(levelId: String, rank: PracticeRank, progress: RankProgress) {
         this[Keys.completed(levelId, rank)] = progress.completed
         this[Keys.stars(levelId, rank)] = progress.clampedStars
+        this[Keys.bestBpm(levelId, rank)] = progress.bestBpm ?: NO_VALUE
         this[Keys.bestAccuracy(levelId, rank)] = progress.bestAccuracy ?: NO_ACCURACY
         this[Keys.crown(levelId, rank)] = progress.crown
     }
@@ -126,6 +128,9 @@ class DataStoreLevelProgressRepository(
         fun stars(levelId: String, rank: PracticeRank) =
             intPreferencesKey("level.$levelId.${rank.storageName}.stars")
 
+        fun bestBpm(levelId: String, rank: PracticeRank) =
+            intPreferencesKey("level.$levelId.${rank.storageName}.best_bpm")
+
         fun bestAccuracy(levelId: String, rank: PracticeRank) =
             floatPreferencesKey("level.$levelId.${rank.storageName}.best_accuracy")
 
@@ -134,6 +139,7 @@ class DataStoreLevelProgressRepository(
     }
 
     companion object {
+        private const val NO_VALUE = -1
         private const val NO_ACCURACY = -1f
     }
 }

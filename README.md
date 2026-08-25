@@ -55,6 +55,12 @@ Open the project in Android Studio to install missing SDK components automatical
 - [Material Color Utilities](https://github.com/material-foundation/material-color-utilities) — generated Material 3 color roles (Apache-2.0)
 - [Radix Colors](https://www.radix-ui.com/colors) and [Open Color](https://yeun.github.io/open-color/) — published palette seeds
 
+## Privacy
+
+The app collects nothing and has no network permission — see [PRIVACY.md](PRIVACY.md).
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
+Third-party attribution: [NOTICE](NOTICE); full license texts in [licenses/](licenses)
+and, inside the installed app, under `assets/licenses/` (reachable from the About screen).

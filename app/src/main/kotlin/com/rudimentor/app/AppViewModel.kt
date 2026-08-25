@@ -115,6 +115,7 @@ class AppViewModel(
     fun recordAttempt(
         levelId: String,
         rank: PracticeRank,
+        bpm: Int,
         accuracy: Float,
         stars: Int,
         passed: Boolean,
@@ -128,6 +129,8 @@ class AppViewModel(
                 progress = RankProgress(
                     completed = current.completed || passed,
                     stars = maxOf(current.clampedStars, if (passed) stars else 0),
+                    bestBpm = maxOf(current.bestBpm ?: 0, if (passed) bpm else 0)
+                        .takeIf { it > 0 } ?: current.bestBpm,
                     bestAccuracy = maxOf(current.bestAccuracy ?: 0f, accuracy),
                     crown = current.crown || crown,
                 ),

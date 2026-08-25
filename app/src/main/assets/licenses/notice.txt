@@ -1,0 +1,29 @@
+RudiMentor
+Copyright 2026 Nikolai Krasilnikov
+
+This product includes software and fonts developed by third parties.
+
+Apache License 2.0
+  Oboe -- Copyright The Android Open Source Project
+    https://github.com/google/oboe
+  Jetpack Compose, Material 3 and AndroidX (Activity, Lifecycle, DataStore,
+  graphics-shapes) -- Copyright The Android Open Source Project
+    https://developer.android.com/jetpack
+  Material Components for Android -- Copyright Google LLC
+    https://github.com/material-components/material-components-android
+  kotlinx.coroutines -- Copyright JetBrains s.r.o.
+    https://github.com/Kotlin/kotlinx.coroutines
+  Material Design Icons (menu icons) -- Copyright Pictogrammers
+    https://github.com/Templarian/MaterialDesign
+  The full text of the Apache License 2.0 is in licenses/apache-2.0.txt
+
+SIL Open Font License 1.1
+  JetBrains Mono -- Copyright 2020 The JetBrains Mono Project Authors
+    https://github.com/JetBrains/JetBrainsMono
+  Space Grotesk -- Copyright 2020 The Space Grotesk Project Authors
+    https://github.com/floriankarsten/space-grotesk
+  The full text of the SIL Open Font License 1.1 is in licenses/ofl-1.1.txt
+
+Rudiment names and stickings are the shared vocabulary of rudimental drumming.
+No exercise, notation, audio or text from any drum method book is reproduced in
+this app: every level, pattern, sound and drawing in it was made for it.

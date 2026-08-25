@@ -1,27 +1,43 @@
 package com.rudimentor.app.ui.levels
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
+import com.rudimentor.app.data.levels.LeadHand
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelModifier
 import com.rudimentor.app.data.levels.LevelType
@@ -37,76 +53,30 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
-/**
- * The sticking of the level, drawn as pads. Every block of the attempt is shown, not only the
- * first one: a transition level plays a chain of patterns, and the preview used to draw the
- * first phase twice instead (decision 152). A long pattern wraps at [PATTERN_ROW_STEPS] pads
- * so a 16-step figure fits the screen.
- */
 @Composable
 internal fun PatternPreview(
     level: Level,
     modifier: Modifier = Modifier,
 ) {
-    val blocks = level.phases.filter { it.steps.isNotEmpty() }
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        blocks.forEach { phase ->
-            PatternBlock(
-                steps = phase.steps,
-                label = if (blocks.size > 1) {
-                    stringResource(
-                        R.string.level_detail_phase_label,
-                        phase.index + 1,
-                        phase.beatCount,
-                    )
-                } else {
-                    null
-                },
-            )
-        }
-        if (blocks.size > 1 && level.phaseRepeats > 1) {
-            Text(
-                text = stringResource(R.string.level_detail_phase_repeats, level.phaseRepeats),
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.RowNumber,
-                letterSpacing = 1.4.sp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PatternBlock(
-    steps: List<PatternStep>,
-    label: String?,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
-        if (label != null) {
-            Text(
-                text = label.uppercase(),
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.Muted,
-                letterSpacing = 1.4.sp,
-            )
-        }
-        steps.chunked(PATTERN_ROW_STEPS).forEach { row ->
+        repeat(PATTERN_ROWS) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                row.forEach { step -> PatternStepPad(step) }
+                level.pattern.forEachIndexed { index, step ->
+                    if (index == level.pattern.size / 2) Spacer(modifier = Modifier.width(5.dp))
+                    PatternStepPad(step)
+                }
             }
         }
         Text(
-            text = steps
-                .chunked(STICKING_GROUP)
+            text = level.pattern
+                .chunked((level.pattern.size / 2).coerceAtLeast(1))
                 .joinToString(" · ") { chunk -> chunk.joinToString("") { it.label } },
             color = RudiColors.RowNumber,
             fontFamily = JetBrainsMono,
@@ -164,18 +134,29 @@ private fun PatternStepPad(step: PatternStep) {
     }
 }
 
-/**
- * A level the engine cannot run yet says so above the fold: the play button is disabled and
- * the reason used to live only in the notes at the bottom (decision 131).
- */
 @Composable
-internal fun LevelTag(
-    text: String,
+internal fun LevelTags(
+    level: Level,
     modifier: Modifier = Modifier,
 ) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        // A level the engine cannot run yet says so first: the play button is disabled and the
+        // reason used to live only in the notes below the fold (decision 131).
+        if (!level.playable) LevelTag(stringResource(R.string.level_detail_preview_tag))
+        LevelTag(level.type.displayName)
+        level.modifiers.forEach { LevelTag(it.displayName) }
+        LevelTag(level.technique.strokeStyle.replace('_', ' '))
+    }
+}
+
+@Composable
+private fun LevelTag(text: String) {
     Text(
         text = text.uppercase(),
-        modifier = modifier
+        modifier = Modifier
             .border(1.dp, RudiColors.Line, RoundedCornerShape(8.dp))
             .padding(horizontal = 8.dp, vertical = 4.dp),
         style = RudiTextStyles.RowNumber,
@@ -190,11 +171,12 @@ internal fun LevelPlayButton(
     contentDescription: String,
     modifier: Modifier = Modifier,
     active: Boolean = true,
+    showStop: Boolean = false,
 ) {
     // One transport button in the app, in its small size (decision 102): the level
     // card used to draw its own copy and the two drifted apart.
     TransportButton(
-        playing = false,
+        playing = showStop,
         onClick = onClick,
         modifier = modifier,
         size = TransportSize.Small,
@@ -204,13 +186,11 @@ internal fun LevelPlayButton(
     )
 }
 
-/** One fact about the level or about the learner's best run at it, boxed. */
 @Composable
 internal fun MetricCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    caption: String? = null,
 ) {
     Column(
         modifier = modifier
@@ -230,14 +210,6 @@ internal fun MetricCard(
             style = MaterialTheme.typography.titleMedium.copy(fontFamily = JetBrainsMono),
             color = RudiColors.Text,
         )
-        if (caption != null) {
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = caption,
-                style = MaterialTheme.typography.bodySmall,
-                color = RudiColors.RowNumber,
-            )
-        }
     }
 }
 
@@ -258,6 +230,7 @@ internal val LevelModifier.displayName: String
         LevelModifier.Endurance -> "Endurance"
     }
 
-private const val PATTERN_ROW_STEPS = 8
+internal val LeadHand.padShape: PadShape
+    get() = if (this == LeadHand.Left) PadShape.Round else PadShape.Square
 
-private const val STICKING_GROUP = 4
+private const val PATTERN_ROWS = 2

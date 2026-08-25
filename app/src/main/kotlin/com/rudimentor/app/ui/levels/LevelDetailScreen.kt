@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -37,11 +37,7 @@ import com.rudimentor.app.data.levels.LevelType
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankProgress
 import com.rudimentor.app.data.levels.RankTarget
-import com.rudimentor.app.data.levels.WeakStrategy
 import com.rudimentor.app.ui.component.AppToolbar
-import com.rudimentor.app.ui.component.Pad
-import com.rudimentor.app.ui.component.PadShape
-import com.rudimentor.app.ui.component.PadTone
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.dev.LevelDataSheet
@@ -54,12 +50,6 @@ import kotlin.math.roundToInt
  * One level at the difficulty chosen on the map (decision 111). The screen no longer picks a
  * rank or a tempo: the rank is global, and its target BPM belongs to the course data, so the
  * learner sees what the level asks for instead of a stepper that can contradict it.
- *
- * What it shows is what the course data actually holds about this level (decision 152): the
- * name of the exercise, the sticking of every block, the target tempo, the size of one
- * attempt, the best run at this rank, and the notes that explain a level that behaves
- * differently from its neighbours. The dropped "best BPM" metric belonged to the first draft,
- * where the learner chose the tempo by hand.
  */
 @Composable
 fun LevelDetailScreen(
@@ -113,45 +103,40 @@ fun LevelDetailScreen(
                     .weight(1f)
                     .verticalScroll(rememberScrollState()),
             ) {
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(22.dp))
                 Text(
-                    // The exercise, named: every level used to be titled after its family
-                    // and read `Single Strokes` (decision 152).
-                    text = level.title(family),
+                    text = level.headline(family, rank),
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp),
                     color = RudiColors.Text,
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = level.subtitle(family).uppercase(),
-                        style = RudiTextStyles.RowNumber,
-                        color = RudiColors.Muted,
-                        letterSpacing = 1.4.sp,
-                    )
-                    if (!level.playable) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        LevelTag(stringResource(R.string.level_detail_preview_tag))
-                    }
-                }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = level.purpose(),
+                    text = level.blurb(family),
                     style = MaterialTheme.typography.bodyMedium,
                     color = RudiColors.Muted,
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                LevelTags(level = level)
+
+                if (BuildConfig.DEBUG) {
+                    RudiButton(
+                        text = "DEBUG · LEVEL DATA",
+                        onClick = { showLevelData = true },
+                        modifier = Modifier.padding(top = 12.dp),
+                        style = RudiButtonStyle.Secondary,
+                    )
+                }
 
                 PatternPreview(
                     level = level,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp),
+                        .padding(top = 26.dp),
                 )
 
                 TargetTempo(
                     bpm = target.bpm,
                     stars = rankProgress.clampedStars,
-                    crown = rankProgress.crown,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 22.dp),
@@ -164,9 +149,9 @@ fun LevelDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     MetricCard(
-                        label = stringResource(R.string.level_detail_attempt),
-                        value = attemptValue(level, target),
-                        caption = attemptCaption(level, target),
+                        label = stringResource(R.string.level_detail_best_bpm),
+                        value = rankProgress.bestBpm?.toString()
+                            ?: stringResource(R.string.level_detail_no_score),
                         modifier = Modifier.weight(1f),
                     )
                     MetricCard(
@@ -179,28 +164,12 @@ fun LevelDetailScreen(
                                 )
                             }
                             ?: stringResource(R.string.level_detail_no_score),
-                        caption = stringResource(
-                            if (rankProgress.completed) {
-                                R.string.level_detail_cleared
-                            } else {
-                                R.string.level_detail_not_cleared
-                            },
-                        ),
                         modifier = Modifier.weight(1f),
                     )
                 }
 
                 LevelPlan(level = level, target = target)
-                LevelNotes(level = level, target = target, rankProgress = rankProgress)
-
-                if (BuildConfig.DEBUG) {
-                    RudiButton(
-                        text = "DEBUG · LEVEL DATA",
-                        onClick = { showLevelData = true },
-                        modifier = Modifier.padding(top = 18.dp),
-                        style = RudiButtonStyle.Secondary,
-                    )
-                }
+                LevelNotes(level = level, rankProgress = rankProgress)
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -260,36 +229,11 @@ private fun executionLabel(level: Level, target: RankTarget): String {
     }
 }
 
-/** How much playing one attempt is: notes for a counted lesson, minutes for a timed one. */
-@Composable
-private fun attemptValue(level: Level, target: RankTarget): String {
-    val durationSeconds = level.durationSeconds
-    return if (durationSeconds != null) {
-        stringResource(R.string.level_detail_attempt_timed, ceil(durationSeconds / 60f).toInt())
-    } else {
-        stringResource(R.string.level_detail_attempt_notes, level.noteCount(target))
-    }
-}
-
-/** How long the attempt runs at the tempo of this rank, every ramp phase counted. */
-@Composable
-private fun attemptCaption(level: Level, target: RankTarget): String? {
-    if (level.durationSeconds != null) return null
-    val seconds = level.attemptSeconds(target)
-    if (seconds <= 0) return null
-    return stringResource(R.string.level_detail_attempt_duration, formatSeconds(seconds))
-}
-
-/**
- * The tempo the level asks for at the selected rank, plus what the learner earned at that
- * rank: stars as pad LEDs and the crown, drawn the way the map node draws them (decision 126)
- * instead of the gold text stars of the first draft.
- */
+/** The tempo the level asks for at the selected rank, plus the stars earned at that rank. */
 @Composable
 private fun TargetTempo(
     bpm: Int,
     stars: Int,
-    crown: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -307,20 +251,15 @@ private fun TargetTempo(
             color = RudiColors.Muted,
             letterSpacing = 1.8.sp,
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        Pad(
-            size = 44.dp,
-            shape = PadShape.Round,
-            tone = PadTone.Normal,
-            showLetter = false,
-            stars = stars,
-            crown = crown,
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = "★".repeat(stars) + "☆".repeat(RankProgress.MAX_STARS - stars),
             modifier = Modifier.semantics {
-                contentDescription = buildString {
-                    append("$stars of ${RankProgress.MAX_STARS} stars")
-                    if (crown) append(", crown earned")
-                }
+                contentDescription = "$stars of ${RankProgress.MAX_STARS} stars"
             },
+            style = RudiTextStyles.Timer,
+            color = STAR_COLOR,
+            letterSpacing = 3.sp,
         )
     }
 }
@@ -373,12 +312,18 @@ private fun LevelPlan(level: Level, target: RankTarget) {
         level.phased -> stringResource(
             R.string.level_detail_plan_phases,
             level.phases.size,
-            level.phaseRepeats,
+            level.phases.firstOrNull()?.beatCount ?: 0,
         )
         else -> null
     }
-    Spacer(modifier = Modifier.height(20.dp))
-    SectionLabel(stringResource(R.string.level_detail_plan))
+    Spacer(modifier = Modifier.height(18.dp))
+    Text(
+        text = stringResource(R.string.level_detail_plan).uppercase(),
+        style = RudiTextStyles.RowNumber,
+        color = RudiColors.Muted,
+        letterSpacing = 1.6.sp,
+    )
+    Spacer(modifier = Modifier.height(3.dp))
     Text(text = kind, style = RudiTextStyles.Timer, color = RudiColors.Text)
     if (plan != null) {
         Spacer(modifier = Modifier.height(2.dp))
@@ -388,65 +333,20 @@ private fun LevelPlan(level: Level, target: RankTarget) {
             color = RudiColors.Muted,
         )
     }
-    Spacer(modifier = Modifier.height(14.dp))
-    SectionLabel(stringResource(R.string.level_detail_technique))
-    Text(
-        text = level.techniqueLine(),
-        style = MaterialTheme.typography.bodySmall,
-        color = RudiColors.Muted,
-    )
 }
 
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = RudiTextStyles.RowNumber,
-        color = RudiColors.Muted,
-        letterSpacing = 1.6.sp,
-    )
-    Spacer(modifier = Modifier.height(3.dp))
-}
-
-/**
- * Everything the learner should know before pressing play, and nothing else: why a level is
- * previewed, why its tempo steps back from the level before it, why its note density jumps,
- * which hand it asks for, and whether this rank is already passed. Those fields used to be
- * readable only in the debug sheet.
- */
+/** Everything the learner should know before pressing play, and nothing else. */
 @Composable
 private fun LevelNotes(
     level: Level,
-    target: RankTarget,
     rankProgress: RankProgress,
 ) {
-    val weakFocus = level.lesson.weakFocus
     val notes = buildList {
         if (!level.playable) add(stringResource(R.string.level_detail_preview_body))
-        if (weakFocus != null) {
-            val hand = weakFocus.authoredWeakHand.storageName
-            add(
-                stringResource(
-                    when (weakFocus.strategy) {
-                        WeakStrategy.WeakOnly -> R.string.level_detail_note_weak_only
-                        WeakStrategy.WeakLead -> R.string.level_detail_note_weak_lead
-                    },
-                    hand,
-                ),
-            )
-        }
-        if (level.lesson.midCycleSwitch) add(stringResource(R.string.level_detail_note_mid_cycle))
-        level.lesson.intentionalRollback?.let {
-            add(stringResource(R.string.level_detail_note_rollback, it))
-        }
-        target.densityException?.let {
-            add(stringResource(R.string.level_detail_note_density, it))
-        }
         if (rankProgress.completed) add(stringResource(R.string.level_detail_completed_body))
     }
     if (notes.isEmpty()) return
-    Spacer(modifier = Modifier.height(16.dp))
-    SectionLabel(stringResource(R.string.level_detail_notes))
+    Spacer(modifier = Modifier.height(14.dp))
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         notes.forEach { note ->
             Text(
@@ -457,5 +357,7 @@ private fun LevelNotes(
         }
     }
 }
+
+private val STAR_COLOR = Color(0xFFE0A94A)
 
 private const val ARROW = " \u2192 "

@@ -33,6 +33,7 @@ import com.rudimentor.app.data.levels.LevelCourse
 import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.data.levels.LevelsUiState
 import com.rudimentor.app.data.levels.PracticeRank
+import com.rudimentor.app.ui.about.AboutScreen
 import com.rudimentor.app.ui.component.MenuCard
 import com.rudimentor.app.ui.component.RudiMentorLogo
 import com.rudimentor.app.ui.dev.DevScreen
@@ -58,6 +59,7 @@ private enum class Screen {
     Practice,
     PracticeResult,
     Metronome,
+    About,
     Dev,
     MicLab,
     PracticeLog,
@@ -77,7 +79,7 @@ fun RudiMentorApp(
     onClickFollowsHeadphones: (Boolean) -> Unit,
     onInputLatencyMs: (Float) -> Unit,
     onShowOffsetMs: (Boolean) -> Unit,
-    onAttemptFinished: (Level, PracticeRank, PracticeResult) -> Unit,
+    onAttemptFinished: (Level, PracticeRank, Int, PracticeResult) -> Unit,
 ) {
     // The click follows the audio output until the learner overrides it by hand, so
     // the effective value is decided here, once, for every screen that plays it
@@ -130,6 +132,7 @@ fun RudiMentorApp(
                     screenName = Screen.Metronome.name
                 },
                 onOpenLevels = { screenName = Screen.Levels.name },
+                onOpenAbout = { screenName = Screen.About.name },
                 onOpenDev = { screenName = Screen.Dev.name },
             )
             Screen.Levels -> LevelsScreen(
@@ -206,7 +209,7 @@ fun RudiMentorApp(
                                         "accuracy=${(result.accuracy * 100f).roundToInt()}% " +
                                         "stars=${result.stars} passed=${result.passed}",
                                 )
-                                onAttemptFinished(level, practiceRank, result)
+                                onAttemptFinished(level, practiceRank, practiceBpm, result)
                                 practiceResult = result
                                 screenName = Screen.PracticeResult.name
                             },
@@ -264,6 +267,10 @@ fun RudiMentorApp(
                 actions = actions,
                 onBack = { screenName = metronomeBackTargetName },
             )
+            Screen.About -> AboutScreen(
+                buildInfo = buildInfo,
+                onBack = { screenName = Screen.Menu.name },
+            )
             Screen.Dev -> DevScreen(
                 buildInfo = buildInfo,
                 onBack = { screenName = Screen.Menu.name },
@@ -286,6 +293,7 @@ private fun MainMenu(
     buildInfo: BuildInfo,
     onOpenMetronome: () -> Unit,
     onOpenLevels: () -> Unit,
+    onOpenAbout: () -> Unit,
     onOpenDev: () -> Unit,
 ) {
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
@@ -311,8 +319,8 @@ private fun MainMenu(
                 enabled = true,
                 onClick = onOpenLevels,
             )
-            // Settings and About have their icons and their place in the menu, but no
-            // screens yet: they stay grey and untappable until those screens land.
+            // Settings has its icon and its place in the menu, but no screen yet: it
+            // stays grey and untappable until that screen lands.
             Spacer(modifier = Modifier.height(12.dp))
             MenuCard(
                 title = stringResource(R.string.menu_settings),
@@ -324,8 +332,8 @@ private fun MainMenu(
             MenuCard(
                 title = stringResource(R.string.menu_about),
                 iconRes = R.drawable.ic_menu_info,
-                enabled = false,
-                onClick = {},
+                enabled = true,
+                onClick = onOpenAbout,
             )
             if (BuildConfig.DEBUG) {
                 Spacer(modifier = Modifier.height(12.dp))

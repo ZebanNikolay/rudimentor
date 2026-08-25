@@ -32,17 +32,10 @@
     <string name="level_detail_title">LEVEL %1$s</string>
     <string name="level_detail_rank_meta">%1$s · ×%2$d</string>
     <string name="level_detail_bpm">BPM</string>
+    <string name="level_detail_best_bpm">best BPM</string>
     <string name="level_detail_best_accuracy">best accuracy</string>
     <string name="level_detail_accuracy_value">%1$d%%</string>
     <string name="level_detail_no_score">—</string>
-    <string name="level_detail_cleared">cleared at this rank</string>
-    <string name="level_detail_not_cleared">not cleared yet</string>
-    <string name="level_detail_attempt">one attempt</string>
-    <string name="level_detail_attempt_notes">%1$d notes</string>
-    <string name="level_detail_attempt_timed">≥ %1$d min</string>
-    <string name="level_detail_attempt_duration">≈ %1$s at this tempo</string>
-    <string name="level_detail_phase_label">Block %1$d · %2$d beats</string>
-    <string name="level_detail_phase_repeats">×%1$d passes per attempt</string>
     <string name="level_detail_mode">Mode</string>
     <string name="level_detail_start">Start level practice</string>
     <string name="level_detail_preview_tag">Preview</string>
@@ -59,17 +52,10 @@
     <string name="level_detail_plan_tempo_ramp">%1$s BPM · %2$d beats per phase · %3$d passes</string>
     <string name="level_detail_plan_tempo_ramp_uneven">%1$s BPM · %2$d passes</string>
     <string name="level_detail_plan_subdivision">%1$s hits per beat · blocks of %2$d beats</string>
-    <string name="level_detail_plan_phases">%1$d sticking blocks · %2$d passes</string>
-    <string name="level_detail_technique">Technique</string>
-    <string name="level_detail_notes">Notes</string>
-    <string name="level_detail_note_weak_lead">The weak hand leads: the pattern starts on %1$s.</string>
-    <string name="level_detail_note_weak_only">Weak hand only: every note is played with %1$s.</string>
-    <string name="level_detail_note_mid_cycle">The subdivision changes inside an unfinished sticking cycle.</string>
-    <string name="level_detail_note_rollback">Tempo steps back on purpose: %1$s</string>
-    <string name="level_detail_note_density">More notes than the level before it: %1$s</string>
+    <string name="level_detail_plan_phases">%1$d sticking blocks · %2$d beats each</string>
     <string name="level_detail_completed_body">Passed at this difficulty. Play it again to raise your best accuracy.</string>
-    <string name="level_detail_execution">%1$d beats · ×%2$d</string>
-    <string name="level_detail_execution_timed">≥ %1$d min · ×%2$d</string>
+    <string name="level_detail_execution">%1$d beats · %2$d hits per beat</string>
+    <string name="level_detail_execution_timed">≥ %1$d min · %2$d hits per beat</string>
 
     <!-- Metronome screen chrome -->
     <string name="metronome_title">METRONOME</string>
@@ -138,4 +124,29 @@
     <string name="practice_result_retry">Try again</string>
     <string name="practice_result_map">To map</string>
     <string name="practice_result_stars_cd">%1$d of 3 stars</string>
+    <!-- About -->
+    <string name="about_title">ABOUT</string>
+    <string name="about_tagline">A practice-pad drum trainer. Rudiments, a metronome and a microphone that listens to your pad \u2014 nothing else.</string>
+    <string name="about_version_copied">Version copied.</string>
+    <string name="about_feedback_title">FEEDBACK</string>
+    <string name="about_feedback_body">Found a bug, or thought of something the app should do? Write to me. Every message goes to one mailbox and is read by the one person who makes this app.</string>
+    <string name="about_feedback_button">Send feedback</string>
+    <string name="about_feedback_prompt">What happened, or what would you like the app to do?</string>
+    <string name="about_no_mail_app">No mail app on this device. The address is copied to the clipboard.</string>
+    <string name="about_no_browser">No browser on this device. The link is copied to the clipboard.</string>
+    <string name="about_honest_title">THE HONEST BITS</string>
+    <string name="about_honest_no_business">No ads, no subscriptions, no accounts, no analytics. The app never talks to a server \u2014 it has no network permission at all.</string>
+    <string name="about_honest_mic">The microphone listens in real time to hear your hits. Audio is not recorded, not saved and not sent anywhere.</string>
+    <string name="about_honest_on_device">Your progress, settings and practice logs stay on this device. Uninstalling the app deletes them.</string>
+    <string name="about_honest_author">Made by one person, in the evenings, for his own practice. That is why it is small, and why it keeps changing.</string>
+    <string name="about_credits_title">CREDITS</string>
+    <string name="about_credits_body">Rudiment names and stickings are the shared vocabulary of rudimental drumming, as standardised by the Percussive Arts Society. No exercise, notation, audio or text from any drum method book is reproduced here: every level, pattern, sound and drawing in the app was made for it.</string>
+    <string name="about_open_source_title">OPEN SOURCE</string>
+    <string name="about_open_source_note">RudiMentor is open source, and it stands on other people\'s open source. Tap a line to read the full license text.</string>
+    <string name="about_care_title">TAKE CARE OF YOURSELF</string>
+    <string name="about_care_hearing">A pad plus a metronome in headphones is loud for hours. Keep the volume low enough to hear yourself, and take breaks.</string>
+    <string name="about_care_hands">If your hands or wrists hurt, stop. Speed comes from relaxed hands, never from pushing through pain.</string>
+    <string name="about_copyright">\u00a9 2026 Nikolai Krasilnikov</string>
+    <string name="about_repo">github.com/ZebanNikolay/rudimentor</string>
+    <string name="about_warranty">No warranty. RudiMentor is provided as is, under the Apache License 2.0.</string>
 </resources>
