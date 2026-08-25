@@ -143,7 +143,7 @@ fun PracticeTrack(
             // A missed note drops out of the lane and fades instead of being crossed
             // out (decision 87).
             val fallProgress = if (missed) {
-                ((positionMs - (note.timeMs + attempt.windows.okMs)) / MISS_FALL_MS)
+                ((positionMs - (note.timeMs + attempt.windows.forNote(note.index).okMs)) / MISS_FALL_MS)
                     .coerceIn(0f, 1f)
             } else {
                 0f

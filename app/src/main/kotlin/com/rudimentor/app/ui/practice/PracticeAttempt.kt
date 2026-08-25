@@ -159,14 +159,34 @@ fun buildTempoPlan(level: Level, rank: PracticeRank, bpm: Int): IntArray {
 }
 
 /**
- * Windows of an attempt, derived from the shortest gap between its notes.
+ * Windows of an attempt, one set per note, derived from the spacing around that note.
  *
- * Called once next to [buildPracticeNotes]: the whole attempt is judged against one set
- * of windows, so the grading does not shift inside a track.
+ * Called once next to [buildPracticeNotes]. Judging every note by the shortest gap of the
+ * whole attempt punished the sparse beats of a mixed level (decision 151), so each note is
+ * graded at its own density instead.
  */
-fun hitWindowsFor(notes: List<PracticeNote>): HitWindows {
-    val minInterval = minNoteIntervalMs(notes) ?: return HitWindows.Default
-    return HitWindows.forMinInterval(minInterval)
+fun attemptWindowsFor(notes: List<PracticeNote>): AttemptWindows =
+    AttemptWindows.forIntervals(noteIntervalsMs(notes))
+
+/**
+ * The spacing each note is judged at: the shorter of the gaps to its neighbours.
+ *
+ * The tighter of the two neighbours is what decides the window, not the gap that follows:
+ * a window wider than half the distance to the nearer note would overlap it and a hit
+ * could no longer be attributed to one note. On the beat where a density changes this
+ * makes the note as strict as the denser side of the switch, which is the side that can
+ * actually steal its hits.
+ */
+fun noteIntervalsMs(notes: List<PracticeNote>): List<Float> {
+    if (notes.size < 2) {
+        return List(notes.size) { PracticeScoring.DEFAULT_INTERVAL_MS }
+    }
+    return notes.indices.map { index ->
+        val before = if (index > 0) notes[index].timeMs - notes[index - 1].timeMs else 0f
+        val after = if (index < notes.size - 1) notes[index + 1].timeMs - notes[index].timeMs else 0f
+        val nearest = listOf(before, after).filter { it > 0f }.minOrNull()
+        nearest ?: PracticeScoring.DEFAULT_INTERVAL_MS
+    }
 }
 
 /**
@@ -208,8 +228,12 @@ sealed interface HitOutcome {
  */
 class PracticeAttempt(
     val notes: List<PracticeNote>,
-    val windows: HitWindows = HitWindows.Default,
+    val windows: AttemptWindows = AttemptWindows.uniform(HitWindows.Default),
 ) {
+    /** A level of one density: every note judged by the same windows. */
+    constructor(notes: List<PracticeNote>, windows: HitWindows) :
+        this(notes, AttemptWindows.uniform(windows))
+
     private val judgementsInternal = arrayOfNulls<NoteJudgement>(notes.size)
 
     /** Hits that matched no note, kept as positions in milliseconds. */
@@ -285,7 +309,7 @@ class PracticeAttempt(
             return HitOutcome.Extra(positionMs = positionMs)
         }
         val offset = positionMs - note.timeMs
-        val window = windows.window(offset)
+        val window = windows.forNote(note.index).window(offset)
         val judgement = NoteJudgement(offsetMs = offset, window = window)
         judgementsInternal[note.index] = judgement
         offsetsInternal.add(offset)
@@ -314,7 +338,13 @@ class PracticeAttempt(
             // The grace window keeps a hit that arrives in the next poll buffer from
             // losing its note to expiry: without it a late but valid stroke landed as
             // an extra while the note itself dropped as a miss (decision 101).
-            if (positionMs <= note.timeMs + windows.okMs + PracticeScoring.EXPIRE_GRACE_MS) {
+            //
+            // Each note expires by its own window (decision 151), and stopping at the first
+            // one still open is still correct: a window never reaches past the next note
+            // (`OK_INTERVAL_SHARE`), so the notes expire in the order they are played.
+            if (positionMs <= note.timeMs + windows.forNote(index).okMs +
+                PracticeScoring.EXPIRE_GRACE_MS
+            ) {
                 break
             }
             if (judgementsInternal[index] == null) {
@@ -370,7 +400,9 @@ class PracticeAttempt(
                 offsetsInternal.average().toFloat()
             },
             offsets = offsetsInternal.toList(),
-            windows = windows,
+            // The scale of the result screen has to hold every offset of the attempt, so it
+            // is drawn with the widest windows the attempt had (decision 151).
+            windows = windows.widest,
         )
     }
 
@@ -386,13 +418,18 @@ class PracticeAttempt(
      */
     private fun nearestOpenNote(positionMs: Float): PracticeNote? {
         var best: PracticeNote? = null
-        var bestDistance = windows.okMs
+        var bestDistance = Float.MAX_VALUE
         var index = cursor
         while (index < notes.size) {
             val note = notes[index]
             val distance = abs(positionMs - note.timeMs)
-            if (note.timeMs - positionMs > windows.okMs) break
-            if (judgementsInternal[index] == null && distance <= bestDistance) {
+            // The widest window bounds the scan; whether a note is in reach is then decided
+            // by its own window (decision 151).
+            if (note.timeMs - positionMs > windows.widest.okMs) break
+            if (judgementsInternal[index] == null &&
+                distance <= windows.forNote(index).okMs &&
+                distance < bestDistance
+            ) {
                 best = note
                 bestDistance = distance
             }

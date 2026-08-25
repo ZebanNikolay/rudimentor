@@ -118,8 +118,10 @@ fun PracticeScreen(
     val beatTimesMs = remember(level.id, rank, tempo) { buildBeatTimesMs(level, rank, tempo) }
     val tempoPlan = remember(level.id, rank, tempo) { buildTempoPlan(level, rank, tempo) }
     // Windows are a property of the note list, not of a hit: computed once, then used by
-    // the attempt, the expiry check and the deviation scale alike (decision 125).
-    val windows = remember(notes) { hitWindowsFor(notes) }
+    // the attempt, the expiry check and the deviation scale alike (decision 125). Each note
+    // carries the windows of its own density, so a dense block does not tighten the sparse
+    // beats of the same attempt (decision 151).
+    val windows = remember(notes) { attemptWindowsFor(notes) }
     val attempt = remember(notes) { PracticeAttempt(notes, windows) }
     val minIntervalMs = remember(notes) { minNoteIntervalMs(notes) ?: 0f }
     // One collector per attempt, created when the engine starts and written once the
@@ -137,13 +139,13 @@ fun PracticeScreen(
     }
     // The attempt cannot end before the finish line has arrived and held its glow.
     val endMs = maxOf(
-        lastNoteMs + windows.okMs + TAIL_MS,
+        lastNoteMs + windows.widest.okMs + TAIL_MS,
         finishMs + FINISH_HOLD_MS,
     )
 
     // Nothing before the first note counts: the count-in is played along with, not
     // judged (decision 87).
-    val firstJudgedMs = (notes.firstOrNull()?.timeMs ?: 0f) - windows.okMs
+    val firstJudgedMs = (notes.firstOrNull()?.timeMs ?: 0f) - windows.widest.okMs
 
     var running by remember(attempt) { mutableStateOf(false) }
     var positionMs by remember(attempt) { mutableFloatStateOf(0f) }
@@ -327,7 +329,9 @@ fun PracticeScreen(
             PracticeDeviationScale(
                 offsets = attempt.offsets,
                 modifier = Modifier.padding(horizontal = 18.dp),
-                windows = windows,
+                // The scale has to hold the offsets of every density of the attempt, so it
+                // is drawn with the widest windows (decision 151).
+                windows = windows.widest,
             )
             Row(
                 modifier = Modifier
@@ -402,9 +406,11 @@ fun PracticeScreen(
                                 bpm = tempo,
                                 noteCount = notes.size,
                                 minIntervalMs = minIntervalMs,
-                                perfectMs = windows.perfectMs,
-                                goodMs = windows.goodMs,
-                                okMs = windows.okMs,
+                                // The tightest windows of the attempt: they are the ones the
+                                // shortest interval above produced (decision 151).
+                                perfectMs = windows.tightest.perfectMs,
+                                goodMs = windows.tightest.goodMs,
+                                okMs = windows.tightest.okMs,
                                 latencyMs = latencyMs,
                                 sensitivity = MicLab.DEFAULT_SENSITIVITY,
                                 clickAudible = clickAudible,

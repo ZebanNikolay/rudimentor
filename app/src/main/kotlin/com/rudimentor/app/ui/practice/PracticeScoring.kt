@@ -19,12 +19,12 @@ data class NoteJudgement(
 )
 
 /**
- * The three timing windows of one attempt, in milliseconds.
+ * The three timing windows of one note, in milliseconds.
  *
  * The windows follow the tempo of the level instead of standing still: a human floats
- * more when the notes are far apart, so the window has to be wider there. Everything is
- * derived from the shortest gap between two notes of the level, computed once when the
- * note list is built and never per hit -- the windows must not breathe inside a track.
+ * more when the notes are far apart, so the window has to be wider there. They are
+ * derived from the spacing around the note, computed once when the note list is built
+ * and never per hit -- the windows must not breathe inside a track.
  */
 data class HitWindows(
     val perfectMs: Float,
@@ -65,6 +65,41 @@ data class HitWindows(
             val perfect = minOf(PracticeScoring.PERFECT_SIGMAS * sigma, good)
             return HitWindows(perfectMs = perfect, goodMs = good, okMs = ok)
         }
+    }
+}
+
+/**
+ * The windows of every note of one attempt.
+ *
+ * A level of one density has one set of windows, but a subdivision switch or a tempo ramp
+ * changes the spacing inside the attempt, and a single set derived from the shortest gap
+ * would judge the sparse beats by the standard of the densest block: `SS-01` lost ~17
+ * accuracy points that way (decision 151). So every note carries the windows of *its own*
+ * spacing, computed once here and never per hit.
+ *
+ * [widest] and [tightest] are the two ends of the range, for the readouts that need one
+ * set of numbers: the deviation scale draws the widest so every offset of the attempt fits
+ * inside it, while the telemetry header records the tightest next to the shortest interval
+ * it belongs to.
+ */
+class AttemptWindows private constructor(private val perNote: List<HitWindows>) {
+    val widest: HitWindows = perNote.maxByOrNull { it.okMs } ?: HitWindows.Default
+    val tightest: HitWindows = perNote.minByOrNull { it.okMs } ?: HitWindows.Default
+
+    /** Windows of the note at [index]; the widest for an index outside the attempt. */
+    fun forNote(index: Int): HitWindows = perNote.getOrElse(index) { widest }
+
+    companion object {
+        /** One set of windows for every note, as a level of a single density has. */
+        fun uniform(windows: HitWindows): AttemptWindows = AttemptWindows(listOf(windows))
+
+        /** Windows built per note from the local spacing [intervalsMs] of each one. */
+        fun forIntervals(intervalsMs: List<Float>): AttemptWindows =
+            if (intervalsMs.isEmpty()) {
+                uniform(HitWindows.Default)
+            } else {
+                AttemptWindows(intervalsMs.map { HitWindows.forMinInterval(it) })
+            }
     }
 }
 

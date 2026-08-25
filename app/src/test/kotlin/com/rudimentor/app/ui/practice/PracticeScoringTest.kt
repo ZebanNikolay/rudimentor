@@ -192,6 +192,56 @@ class PracticeScoringTest {
         assertFalse(result.crown)
     }
 
+    @Test
+    fun `each note is judged at the spacing of its nearest neighbour`() {
+        // Three quarters, then three eighths: the switch note takes the denser side.
+        val notes = notesAt(0f, 1000f, 2000f, 2500f, 3000f, 3500f)
+        val intervals = noteIntervalsMs(notes)
+        assertEquals(listOf(1000f, 1000f, 500f, 500f, 500f, 500f), intervals)
+
+        val windows = attemptWindowsFor(notes)
+        assertEquals(HitWindows.forMinInterval(1000f), windows.forNote(0))
+        assertEquals(HitWindows.forMinInterval(500f), windows.forNote(3))
+        // The two ends of the range, for the scale and the telemetry header.
+        assertEquals(HitWindows.forMinInterval(1000f), windows.widest)
+        assertEquals(HitWindows.forMinInterval(500f), windows.tightest)
+    }
+
+    @Test
+    fun `a dense block no longer tightens the sparse notes of the same attempt`() {
+        val notes = notesAt(0f, 1000f, 2000f, 2500f, 3000f, 3500f)
+        val sparse = HitWindows.forMinInterval(1000f)
+        val dense = HitWindows.forMinInterval(500f)
+        // An offset a quarter note tolerates and an eighth note does not.
+        val offset = (dense.okMs + sparse.okMs) / 2f
+
+        val perNote = PracticeAttempt(notes, attemptWindowsFor(notes))
+        assertEquals(HitWindow.Ok, perNote.registerHit(notes[0].timeMs + offset).judgedWindow())
+        // The same offset on a note of the dense block is still a miss.
+        assertEquals(HitWindow.Miss, perNote.registerHit(notes[3].timeMs + offset).judgedWindow())
+
+        // Before decision 151 the whole attempt was judged by the shortest interval, so
+        // the sparse note above lost its hit too.
+        val uniform = PracticeAttempt(notes, dense)
+        assertEquals(HitWindow.Miss, uniform.registerHit(notes[0].timeMs + offset).judgedWindow())
+    }
+
+    private fun HitOutcome.judgedWindow(): HitWindow? =
+        (this as? HitOutcome.Judged)?.judgement?.window ?: HitWindow.Miss
+
+    private fun notesAt(vararg timesMs: Float): List<PracticeNote> =
+        timesMs.mapIndexed { index, timeMs ->
+            PracticeNote(
+                index = index,
+                hand = if (index % 2 == 0) {
+                    com.rudimentor.app.data.levels.PatternHand.Right
+                } else {
+                    com.rudimentor.app.data.levels.PatternHand.Left
+                },
+                timeMs = timeMs,
+            )
+        }
+
     private fun notesEvery(count: Int, spacingMs: Float): List<PracticeNote> =
         List(count) { index ->
             PracticeNote(
