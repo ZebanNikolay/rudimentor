@@ -131,10 +131,11 @@ fun PracticeTrack(
         notes.forEach { note ->
             val x = lineX + (note.timeMs - positionMs) * pxPerMs
             if (x < -side || x > width + side) return@forEach
-            // A phase level changes its sticking mid-attempt: the switch is announced by a
-            // mark in front of the first note of the new block, so it is seen coming instead
-            // of being discovered on the hit line (decision 141).
-            if (note.phaseStart && note.index > 0) {
+            // A phase level changes its sticking mid-attempt and a subdivision switch changes
+            // its density: both are announced by a mark in front of the first note of the new
+            // block, so the switch is seen coming instead of being discovered on the hit line
+            // (decision 141).
+            if ((note.phaseStart || note.densityStart) && note.index > 0) {
                 drawPhaseSwitch(x = x - side * PHASE_MARK_GAP, height = height)
             }
             val judgement = attempt.judgementAt(note.index)
