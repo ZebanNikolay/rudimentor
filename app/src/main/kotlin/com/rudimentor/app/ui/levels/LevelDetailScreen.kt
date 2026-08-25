@@ -15,6 +15,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,6 +28,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rudimentor.app.BuildConfig
 import com.rudimentor.app.R
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
@@ -32,6 +37,9 @@ import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankProgress
 import com.rudimentor.app.data.levels.RankTarget
 import com.rudimentor.app.ui.component.AppToolbar
+import com.rudimentor.app.ui.component.RudiButton
+import com.rudimentor.app.ui.component.RudiButtonStyle
+import com.rudimentor.app.ui.dev.LevelDataSheet
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import kotlin.math.ceil
@@ -53,6 +61,13 @@ fun LevelDetailScreen(
 ) {
     val target = level.target(rank)
     val rankProgress = progress.forRank(rank)
+    // Debug builds can read the course data behind the level they are standing on: the
+    // screen itself hides the fields that explain unexpected behaviour (decision 145).
+    var showLevelData by remember(level.id) { mutableStateOf(false) }
+    if (BuildConfig.DEBUG && showLevelData) {
+        LevelDataSheet(level = level, family = family, onClose = { showLevelData = false })
+        return
+    }
     BackHandler(onBack = onBack)
 
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
@@ -101,6 +116,15 @@ fun LevelDetailScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 LevelTags(level = level)
+
+                if (BuildConfig.DEBUG) {
+                    RudiButton(
+                        text = "DEBUG · LEVEL DATA",
+                        onClick = { showLevelData = true },
+                        modifier = Modifier.padding(top = 12.dp),
+                        style = RudiButtonStyle.Secondary,
+                    )
+                }
 
                 PatternPreview(
                     level = level,
