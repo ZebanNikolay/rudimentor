@@ -7,7 +7,6 @@ package com.rudimentor.app.data.levels
 data class RankProgress(
     val completed: Boolean = false,
     val stars: Int = 0,
-    val bestBpm: Int? = null,
     val bestAccuracy: Float? = null,
     /** The crown: three stars with most notes dead on and next to no extra hits. */
     val crown: Boolean = false,
