@@ -12,7 +12,6 @@ import com.rudimentor.app.data.levels.PatternMode
 import com.rudimentor.app.data.levels.PatternStep
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankTarget
-import com.rudimentor.app.data.levels.SubdivisionPlan
 import com.rudimentor.app.data.levels.Technique
 import com.rudimentor.app.data.levels.TransitionPhase
 import com.rudimentor.app.data.levels.TransitionPlan
@@ -93,55 +92,6 @@ class PracticeNotesTest {
         assertEquals("RRLLRLLR", notes.hands())
         assertEquals(listOf(0, 4), notes.filter(PracticeNote::phaseStart).map(PracticeNote::index))
         assertEquals(listOf(0, 0, 0, 0, 1, 1, 1, 1), notes.map(PracticeNote::phaseIndex))
-    }
-
-    @Test
-    fun `a subdivision switch changes density between blocks and keeps the pulse`() {
-        // doubles.SS-01 at Practice: RRLL, 48 beats, blocks of 8 beats at 1 - 2 - 1 hits
-        // per beat, one tempo throughout (decision 98).
-        val level = level(
-            lesson(hands = "RRLL", beatCount = 48).copy(
-                type = LevelType.SubdivisionSwitch,
-                rankTargets = listOf(
-                    RankTarget(
-                        rank = PracticeRank.Practice,
-                        bpm = 60,
-                        hitsPerBeat = 1,
-                        subdivisionPlan = SubdivisionPlan(blockBeats = 8, hitsPerBeat = listOf(1, 2, 1)),
-                    ),
-                ),
-            ),
-        )
-        val notes = buildPracticeNotes(level, PracticeRank.Practice, bpm = 60)
-
-        // The plan cycles: 8 beats x1, 8 x2, 8 x1, then the same three blocks again.
-        assertEquals(2 * (8 + 16 + 8), notes.size)
-        assertEquals(notes.size, level.noteCount(level.target(PracticeRank.Practice)))
-        // The sticking runs through a switch instead of restarting on it.
-        assertEquals("RRLL".repeat(notes.size / 4), notes.hands())
-        // Every beat of the attempt still lands on the click, switch or not.
-        val countInMs = PracticeScoring.COUNT_IN_BEATS * 1000f
-        (0..48).forEach { beat ->
-            val onBeat = notes.firstOrNull { abs(it.timeMs - (countInMs + beat * 1000f)) < 0.01f }
-            assertTrue("beat $beat is not on the grid", beat == 48 || onBeat != null)
-        }
-        // Inside the dense block the notes sit half a beat apart.
-        assertEquals(500f, notes[9].timeMs - notes[8].timeMs, 0.01f)
-        // Only a real change of density is marked: the last block of a pass and the first of
-        // the next both play one hit per beat, so no mark sits between them.
-        assertEquals(
-            listOf(8, 24, 40, 56),
-            notes.filter(PracticeNote::densityStart).map(PracticeNote::index),
-        )
-        assertTrue(notes.none(PracticeNote::phaseStart))
-    }
-
-    @Test
-    fun `a steady level marks no density switch`() {
-        val notes = buildPracticeNotes(level(lesson(hands = "RL", beatCount = 8)), PracticeRank.Groove, bpm = 90)
-
-        assertEquals(16, notes.size)
-        assertTrue(notes.none(PracticeNote::densityStart))
     }
 
     private fun List<PracticeNote>.hands(): String = joinToString("") {

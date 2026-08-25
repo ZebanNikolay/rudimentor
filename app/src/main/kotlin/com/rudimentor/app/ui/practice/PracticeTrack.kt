@@ -131,11 +131,10 @@ fun PracticeTrack(
         notes.forEach { note ->
             val x = lineX + (note.timeMs - positionMs) * pxPerMs
             if (x < -side || x > width + side) return@forEach
-            // A phase level changes its sticking mid-attempt and a subdivision switch changes
-            // its density: both are announced by a mark in front of the first note of the new
-            // block, so the switch is seen coming instead of being discovered on the hit line
-            // (decision 141).
-            if ((note.phaseStart || note.densityStart) && note.index > 0) {
+            // A phase level changes its sticking mid-attempt: the switch is announced by a
+            // mark in front of the first note of the new block, so it is seen coming instead
+            // of being discovered on the hit line (decision 141).
+            if (note.phaseStart && note.index > 0) {
                 drawPhaseSwitch(x = x - side * PHASE_MARK_GAP, height = height)
             }
             val judgement = attempt.judgementAt(note.index)
@@ -331,17 +330,26 @@ private fun DrawScope.drawBarLines(
     height: Float,
 ) {
     if (beatMs <= 0f) return
+    // Widths in dp, not raw pixels: a 1 px line on a ~3x density panel is a third
+    // of a hairline and disappeared on device, which is what made the metronome
+    // invisible on the track (decision 145).
+    val thin = BAR_WIDTH.toPx()
+    val thick = BAR_STRONG_WIDTH.toPx()
     val firstBeat = ((positionMs - lineX / pxPerMs) / beatMs).toInt() - 1
     val lastBeat = ((positionMs + (size.width - lineX) / pxPerMs) / beatMs).toInt() + 1
     for (beat in firstBeat..lastBeat) {
         val x = lineX + (beat * beatMs - positionMs) * pxPerMs
         if (x < 0f || x > size.width) continue
+        // Every fourth beat is the accented click the engine plays, so it is the
+        // one that gets the full-height, brighter bar; the plain beats stay inset
+        // so the lane still reads as a lane and not as a grid of equals.
         val strong = beat % 4 == 0
+        val inset = if (strong) 0f else height * BAR_INSET_FRACTION
         drawLine(
             color = if (strong) RudiColors.TrackBarStrong else RudiColors.TrackBar,
-            start = Offset(x, 0f),
-            end = Offset(x, height),
-            strokeWidth = 1f,
+            start = Offset(x, inset),
+            end = Offset(x, height - inset),
+            strokeWidth = if (strong) thick else thin,
         )
     }
 }
@@ -438,6 +446,12 @@ internal fun verdictWord(judgement: NoteJudgement): String = when (judgement.win
  */
 private const val VISIBLE_MS = 1400f
 private const val LINE_FRACTION = 0.33f
+
+/** Beat grid strokes: the metronome as seen, in dp so density cannot erase them. */
+private val BAR_WIDTH = 1.5.dp
+private val BAR_STRONG_WIDTH = 3.dp
+private const val BAR_INSET_FRACTION = 0.08f
+
 private const val MISS_FALL_MS = 420f
 
 /** How far a played note steps back once its verdict is on the rail. */

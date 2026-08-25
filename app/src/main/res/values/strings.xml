@@ -41,7 +41,7 @@
     <string name="level_detail_preview_tag">Preview</string>
     <string name="level_detail_preview_only">Practice for this level is not available yet</string>
     <string name="level_detail_preview_body">Preview only for now: this level needs phase switching, a timed attempt or two hands on one position. Practice unlocks when the engine supports it.</string>
-    <string name="level_detail_approximation_body">The engine plays the entry tempo of this level: the authored ramp changes it mid-attempt and is not followed yet.</string>
+    <string name="level_detail_approximation_body">The engine plays the entry tempo and density of this level: the authored plan changes them mid-attempt and is not followed yet.</string>
     <string name="level_detail_completed_body">Passed at this difficulty. Play it again to raise your best accuracy.</string>
     <string name="level_detail_execution">%1$d beats · %2$d hits per beat</string>
     <string name="level_detail_execution_timed">≥ %1$d min · %2$d hits per beat</string>

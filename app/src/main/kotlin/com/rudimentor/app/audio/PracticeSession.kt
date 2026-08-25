@@ -48,6 +48,12 @@ class PracticeSession(
          * to constant, and a drift here means the two clocks are not one clock.
          */
         val clockSkewMs: Float = 0f,
+        /**
+         * Measured output latency the timeline is corrected by, in milliseconds.
+         * Diagnostics: on the speaker path it is tens of milliseconds, on Bluetooth
+         * it is hundreds and it moves.
+         */
+        val outputLatencyMs: Float = 0f,
     )
 
     var bpm: Int = MicLab.DEFAULT_BPM
@@ -57,6 +63,15 @@ class PracticeSession(
         private set
 
     private var anchorFrame: Long? = null
+
+    /**
+     * The manual latency trim from settings, measured with a self-loopback on the
+     * speaker path. The real hit compensation is this plus the measured output
+     * latency, because a stroke played to the click carries the output latency too
+     * (decision 145).
+     */
+    private var baseLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS
+    private var appliedLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS
     private val hitScratch = ArrayList<NativeMicLab.HitEvent>(32)
     private val tickScratch = ArrayList<NativeMicLab.TickEvent>(32)
     private val hitPositions = ArrayList<Hit>(8)
@@ -79,6 +94,8 @@ class PracticeSession(
         native.setBpm(this.bpm)
         native.setClickAudible(clickAudible)
         native.setSensitivity(sensitivity.coerceIn(0f, 1f))
+        baseLatencyMs = inputLatencyMs
+        appliedLatencyMs = inputLatencyMs
         native.setInputLatencyMillis(inputLatencyMs)
         running = native.start()
         return running
@@ -93,8 +110,11 @@ class PracticeSession(
 
     fun setClickAudible(audible: Boolean) = native.setClickAudible(audible)
 
-    fun setInputLatencyMs(millis: Float) =
-        native.setInputLatencyMillis(millis.coerceIn(-100f, 300f))
+    fun setInputLatencyMs(millis: Float) {
+        baseLatencyMs = millis.coerceIn(-100f, 300f)
+        appliedLatencyMs = baseLatencyMs
+        native.setInputLatencyMillis(baseLatencyMs)
+    }
 
     fun setSensitivity(value: Float) = native.setSensitivity(value.coerceIn(0f, 1f))
 
@@ -124,6 +144,19 @@ class PracticeSession(
             }
         }
 
+        // Everything the player can perceive lives on the presentation clock, not on
+        // the render clock: `outputFrame` counts frames written into the buffer, so a
+        // click written now is only heard `outputLatencyMs` later. Drawing the notes
+        // on the render clock is what put the audible click roughly half a note away
+        // from its own note over Bluetooth, and drifting because A2DP latency drifts
+        // (decision 145). The same shift has to reach the hit compensation, or a
+        // stroke played to the corrected picture would read late by the same amount.
+        val outputLatencyMs = snapshot.outputLatencyMs
+        if (kotlin.math.abs(baseLatencyMs + outputLatencyMs - appliedLatencyMs) > LATENCY_STEP_MS) {
+            appliedLatencyMs = baseLatencyMs + outputLatencyMs
+            native.setInputLatencyMillis(appliedLatencyMs)
+        }
+
         val anchor = anchorFrame
         if (anchor == null || framesPerMs <= 0f) {
             return Poll(
@@ -140,6 +173,9 @@ class PracticeSession(
         for (hit in hitScratch) {
             hitPositions.add(
                 Hit(
+                    // The native drain already subtracted the anchor-relative latency
+                    // compensation (trim + measured output latency), so the hit lands
+                    // on the same presentation timeline the notes are drawn on.
                     positionMs = (hit.frame - anchor) / framesPerMs,
                     envelope = hit.envelope,
                     threshold = hit.threshold,
@@ -153,18 +189,26 @@ class PracticeSession(
         // while the notes were drawn ahead of their own sound (decision 101).
         return Poll(
             anchored = true,
-            positionMs = (snapshot.outputFrame - anchor) / framesPerMs,
+            positionMs = (snapshot.outputFrame - anchor) / framesPerMs - outputLatencyMs,
             hits = if (hitPositions.isEmpty()) emptyList() else ArrayList(hitPositions),
             envelope = snapshot.envelope,
             threshold = snapshot.threshold,
             peak = snapshot.peak,
             running = snapshot.running,
             clockSkewMs = (snapshot.inputFrame - snapshot.outputFrame) / framesPerMs,
+            outputLatencyMs = outputLatencyMs,
         )
     }
 
     companion object {
         /** Same 8 ms cadence the mic lab polls at (~120 Hz). */
         const val POLL_INTERVAL_MS = 8L
+
+        /**
+         * How far the measured output latency has to move before the native hit
+         * compensation is re-pushed. Small enough to follow Bluetooth drift, large
+         * enough not to write an atomic on every poll.
+         */
+        private const val LATENCY_STEP_MS = 2f
     }
 }

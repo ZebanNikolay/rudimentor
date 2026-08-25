@@ -79,6 +79,16 @@ public:
         float peak;
         bool clickAudible;
         bool running;
+        /**
+         * Measured output latency in milliseconds: how far behind the render
+         * clock the sound actually is. `outputFrame` counts frames *written*
+         * into the buffer, so a frame written now is only heard this many
+         * milliseconds later. On the low-latency speaker path this is ~10-30 ms;
+         * over Bluetooth A2DP it is 150-300 ms and it drifts, which is what put
+         * the click half a note away from the note on device (decision 145).
+         * 0 means "the device gave us no timestamps", i.e. no compensation.
+         */
+        float outputLatencyMs;
     };
 
     MicLabEngine();
@@ -130,6 +140,10 @@ private:
     std::atomic<bool> clickAudible_{false};
     std::atomic<bool> running_{false};
     std::atomic<float> inputLatencyFrames_{0.0f};
+    // Smoothed output latency, sampled from the stream timestamps in the output
+    // callback. Read by the UI thread through snapshot().
+    std::atomic<float> outputLatencyMillis_{0.0f};
+    int latencyPollCountdown_ = 0;
 
     int32_t sampleRate_ = 48000;
     int64_t outputFrames_ = 0;

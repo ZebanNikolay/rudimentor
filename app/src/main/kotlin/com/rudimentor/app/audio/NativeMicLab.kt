@@ -42,6 +42,12 @@ class NativeMicLab {
         val peak: Float,
         val clickAudible: Boolean,
         val running: Boolean,
+        /**
+         * Measured distance between the render clock [outputFrame] runs on and the
+         * sound the player actually hears, in milliseconds. 0 means the device gave
+         * no timestamps, so no compensation is possible (decision 145).
+         */
+        val outputLatencyMs: Float = 0f,
     )
 
     /**
@@ -93,7 +99,7 @@ class NativeMicLab {
         val index: Long,
     )
 
-    private val snapshotBuffer = IntArray(12)
+    private val snapshotBuffer = IntArray(13)
     private val streamInfoBuffer = IntArray(14)
     private val hitBuffer = LongArray(HIT_DRAIN_CAPACITY * 3)
     private val tickBuffer = LongArray(TICK_DRAIN_CAPACITY * 2)
@@ -124,6 +130,7 @@ class NativeMicLab {
             peak = snapshotBuffer[7] / 1_000_000f,
             clickAudible = snapshotBuffer[8] != 0,
             running = snapshotBuffer[9] != 0,
+            outputLatencyMs = snapshotBuffer[12] / 1_000f,
         )
     }
 

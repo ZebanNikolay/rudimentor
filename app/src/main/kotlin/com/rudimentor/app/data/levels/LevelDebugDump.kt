@@ -92,13 +92,9 @@ fun describeLevel(level: Level, family: Family): String = buildString {
     level.rankTargets.forEach { target ->
         append('\n')
         append("-- rank ").append(target.rank.storageName).append(" --\n")
-        val densities = (0 until level.beatCount).map(target::hitsPerBeatAtBeat).distinct()
         line("bpm", target.bpm)
-        line(
-            "hits per beat",
-            if (densities.size > 1) densities.joinToString(" / ") + " (per block)" else target.hitsPerBeat,
-        )
-        line("notes per attempt", level.noteCount(target))
+        line("hits per beat", target.hitsPerBeat)
+        line("notes per attempt", noteCount(level, target))
         line("attempt repeats", target.attemptRepeats)
         target.subdivisionPlan?.let { plan ->
             line(
@@ -113,13 +109,26 @@ fun describeLevel(level: Level, family: Family): String = buildString {
             }
         }
         line("density exception", target.densityException)
-        // The click is set once per attempt, so a ramp is still played flat. Without this
-        // line the level looks like a steady one on the phone and the gap is invisible.
+        // The engine walks one density and one tempo per attempt, so a level whose data
+        // asks for a plan is currently played flat. Without this line the level looks
+        // identical to a steady one on the phone and the difference is invisible.
+        target.subdivisionPlan?.let {
+            line(
+                "ENGINE",
+                "plays ${target.hitsPerBeat} hits per beat for the whole attempt - " +
+                    "the density switch is not implemented yet",
+            )
+        }
         target.tempoRampPlan?.let {
             line(
                 "ENGINE",
-                "plays ${target.bpm} bpm for the whole attempt - the ramp is not followed yet",
+                "plays ${target.bpm} bpm for the whole attempt - the ramp is not implemented yet",
             )
         }
     }
 }
+
+/** What the engine will emit for this target: every phase, every repeat. */
+private fun noteCount(level: Level, target: RankTarget): Int =
+    level.phaseRepeats * target.attemptRepeats *
+        level.phases.sumOf { it.beatCount * target.hitsPerBeat }

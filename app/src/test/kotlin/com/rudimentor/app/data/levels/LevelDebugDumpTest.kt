@@ -28,7 +28,7 @@ class LevelDebugDumpTest {
     }
 
     @Test
-    fun `a subdivision switch prints its plan and the density of every block`() {
+    fun `a subdivision switch prints its plan and says the engine plays it flat`() {
         val lesson = lesson("f.SS-01", type = LevelType.SubdivisionSwitch).copy(
             execution = Execution(beatCount = 48),
             rankTargets = listOf(
@@ -45,10 +45,7 @@ class LevelDebugDumpTest {
 
         assertTrue(dump.contains("type: subdivision_switch"))
         assertTrue(dump.contains("subdivision plan: blocks of 8 beats at 1 -> 2 -> 1 hits per beat"))
-        assertTrue(dump.contains("hits per beat: 1 / 2 (per block)"))
-        // Two passes of the three blocks: 8 + 16 + 8 notes each.
-        assertTrue(dump.contains("notes per attempt: 64"))
-        assertFalse(dump.contains("ENGINE"))
+        assertTrue(dump.contains("ENGINE: plays 1 hits per beat for the whole attempt"))
     }
 
     @Test

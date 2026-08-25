@@ -58,8 +58,12 @@ object RudiColors {
     /** Practice track (approved practice-screen concept, decisions 85-90). */
     val TrackHitLine = Color(0xFF6F6F6C)
     val TrackLane = Color(0xFF1E1E1E)
-    val TrackBarStrong = Color(0xFF2E2E2E)
-    val TrackBar = Color(0xFF232323)
+    // Beat grid: these are the metronome beats, so they have to be readable at
+    // arm's length on a bright pad-practice screen. The first values (#2E2E2E /
+    // #232323 on the #161616 background) were invisible on device, which hid the
+    // metronome from the eye entirely (decision 145).
+    val TrackBarStrong = Color(0xFF6A6A66)
+    val TrackBar = Color(0xFF3C3C3A)
     // The three windows read as one heat scale away from the target: brick for
     // PERFECT, orange for GOOD, yellow for OK (decision 130). The other order made
     // the wider window look hotter than the tighter one.

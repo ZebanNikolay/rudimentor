@@ -38,6 +38,8 @@ bool MicLabEngine::start() {
     outputFramesPublished_.store(0, std::memory_order_release);
     inputFrames_.store(0, std::memory_order_release);
     inputFrameZero_.store(-1, std::memory_order_release);
+    outputLatencyMillis_.store(0.0f, std::memory_order_release);
+    latencyPollCountdown_ = 0;
     nextTickFrame_ = static_cast<double>(sampleRate_) * 0.30;  // brief warm-up
     step_ = 0;
     clickFrame_ = kClickFrames;
@@ -165,6 +167,7 @@ MicLabEngine::Snapshot MicLabEngine::snapshot() const {
             detector_.lastPeak(),
             clickAudible_.load(std::memory_order_acquire),
             running_.load(std::memory_order_acquire),
+            outputLatencyMillis_.load(std::memory_order_acquire),
     };
 }
 
@@ -300,6 +303,31 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
 
     outputFrames_ += numFrames;
     outputFramesPublished_.store(outputFrames_, std::memory_order_release);
+
+    // Sample the presentation clock every ~100 ms. `calculateLatencyMillis()`
+    // compares frames written with the device timestamp, so it reports the real
+    // distance between the render clock the notes are drawn on and the sound the
+    // player hears. It has to be re-sampled during the run, not measured once:
+    // Bluetooth latency drifts, which is why the click felt like it was slowly
+    // sliding away from the note (decision 145). A failed call leaves the last
+    // good value in place.
+    if (--latencyPollCountdown_ <= 0) {
+        latencyPollCountdown_ =
+                std::max(1, static_cast<int>(sampleRate_ / 10 / std::max(1, numFrames)));
+        const auto latency = audioStream->calculateLatencyMillis();
+        if (latency) {
+            const float measured = static_cast<float>(latency.value());
+            if (measured >= 0.0f && measured < 1000.0f) {
+                const float previous = outputLatencyMillis_.load(std::memory_order_acquire);
+                // First reading lands as is; later ones are smoothed so a single
+                // odd timestamp cannot jump the whole timeline.
+                const float next = previous <= 0.0f
+                        ? measured
+                        : previous + 0.25f * (measured - previous);
+                outputLatencyMillis_.store(next, std::memory_order_release);
+            }
+        }
+    }
     return running_.load(std::memory_order_acquire)
             ? oboe::DataCallbackResult::Continue
             : oboe::DataCallbackResult::Stop;

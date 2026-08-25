@@ -62,6 +62,7 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
@@ -198,6 +199,10 @@ fun PracticeScreen(
     LaunchedEffect(running, attempt) {
         if (!running) return@LaunchedEffect
         var skewLogged = false
+        // Output latency is what the timeline is corrected by; over Bluetooth it is
+        // hundreds of milliseconds and it drifts, so a jump belongs in the log next
+        // to the strokes it moved (decision 145).
+        var loggedLatencyMs = -1f
         while (true) {
             val poll = session.poll()
             envelope = poll.envelope
@@ -208,7 +213,17 @@ fun PracticeScreen(
                     DevLog.log(
                         "practice",
                         "anchored, input-output clock skew ${poll.clockSkewMs.roundToInt()} ms, " +
-                            "latency slider ${latencyMs.roundToInt()} ms",
+                            "latency slider ${latencyMs.roundToInt()} ms, " +
+                            "output latency ${poll.outputLatencyMs.roundToInt()} ms",
+                    )
+                    loggedLatencyMs = poll.outputLatencyMs
+                }
+                if (abs(poll.outputLatencyMs - loggedLatencyMs) > LATENCY_LOG_STEP_MS) {
+                    loggedLatencyMs = poll.outputLatencyMs
+                    DevLog.log(
+                        "practice",
+                        "output latency ${poll.outputLatencyMs.roundToInt()} ms " +
+                            "at ${poll.positionMs.roundToInt()} ms",
                     )
                 }
                 val now = poll.positionMs
@@ -479,6 +494,9 @@ private fun NativeMicLab.StreamInfo.toTelemetry(): TelemetryAudio = TelemetryAud
 /** Wall-clock stamp of the attempt, the one line a human reads first. */
 private fun logStamp(): String =
     SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+
+/** How far the measured output latency has to move before it is logged again. */
+private const val LATENCY_LOG_STEP_MS = 15f
 
 /** Extra time after the last note before the attempt closes itself. */
 private const val TAIL_MS = 300f
