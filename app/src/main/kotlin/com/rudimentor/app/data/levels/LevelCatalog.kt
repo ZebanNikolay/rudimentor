@@ -179,8 +179,11 @@ data class TempoRampPlan(
 /**
  * One rank of a lesson. Schema 7 lets a target replace the fixed [bpm] with a tempo ramp
  * and the fixed [hitsPerBeat] with a subdivision plan, so both scalars are the *entry*
- * values: the first phase of the ramp and the first block of the subdivision plan. The
- * practice engine plays a planned level at those entry values until it can follow a plan.
+ * values: the first phase of the ramp and the first block of the subdivision plan.
+ *
+ * A subdivision plan is played: [hitsPerBeatAtBeat] gives the density of any beat of the
+ * attempt. A tempo ramp is not, because the click of the engine is set once per attempt,
+ * so a ramp still plays at its entry tempo.
  */
 data class RankTarget(
     val rank: PracticeRank,
@@ -192,7 +195,21 @@ data class RankTarget(
     val densityException: String? = null,
 ) {
     /** True when the engine plays an approximation of the authored plan. */
-    val approximated: Boolean get() = subdivisionPlan != null || tempoRampPlan != null
+    val approximated: Boolean get() = tempoRampPlan != null
+
+    /**
+     * Density of [beat], counted from the first beat of the attempt.
+     *
+     * A subdivision plan holds one density per block of [SubdivisionPlan.blockBeats] beats
+     * and the blocks cycle: `1 → 2 → 1` over blocks of 8 beats fills 48 beats as two passes
+     * of the same three blocks (decision 98). A target without a plan answers its own
+     * density for every beat, so callers never branch on the plan themselves.
+     */
+    fun hitsPerBeatAtBeat(beat: Int): Int {
+        val plan = subdivisionPlan ?: return hitsPerBeat
+        val block = beat / plan.blockBeats
+        return plan.hitsPerBeat[block % plan.hitsPerBeat.size]
+    }
 
     /** How many times the authored execution repeats within one attempt at this rank. */
     val attemptRepeats: Int get() = tempoRampPlan?.repeatCount ?: 1
@@ -335,6 +352,26 @@ data class Level(
     val playable: Boolean = supportsBeatGrid && !lesson.execution.timed && beatCount > 0
 
     fun target(rank: PracticeRank): RankTarget = rankTargets.single { it.rank == rank }
+
+    /**
+     * How many notes one official attempt at [target] plays: every beat of every block of
+     * every pass, at the density that beat is played on. Shown by the debug dump and used
+     * by the tests, so both read the same number the practice engine builds.
+     */
+    fun noteCount(target: RankTarget): Int {
+        var beat = 0
+        var notes = 0
+        repeat(phaseRepeats * target.attemptRepeats) {
+            phases.forEach { phase ->
+                if (phase.steps.isEmpty()) return@forEach
+                repeat(phase.beatCount) {
+                    notes += target.hitsPerBeatAtBeat(beat)
+                    beat += 1
+                }
+            }
+        }
+        return notes
+    }
 }
 
 enum class LevelNodeState {
