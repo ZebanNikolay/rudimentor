@@ -174,16 +174,19 @@ data class TempoRampPlan(
     val direction: String,
     val phases: List<TempoRampPhase>,
     val repeatCount: Int = 1,
-)
+) {
+    /** Beats in one pass through the phases. */
+    val passBeats: Int get() = phases.sumOf { it.beatCount }
+}
 
 /**
  * One rank of a lesson. Schema 7 lets a target replace the fixed [bpm] with a tempo ramp
  * and the fixed [hitsPerBeat] with a subdivision plan, so both scalars are the *entry*
  * values: the first phase of the ramp and the first block of the subdivision plan.
  *
- * A subdivision plan is played: [hitsPerBeatAtBeat] gives the density of any beat of the
- * attempt. A tempo ramp is not, because the click of the engine is set once per attempt,
- * so a ramp still plays at its entry tempo.
+ * Both plans are played: [hitsPerBeatAtBeat] gives the density of any beat of the attempt
+ * and [bpmAtBeat] gives its tempo, so the scalars are only what a level without a plan
+ * answers for every beat.
  */
 data class RankTarget(
     val rank: PracticeRank,
@@ -194,8 +197,24 @@ data class RankTarget(
     /** Why this target is allowed to break the density growth rule, when it is. */
     val densityException: String? = null,
 ) {
-    /** True when the engine plays an approximation of the authored plan. */
-    val approximated: Boolean get() = tempoRampPlan != null
+    /**
+     * Tempo of [beat], counted from the first beat of the attempt.
+     *
+     * One pass through the phases of a ramp is shorter than an attempt, so the passes
+     * repeat (decision 100) and the beat is read within its pass. A target without a ramp
+     * answers its own [bpm] for every beat.
+     */
+    fun bpmAtBeat(beat: Int): Int {
+        val plan = tempoRampPlan ?: return bpm
+        val passBeats = plan.passBeats
+        if (passBeats <= 0) return bpm
+        var remaining = beat.mod(passBeats)
+        plan.phases.forEach { phase ->
+            if (remaining < phase.beatCount) return phase.bpm
+            remaining -= phase.beatCount
+        }
+        return plan.phases.last().bpm
+    }
 
     /**
      * Density of [beat], counted from the first beat of the attempt.
@@ -352,6 +371,18 @@ data class Level(
     val playable: Boolean = supportsBeatGrid && !lesson.execution.timed && beatCount > 0
 
     fun target(rank: PracticeRank): RankTarget = rankTargets.single { it.rank == rank }
+
+    /**
+     * Tempo of every beat of one attempt at [target], in order: what the metronome has to
+     * play for the click to stay on the notes of a tempo ramp. A level without a ramp
+     * yields one tempo repeated, which the audio engine treats as a plain fixed tempo.
+     */
+    fun tempoPlan(target: RankTarget): IntArray =
+        IntArray(beatsPerAttempt(target)) { beat -> target.bpmAtBeat(beat) }
+
+    /** Beats one official attempt plays: the block chain, every pass of it. */
+    fun beatsPerAttempt(target: RankTarget): Int =
+        phaseRepeats * target.attemptRepeats * phases.sumOf { if (it.steps.isEmpty()) 0 else it.beatCount }
 
     /**
      * How many notes one official attempt at [target] plays: every beat of every block of

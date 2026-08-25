@@ -33,6 +33,7 @@ import com.rudimentor.app.R
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelProgress
+import com.rudimentor.app.data.levels.LevelType
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankProgress
 import com.rudimentor.app.data.levels.RankTarget
@@ -167,7 +168,8 @@ fun LevelDetailScreen(
                     )
                 }
 
-                LevelNotes(level = level, rankProgress = rankProgress, approximated = target.approximated)
+                LevelPlan(level = level, target = target)
+                LevelNotes(level = level, rankProgress = rankProgress)
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -262,16 +264,85 @@ private fun TargetTempo(
     }
 }
 
+/**
+ * What this level does to the attempt, named: the kind of lesson it is, and the plan it
+ * changes mid-attempt when it has one. A tempo ramp and a subdivision switch look like a
+ * plain level on this screen otherwise, which is exactly what made SS-01 unreadable
+ * (decision 148).
+ */
+@Composable
+private fun LevelPlan(level: Level, target: RankTarget) {
+    val kind = stringResource(
+        when (level.type) {
+            LevelType.Steady -> R.string.level_detail_kind_steady
+            LevelType.Isolation -> R.string.level_detail_kind_isolation
+            LevelType.Unison -> R.string.level_detail_kind_unison
+            LevelType.Transition -> R.string.level_detail_kind_transition
+            LevelType.SubdivisionSwitch -> R.string.level_detail_kind_subdivision
+            LevelType.TempoRamp -> R.string.level_detail_kind_tempo_ramp
+            LevelType.Dynamics -> R.string.level_detail_kind_dynamics
+        },
+    )
+    val ramp = target.tempoRampPlan
+    val subdivision = target.subdivisionPlan
+    val plan = when {
+        ramp != null && ramp.phases.isNotEmpty() -> {
+            val tempos = ramp.phases.joinToString(ARROW) { it.bpm.toString() }
+            val phaseBeats = ramp.phases.map { it.beatCount }.distinct().singleOrNull()
+            if (phaseBeats != null) {
+                stringResource(
+                    R.string.level_detail_plan_tempo_ramp,
+                    tempos,
+                    phaseBeats,
+                    ramp.repeatCount,
+                )
+            } else {
+                stringResource(
+                    R.string.level_detail_plan_tempo_ramp_uneven,
+                    tempos,
+                    ramp.repeatCount,
+                )
+            }
+        }
+        subdivision != null && subdivision.hitsPerBeat.isNotEmpty() -> stringResource(
+            R.string.level_detail_plan_subdivision,
+            subdivision.hitsPerBeat.joinToString(ARROW),
+            subdivision.blockBeats,
+        )
+        level.phased -> stringResource(
+            R.string.level_detail_plan_phases,
+            level.phases.size,
+            level.phases.firstOrNull()?.beatCount ?: 0,
+        )
+        else -> null
+    }
+    Spacer(modifier = Modifier.height(18.dp))
+    Text(
+        text = stringResource(R.string.level_detail_plan).uppercase(),
+        style = RudiTextStyles.RowNumber,
+        color = RudiColors.Muted,
+        letterSpacing = 1.6.sp,
+    )
+    Spacer(modifier = Modifier.height(3.dp))
+    Text(text = kind, style = RudiTextStyles.Timer, color = RudiColors.Text)
+    if (plan != null) {
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = plan,
+            style = MaterialTheme.typography.bodySmall,
+            color = RudiColors.Muted,
+        )
+    }
+}
+
 /** Everything the learner should know before pressing play, and nothing else. */
 @Composable
 private fun LevelNotes(
     level: Level,
     rankProgress: RankProgress,
-    approximated: Boolean,
 ) {
     val notes = buildList {
         if (!level.playable) add(stringResource(R.string.level_detail_preview_body))
-        if (approximated) add(stringResource(R.string.level_detail_approximation_body))
         if (rankProgress.completed) add(stringResource(R.string.level_detail_completed_body))
     }
     if (notes.isEmpty()) return
@@ -288,3 +359,5 @@ private fun LevelNotes(
 }
 
 private val STAR_COLOR = Color(0xFFE0A94A)
+
+private const val ARROW = " \u2192 "

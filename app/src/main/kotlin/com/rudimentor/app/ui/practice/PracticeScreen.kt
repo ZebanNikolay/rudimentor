@@ -113,6 +113,10 @@ fun PracticeScreen(
     // once here so the track, the click and the scoring all use the same number.
     val tempo = bpm.coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
     val notes = remember(level.id, rank, tempo) { buildPracticeNotes(level, rank, tempo) }
+    // The beat grid of the attempt and the tempo the engine plays it at: a tempo ramp
+    // changes tempo between phases, so both are per beat (decision 148).
+    val beatTimesMs = remember(level.id, rank, tempo) { buildBeatTimesMs(level, rank, tempo) }
+    val tempoPlan = remember(level.id, rank, tempo) { buildTempoPlan(level, rank, tempo) }
     // Windows are a property of the note list, not of a hit: computed once, then used by
     // the attempt, the expiry check and the deviation scale alike (decision 125).
     val windows = remember(notes) { hitWindowsFor(notes) }
@@ -314,7 +318,7 @@ fun PracticeScreen(
                 notes = notes,
                 attempt = attempt,
                 positionMs = positionMs,
-                beatMs = beatMs,
+                beatTimesMs = beatTimesMs,
                 frame = frame,
                 finishMs = finishMs,
                 showOffsetMs = showOffsetMs,
@@ -378,6 +382,7 @@ fun PracticeScreen(
                         bpm = tempo,
                         clickAudible = clickAudible,
                         inputLatencyMs = latencyMs,
+                        tempoPlan = tempoPlan,
                     )
                     if (!started) DevLog.error("practice", "audio engine refused to start")
                     audioFailed = !started

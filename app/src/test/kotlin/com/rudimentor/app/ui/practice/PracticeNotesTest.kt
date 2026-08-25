@@ -13,6 +13,8 @@ import com.rudimentor.app.data.levels.PatternStep
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankTarget
 import com.rudimentor.app.data.levels.SubdivisionPlan
+import com.rudimentor.app.data.levels.TempoRampPhase
+import com.rudimentor.app.data.levels.TempoRampPlan
 import com.rudimentor.app.data.levels.Technique
 import com.rudimentor.app.data.levels.TransitionPhase
 import com.rudimentor.app.data.levels.TransitionPlan
@@ -143,6 +145,65 @@ class PracticeNotesTest {
         assertEquals(16, notes.size)
         assertTrue(notes.none(PracticeNote::densityStart))
     }
+
+    @Test
+    fun `a tempo ramp plays every phase at its own tempo`() {
+        // doubles.RM-01 shaped: 16 beats per pass, 60 -> 120 BPM, two passes per attempt.
+        val level = rampLevel()
+        val notes = buildPracticeNotes(level, PracticeRank.Practice, bpm = 60)
+
+        assertEquals(32, notes.size)
+        val countInMs = PracticeScoring.COUNT_IN_BEATS * 1000f
+        // The first phase runs at 60 BPM: whole-second beats after the count-in.
+        assertEquals(countInMs, notes[0].timeMs, 0.01f)
+        assertEquals(1000f, notes[1].timeMs - notes[0].timeMs, 0.01f)
+        // The second phase runs at 120 BPM, so its beats are half as long.
+        assertEquals(countInMs + 8000f, notes[8].timeMs, 0.01f)
+        assertEquals(500f, notes[9].timeMs - notes[8].timeMs, 0.01f)
+        // The pass repeats, so the attempt goes back to the slow phase.
+        assertEquals(countInMs + 12_000f, notes[16].timeMs, 0.01f)
+        assertEquals(1000f, notes[17].timeMs - notes[16].timeMs, 0.01f)
+    }
+
+    @Test
+    fun `the tempo plan carries the count-in and follows the chosen tempo`() {
+        val level = rampLevel()
+        val plan = buildTempoPlan(level, PracticeRank.Practice, bpm = 60)
+
+        // Four count-in beats at the entry tempo, then a beat per beat of the attempt.
+        assertEquals(PracticeScoring.COUNT_IN_BEATS + 32, plan.size)
+        assertEquals(listOf(60, 60, 60, 60), plan.take(4))
+        assertEquals(60, plan[PracticeScoring.COUNT_IN_BEATS])
+        assertEquals(120, plan[PracticeScoring.COUNT_IN_BEATS + 8])
+        // Picking a faster tempo moves the whole authored shape, keeping its ratio.
+        val faster = buildTempoPlan(level, PracticeRank.Practice, bpm = 90)
+        assertEquals(90, faster[PracticeScoring.COUNT_IN_BEATS])
+        assertEquals(180, faster[PracticeScoring.COUNT_IN_BEATS + 8])
+        // A level without a ramp needs no plan: the engine keeps its fixed tempo.
+        assertEquals(0, buildTempoPlan(level(lesson(hands = "RL", beatCount = 8)), PracticeRank.Practice, bpm = 60).size)
+    }
+
+    private fun rampLevel() = level(
+        lesson(hands = "RRLL", beatCount = 16).copy(
+            type = LevelType.TempoRamp,
+            rankTargets = listOf(
+                RankTarget(
+                    rank = PracticeRank.Practice,
+                    bpm = 60,
+                    hitsPerBeat = 1,
+                    tempoRampPlan = TempoRampPlan(
+                        mode = "step",
+                        direction = "up",
+                        phases = listOf(
+                            TempoRampPhase(bpm = 60, beatCount = 8),
+                            TempoRampPhase(bpm = 120, beatCount = 8),
+                        ),
+                        repeatCount = 2,
+                    ),
+                ),
+            ),
+        ),
+    )
 
     private fun List<PracticeNote>.hands(): String = joinToString("") {
         if (it.hand == PatternHand.Right) "R" else "L"

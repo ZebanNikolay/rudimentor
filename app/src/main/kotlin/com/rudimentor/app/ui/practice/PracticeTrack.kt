@@ -53,7 +53,7 @@ fun PracticeTrack(
     notes: List<PracticeNote>,
     attempt: PracticeAttempt,
     positionMs: Float,
-    beatMs: Float,
+    beatTimesMs: FloatArray,
     frame: Int,
     finishMs: Float,
     modifier: Modifier = Modifier,
@@ -83,7 +83,7 @@ fun PracticeTrack(
 
         drawBarLines(
             positionMs = positionMs,
-            beatMs = beatMs,
+            beatTimesMs = beatTimesMs,
             pxPerMs = pxPerMs,
             lineX = lineX,
             height = height,
@@ -100,7 +100,7 @@ fun PracticeTrack(
 
         drawCountIn(
             positionMs = positionMs,
-            beatMs = beatMs,
+            beatTimesMs = beatTimesMs,
             pxPerMs = pxPerMs,
             lineX = lineX,
             laneY = laneY,
@@ -322,29 +322,53 @@ internal fun windowColor(window: HitWindow): Color = when (window) {
     HitWindow.Miss -> RudiColors.WindowMiss
 }
 
-/** Bar lines every four beats, plus a quieter line on every beat. */
+/**
+ * Bar lines every four beats, plus a quieter line on every beat. The beats come from the
+ * grid of the attempt rather than from one beat length, so the bars of a tempo ramp stay
+ * on its clicks (decision 148); beats past the end of the grid keep the last beat length,
+ * which is what draws the tail after the final note.
+ */
 private fun DrawScope.drawBarLines(
     positionMs: Float,
-    beatMs: Float,
+    beatTimesMs: FloatArray,
     pxPerMs: Float,
     lineX: Float,
     height: Float,
 ) {
-    if (beatMs <= 0f) return
+    if (beatTimesMs.isEmpty()) return
     // Widths in dp, not raw pixels: a 1 px line on a ~3x density panel is a third
     // of a hairline and disappeared on device, which is what made the metronome
     // invisible on the track (decision 147).
     val thin = BAR_WIDTH.toPx()
     val thick = BAR_STRONG_WIDTH.toPx()
-    val firstBeat = ((positionMs - lineX / pxPerMs) / beatMs).toInt() - 1
-    val lastBeat = ((positionMs + (size.width - lineX) / pxPerMs) / beatMs).toInt() + 1
-    for (beat in firstBeat..lastBeat) {
-        val x = lineX + (beat * beatMs - positionMs) * pxPerMs
+    val fromMs = positionMs - lineX / pxPerMs
+    val toMs = positionMs + (size.width - lineX) / pxPerMs
+    val tailBeatMs = if (beatTimesMs.size >= 2) {
+        beatTimesMs.last() - beatTimesMs[beatTimesMs.size - 2]
+    } else {
+        0f
+    }
+    var beat = 0
+    while (true) {
+        val timeMs = if (beat < beatTimesMs.size) {
+            beatTimesMs[beat]
+        } else {
+            if (tailBeatMs <= 0f) return
+            beatTimesMs.last() + (beat - beatTimesMs.size + 1) * tailBeatMs
+        }
+        if (timeMs > toMs) return
+        if (timeMs < fromMs) {
+            beat += 1
+            continue
+        }
+        val x = lineX + (timeMs - positionMs) * pxPerMs
+        val barBeat = beat
+        beat += 1
         if (x < 0f || x > size.width) continue
         // Every fourth beat is the accented click the engine plays, so it is the
         // one that gets the full-height, brighter bar; the plain beats stay inset
         // so the lane still reads as a lane and not as a grid of equals.
-        val strong = beat % 4 == 0
+        val strong = barBeat % 4 == 0
         val inset = if (strong) 0f else height * BAR_INSET_FRACTION
         drawLine(
             color = if (strong) RudiColors.TrackBarStrong else RudiColors.TrackBar,
@@ -400,7 +424,7 @@ private fun DrawScope.drawLane(laneY: Float, width: Float) {
  */
 private fun DrawScope.drawCountIn(
     positionMs: Float,
-    beatMs: Float,
+    beatTimesMs: FloatArray,
     pxPerMs: Float,
     lineX: Float,
     laneY: Float,
@@ -408,8 +432,8 @@ private fun DrawScope.drawCountIn(
     measurer: TextMeasurer,
     style: TextStyle,
 ) {
-    for (beat in 0 until PracticeScoring.COUNT_IN_BEATS) {
-        val timeMs = beat * beatMs
+    for (beat in 0 until minOf(PracticeScoring.COUNT_IN_BEATS, beatTimesMs.size)) {
+        val timeMs = beatTimesMs[beat]
         val x = lineX + (timeMs - positionMs) * pxPerMs
         if (x < -side || x > size.width + side) continue
         val passed = positionMs >= timeMs

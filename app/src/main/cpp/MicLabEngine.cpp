@@ -94,6 +94,20 @@ void MicLabEngine::setBpm(int bpm) {
     bpm_.store(std::clamp(bpm, kMinBpm, kMaxBpm), std::memory_order_release);
 }
 
+void MicLabEngine::setTempoPlan(const int *bpmPerBeat, int count) {
+    if (bpmPerBeat == nullptr || count <= 0) {
+        tempoPlanSize_.store(0, std::memory_order_release);
+        return;
+    }
+    const int size = std::min(count, kMaxPlanBeats);
+    for (int i = 0; i < size; ++i) {
+        tempoPlan_[static_cast<size_t>(i)] = std::clamp(bpmPerBeat[i], kMinBpm, kMaxBpm);
+    }
+    // The size is published last: the callback reads it first and then only
+    // touches entries below it, so it never reads a half-written plan.
+    tempoPlanSize_.store(size, std::memory_order_release);
+}
+
 void MicLabEngine::setClickAudible(bool audible) {
     clickAudible_.store(audible, std::memory_order_release);
 }
@@ -267,19 +281,27 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
     auto *output = static_cast<float *>(audioData);
     const int32_t channelCount = audioStream->getChannelCount();
     const bool audible = clickAudible_.load(std::memory_order_acquire);
-    const double framesPerBeat =
-            static_cast<double>(sampleRate_) * 60.0 /
-            static_cast<double>(bpm_.load(std::memory_order_acquire));
+    const int fixedBpm = bpm_.load(std::memory_order_acquire);
+    const int planSize = tempoPlanSize_.load(std::memory_order_acquire);
+    // The length of a beat is decided when that beat starts, so a tempo ramp
+    // switches tempo on the exact frame of the switch instead of a buffer later
+    // (decision 148). Without a plan every beat is the fixed tempo.
+    const auto framesPerBeatOf = [&](int64_t beat) {
+        const int beatBpm = planSize > 0
+                ? tempoPlan_[static_cast<size_t>(beat % planSize)]
+                : fixedBpm;
+        return static_cast<double>(sampleRate_) * 60.0 / static_cast<double>(beatBpm);
+    };
 
     for (int32_t f = 0; f < numFrames; ++f) {
         const int64_t frameIndex = outputFrames_ + f;
         if (static_cast<double>(frameIndex) >= nextTickFrame_) {
             tickCount_.fetch_add(1, std::memory_order_acq_rel);
             publishTick(frameIndex, step_);
-            step_ += 1;
             clickFrame_ = 0;
             phase_ = 0.0;
-            nextTickFrame_ += framesPerBeat;
+            nextTickFrame_ += framesPerBeatOf(step_);
+            step_ += 1;
         }
 
         float sample = 0.0f;

@@ -66,6 +66,24 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeSetBpm(JNIEnv *, jobject, jint 
 }
 
 extern "C" JNIEXPORT void JNICALL
+Java_com_rudimentor_app_audio_NativeMicLab_nativeSetTempoPlan(
+        JNIEnv *env, jobject, jintArray bpmPerBeat) {
+    if (bpmPerBeat == nullptr) {
+        micLab.setTempoPlan(nullptr, 0);
+        return;
+    }
+    const jsize length = env->GetArrayLength(bpmPerBeat);
+    if (length <= 0) {
+        micLab.setTempoPlan(nullptr, 0);
+        return;
+    }
+    std::vector<jint> beats(static_cast<size_t>(length));
+    env->GetIntArrayRegion(bpmPerBeat, 0, length, beats.data());
+    const std::vector<int> values(beats.begin(), beats.end());
+    micLab.setTempoPlan(values.data(), static_cast<int>(values.size()));
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_com_rudimentor_app_audio_NativeMicLab_nativeSetClickAudible(
         JNIEnv *, jobject, jboolean audible) {
     micLab.setClickAudible(audible == JNI_TRUE);

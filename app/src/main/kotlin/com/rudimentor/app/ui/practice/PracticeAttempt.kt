@@ -4,6 +4,7 @@ import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.PatternHand
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankTarget
+import com.rudimentor.app.audio.MicLab
 import kotlin.math.abs
 
 /**
@@ -43,15 +44,16 @@ data class PracticeNote(
  * its sticking cycle declares `midCycleSwitch`, which only means anything if the cycle
  * carries on.
  *
- * Times are built from the beat index rather than accumulated, so a long attempt cannot
- * drift; the count-in beats come before note 0, so `timeMs` is already the time on the
+ * The tempo is per beat too: a tempo ramp changes it between phases ([attemptBeatBpms],
+ * decision 148), so beat starts are accumulated instead of multiplied out of one beat
+ * length. The count-in beats come before note 0, so `timeMs` is already the time on the
  * shared clock the audio engine reports.
  */
 fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<PracticeNote> {
     val target = practiceTarget(level, rank) ?: return emptyList()
     if (bpm <= 0) return emptyList()
-    val beatMs = 60_000f / bpm
-    val countInMs = PracticeScoring.COUNT_IN_BEATS * beatMs
+    val beatBpms = attemptBeatBpms(level, rank, bpm)
+    val beatTimes = buildBeatTimesMs(level, rank, bpm)
     val notes = ArrayList<PracticeNote>()
     // Beats since the start of the attempt: it places the note in time and it is what the
     // subdivision plan is read with, so both stay in step across phases and repeats.
@@ -64,8 +66,10 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
             var position = 0
             repeat(phase.beatCount) { beatInPhase ->
                 val hitsPerBeat = target.hitsPerBeatAtBeat(beat)
+                val beatMs = 60_000f / (beatBpms.getOrNull(beat) ?: bpm)
+                val beatStartMs = beatTimes.getOrNull(PracticeScoring.COUNT_IN_BEATS + beat)
+                    ?: return notes
                 val noteMs = beatMs / hitsPerBeat
-                val beatStartMs = countInMs + beat * beatMs
                 for (hit in 0 until hitsPerBeat) {
                     val step = steps[position % steps.size]
                     notes.add(
@@ -93,6 +97,65 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
         }
     }
     return notes
+}
+
+/**
+ * Tempo of every beat of one attempt, in beat order.
+ *
+ * A level without a tempo ramp plays the whole attempt at [bpm]. A ramp holds authored
+ * tempos, and the player can still pick a tempo, so the authored shape is scaled by the
+ * ratio between [bpm] and the entry tempo of the rank: picking 110 on a 95 → 105 ramp
+ * keeps the same climb, moved up. Every beat is clamped to the tempo range the engine
+ * accepts, which also stops a fast rank from ramping past it.
+ */
+fun attemptBeatBpms(level: Level, rank: PracticeRank, bpm: Int): IntArray {
+    val target = practiceTarget(level, rank) ?: return IntArray(0)
+    val beats = level.beatsPerAttempt(target)
+    if (beats <= 0 || bpm <= 0) return IntArray(0)
+    val plan = target.tempoRampPlan
+    if (plan == null || target.bpm <= 0) return IntArray(beats) { bpm }
+    val scale = bpm.toFloat() / target.bpm.toFloat()
+    return IntArray(beats) { beat ->
+        Math.round(target.bpmAtBeat(beat) * scale).coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
+    }
+}
+
+/**
+ * Start time of every beat the attempt plays, count-in beats first: the grid the track
+ * draws its beat bars and its count-in digits on, and what places the notes in time. Under
+ * a tempo ramp the beats have different lengths, so the grid cannot be one multiple
+ * (decision 148).
+ */
+fun buildBeatTimesMs(level: Level, rank: PracticeRank, bpm: Int): FloatArray {
+    val beatBpms = attemptBeatBpms(level, rank, bpm)
+    if (beatBpms.isEmpty()) return FloatArray(0)
+    val countIn = PracticeScoring.COUNT_IN_BEATS
+    val times = FloatArray(countIn + beatBpms.size)
+    var timeMs = 0f
+    val entryBeatMs = 60_000f / beatBpms.first()
+    for (index in 0 until countIn) {
+        times[index] = timeMs
+        timeMs += entryBeatMs
+    }
+    beatBpms.forEachIndexed { index, beatBpm ->
+        times[countIn + index] = timeMs
+        timeMs += 60_000f / beatBpm
+    }
+    return times
+}
+
+/**
+ * The tempo plan the audio engine is started with: the count-in beats at the entry tempo
+ * of the attempt, then every beat of the attempt. Empty for a level that plays at one
+ * tempo, which the engine reads as "keep the fixed tempo".
+ */
+fun buildTempoPlan(level: Level, rank: PracticeRank, bpm: Int): IntArray {
+    val target = practiceTarget(level, rank) ?: return IntArray(0)
+    if (target.tempoRampPlan == null) return IntArray(0)
+    val beats = attemptBeatBpms(level, rank, bpm)
+    if (beats.isEmpty()) return IntArray(0)
+    val countIn = IntArray(PracticeScoring.COUNT_IN_BEATS) { beats.first() }
+    return countIn + beats
 }
 
 /**

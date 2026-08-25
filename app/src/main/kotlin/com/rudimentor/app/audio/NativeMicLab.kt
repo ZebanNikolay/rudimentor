@@ -108,6 +108,15 @@ class NativeMicLab {
     fun stop() = nativeStop()
 
     fun setBpm(bpm: Int) = nativeSetBpm(bpm)
+
+    /**
+     * Installs the tempo of every beat of the attempt, count-in included, replacing the
+     * fixed tempo. The engine switches tempo on the frame the beat starts on, which is
+     * what keeps the click of a tempo ramp on its notes (decision 148). An empty array
+     * goes back to the fixed tempo. Call it before [start].
+     */
+    fun setTempoPlan(bpmPerBeat: IntArray) = nativeSetTempoPlan(bpmPerBeat)
+
     fun setClickAudible(audible: Boolean) = nativeSetClickAudible(audible)
     fun setSensitivity(sensitivity01: Float) = nativeSetSensitivity(sensitivity01)
     fun setInputLatencyMillis(millis: Float) = nativeSetInputLatencyMillis(millis)
@@ -182,6 +191,7 @@ class NativeMicLab {
     private external fun nativeStart(): Boolean
     private external fun nativeStop()
     private external fun nativeSetBpm(bpm: Int)
+    private external fun nativeSetTempoPlan(bpmPerBeat: IntArray)
     private external fun nativeSetClickAudible(audible: Boolean)
     private external fun nativeSetSensitivity(sensitivity: Float)
     private external fun nativeSetInputLatencyMillis(millis: Float)

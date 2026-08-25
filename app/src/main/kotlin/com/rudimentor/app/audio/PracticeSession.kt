@@ -59,6 +59,15 @@ class PracticeSession(
     var bpm: Int = MicLab.DEFAULT_BPM
         private set
 
+    /**
+     * Tempo of every beat of the attempt, count-in included, or empty when the attempt
+     * runs at the single [bpm]. A tempo ramp makes beats different lengths, so the
+     * anchor of the timeline cannot be projected back from the first tick with one beat
+     * length (decision 148).
+     */
+    var tempoPlan: IntArray = IntArray(0)
+        private set
+
     var running: Boolean = false
         private set
 
@@ -85,13 +94,18 @@ class PracticeSession(
         clickAudible: Boolean = false,
         inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
         sensitivity: Float = MicLab.DEFAULT_SENSITIVITY,
+        tempoPlan: IntArray = IntArray(0),
     ): Boolean {
         if (running) return true
         this.bpm = bpm.coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
+        this.tempoPlan = IntArray(tempoPlan.size) {
+            tempoPlan[it].coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
+        }
         anchorFrame = null
         hitScratch.clear()
         tickScratch.clear()
         native.setBpm(this.bpm)
+        native.setTempoPlan(this.tempoPlan)
         native.setClickAudible(clickAudible)
         native.setSensitivity(sensitivity.coerceIn(0f, 1f))
         baseLatencyMs = inputLatencyMs
@@ -132,15 +146,16 @@ class PracticeSession(
         native.drainHits(hitScratch)
         val snapshot = native.snapshot()
         val framesPerMs = snapshot.sampleRate / 1000f
-        val framesPerBeat = if (bpm > 0) snapshot.sampleRate * 60.0 / bpm else 0.0
 
         // The clock of the attempt starts at tick 0, not at engine start: the first
         // tick tells us where the grid actually landed, and its index lets us project
-        // back to tick 0 even when Kotlin sees the second or third tick first.
-        if (anchorFrame == null && framesPerBeat > 0.0) {
+        // back to tick 0 even when Kotlin sees the second or third tick first. Under a
+        // tempo plan the beats before it are not all the same length, so the projection
+        // sums their real lengths instead of multiplying one of them.
+        if (anchorFrame == null && bpm > 0) {
             val first = tickScratch.firstOrNull()
             if (first != null) {
-                anchorFrame = first.frame - (first.index * framesPerBeat).toLong()
+                anchorFrame = first.frame - framesBeforeBeat(first.index, snapshot.sampleRate)
             }
         }
 
@@ -198,6 +213,18 @@ class PracticeSession(
             clockSkewMs = (snapshot.inputFrame - snapshot.outputFrame) / framesPerMs,
             outputLatencyMs = outputLatencyMs,
         )
+    }
+
+    /** Frames the engine spends on the beats before [beat], at [sampleRate]. */
+    private fun framesBeforeBeat(beat: Long, sampleRate: Int): Long {
+        if (beat <= 0L || sampleRate <= 0) return 0L
+        val plan = tempoPlan
+        if (plan.isEmpty()) return (beat * sampleRate * 60.0 / bpm).toLong()
+        var frames = 0.0
+        for (i in 0 until beat) {
+            frames += sampleRate * 60.0 / plan[(i % plan.size).toInt()]
+        }
+        return frames.toLong()
     }
 
     companion object {

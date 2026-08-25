@@ -98,6 +98,22 @@ public:
     void stop();
 
     void setBpm(int bpm);
+
+    /**
+     * Installs the tempo of every beat of one attempt, in beat order, replacing
+     * the fixed tempo of setBpm(). A tempo ramp changes tempo mid-attempt, and
+     * the switch has to happen on the exact frame the beat starts on: driving it
+     * from Kotlin would land it a buffer late, which over Bluetooth is a good
+     * fraction of a beat, and the click would drift off the notes (decision 148).
+     *
+     * `count` beats past the end of the plan repeat it from the top, so an
+     * attempt that overruns its own plan keeps clicking in tempo. Pass a count of
+     * 0 to go back to the fixed tempo. Call it before start(): the plan is read
+     * by the audio callback and only the size is published atomically, so it is
+     * not safe to swap a running plan.
+     */
+    void setTempoPlan(const int *bpmPerBeat, int count);
+
     void setClickAudible(bool audible);
     void setSensitivity(float sensitivity01);
     void setInputLatencyMillis(float millis);
@@ -126,12 +142,22 @@ private:
     static constexpr int kMinBpm = 40;
     static constexpr int kMaxBpm = 240;
     static constexpr int kClickFrames = 960;
+    /**
+     * Room for the longest attempt the course can author: the densest ramp is
+     * 48 beats per pass with a handful of passes, so this is generous.
+     */
+    static constexpr int kMaxPlanBeats = 512;
 
     mutable std::mutex streamMutex_;
     std::shared_ptr<oboe::AudioStream> outputStream_;
     std::shared_ptr<oboe::AudioStream> inputStream_;
 
     std::atomic<int> bpm_{60};
+    // Tempo per beat of the attempt, written by the UI thread before start() and
+    // read by the audio callback on every tick. Only the size is atomic: the plan
+    // is installed while the engine is stopped.
+    std::array<int, kMaxPlanBeats> tempoPlan_{};
+    std::atomic<int> tempoPlanSize_{0};
     // Off by default: without headphones, an audible click leaks from the
     // speaker back into the mic and the detector scores that echo as a hit
     // (usually landing in the "red"/off bucket, since `inputLatencyFrames_`

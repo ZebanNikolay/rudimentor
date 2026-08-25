@@ -287,7 +287,7 @@ class LevelCatalogTest {
     }
 
     @Test
-    fun `a planned target is played at its entry tempo and density`() {
+    fun `a tempo ramp answers the tempo of every beat of its pass`() {
         val level = catalog(
             lessons = listOf(
                 lesson("f.TM-01").copy(
@@ -316,8 +316,14 @@ class LevelCatalogTest {
 
         val practice = level.target(PracticeRank.Practice)
         assertEquals(80, practice.bpm)
-        assertTrue(practice.approximated)
-        assertFalse(level.target(PracticeRank.Stage).approximated)
+        assertEquals(80, practice.bpmAtBeat(0))
+        assertEquals(80, practice.bpmAtBeat(31))
+        assertEquals(100, practice.bpmAtBeat(32))
+        assertEquals(100, practice.bpmAtBeat(63))
+        // The pass repeats within an attempt, so beat 64 is the first beat again.
+        assertEquals(80, practice.bpmAtBeat(64))
+        // A rank without a ramp holds one tempo for the whole attempt.
+        assertEquals(90, level.target(PracticeRank.Stage).bpmAtBeat(40))
         assertNull(level.target(PracticeRank.Groove).tempoRampPlan)
     }
 
