@@ -32,10 +32,17 @@
     <string name="level_detail_title">LEVEL %1$s</string>
     <string name="level_detail_rank_meta">%1$s · ×%2$d</string>
     <string name="level_detail_bpm">BPM</string>
-    <string name="level_detail_best_bpm">best BPM</string>
     <string name="level_detail_best_accuracy">best accuracy</string>
     <string name="level_detail_accuracy_value">%1$d%%</string>
     <string name="level_detail_no_score">—</string>
+    <string name="level_detail_cleared">cleared at this rank</string>
+    <string name="level_detail_not_cleared">not cleared yet</string>
+    <string name="level_detail_attempt">one attempt</string>
+    <string name="level_detail_attempt_notes">%1$d notes</string>
+    <string name="level_detail_attempt_timed">≥ %1$d min</string>
+    <string name="level_detail_attempt_duration">≈ %1$s at this tempo</string>
+    <string name="level_detail_phase_label">Block %1$d · %2$d beats</string>
+    <string name="level_detail_phase_repeats">×%1$d passes per attempt</string>
     <string name="level_detail_mode">Mode</string>
     <string name="level_detail_start">Start level practice</string>
     <string name="level_detail_preview_tag">Preview</string>
@@ -52,10 +59,17 @@
     <string name="level_detail_plan_tempo_ramp">%1$s BPM · %2$d beats per phase · %3$d passes</string>
     <string name="level_detail_plan_tempo_ramp_uneven">%1$s BPM · %2$d passes</string>
     <string name="level_detail_plan_subdivision">%1$s hits per beat · blocks of %2$d beats</string>
-    <string name="level_detail_plan_phases">%1$d sticking blocks · %2$d beats each</string>
+    <string name="level_detail_plan_phases">%1$d sticking blocks · %2$d passes</string>
+    <string name="level_detail_technique">Technique</string>
+    <string name="level_detail_notes">Notes</string>
+    <string name="level_detail_note_weak_lead">The weak hand leads: the pattern starts on %1$s.</string>
+    <string name="level_detail_note_weak_only">Weak hand only: every note is played with %1$s.</string>
+    <string name="level_detail_note_mid_cycle">The subdivision changes inside an unfinished sticking cycle.</string>
+    <string name="level_detail_note_rollback">Tempo steps back on purpose: %1$s</string>
+    <string name="level_detail_note_density">More notes than the level before it: %1$s</string>
     <string name="level_detail_completed_body">Passed at this difficulty. Play it again to raise your best accuracy.</string>
-    <string name="level_detail_execution">%1$d beats · %2$d hits per beat</string>
-    <string name="level_detail_execution_timed">≥ %1$d min · %2$d hits per beat</string>
+    <string name="level_detail_execution">%1$d beats · ×%2$d</string>
+    <string name="level_detail_execution_timed">≥ %1$d min · ×%2$d</string>
 
     <!-- Metronome screen chrome -->
     <string name="metronome_title">METRONOME</string>

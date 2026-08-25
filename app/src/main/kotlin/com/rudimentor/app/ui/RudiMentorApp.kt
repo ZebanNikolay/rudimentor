@@ -77,7 +77,7 @@ fun RudiMentorApp(
     onClickFollowsHeadphones: (Boolean) -> Unit,
     onInputLatencyMs: (Float) -> Unit,
     onShowOffsetMs: (Boolean) -> Unit,
-    onAttemptFinished: (Level, PracticeRank, Int, PracticeResult) -> Unit,
+    onAttemptFinished: (Level, PracticeRank, PracticeResult) -> Unit,
 ) {
     // The click follows the audio output until the learner overrides it by hand, so
     // the effective value is decided here, once, for every screen that plays it
@@ -206,7 +206,7 @@ fun RudiMentorApp(
                                         "accuracy=${(result.accuracy * 100f).roundToInt()}% " +
                                         "stars=${result.stars} passed=${result.passed}",
                                 )
-                                onAttemptFinished(level, practiceRank, practiceBpm, result)
+                                onAttemptFinished(level, practiceRank, result)
                                 practiceResult = result
                                 screenName = Screen.PracticeResult.name
                             },
