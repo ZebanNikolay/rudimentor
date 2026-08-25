@@ -152,11 +152,8 @@
     <string name="about_honest_no_business">No ads, no subscriptions, no accounts, no analytics. The app never talks to a server \u2014 it has no network permission at all.</string>
     <string name="about_honest_mic">The microphone listens in real time to hear your hits. Audio is not recorded, not saved and not sent anywhere.</string>
     <string name="about_honest_on_device">Your progress, settings and practice logs stay on this device. Uninstalling the app deletes them.</string>
-    <string name="about_honest_author">Made by one person, in the evenings, for his own practice. That is why it is small, and why it keeps changing.</string>
-    <string name="about_credits_title">CREDITS</string>
-    <string name="about_credits_body">Rudiment names and stickings are the shared vocabulary of rudimental drumming, as standardised by the Percussive Arts Society. No exercise, notation, audio or text from any drum method book is reproduced here: every level, pattern, sound and drawing in the app was made for it.</string>
-    <string name="about_open_source_title">OPEN SOURCE</string>
-    <string name="about_open_source_note">RudiMentor is open source, and it stands on other people\'s open source. Tap a line to read the full license text.</string>
+    <string name="about_licenses_title">Licenses</string>
+    <string name="about_licenses_link">Open source licenses</string>
     <string name="about_care_title">TAKE CARE OF YOURSELF</string>
     <string name="about_care_hearing">A pad plus a metronome in headphones is loud for hours. Keep the volume low enough to hear yourself, and take breaks.</string>
     <string name="about_care_hands">If your hands or wrists hurt, stop. Speed comes from relaxed hands, never from pushing through pain.</string>

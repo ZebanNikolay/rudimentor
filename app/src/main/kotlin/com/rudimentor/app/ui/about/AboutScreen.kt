@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -24,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -60,10 +58,10 @@ fun AboutScreen(
     buildInfo: BuildInfo,
     onBack: () -> Unit,
 ) {
-    var openLicense by remember { mutableStateOf<LicenseEntry?>(null) }
-    val entry = openLicense
-    if (entry != null) {
-        LicenseTextScreen(entry = entry, onBack = { openLicense = null })
+    val licensesTitle = stringResource(R.string.about_licenses_title)
+    var showLicenses by remember { mutableStateOf(false) }
+    if (showLicenses) {
+        LicenseTextScreen(title = licensesTitle, onBack = { showLicenses = false })
         return
     }
 
@@ -126,25 +124,6 @@ fun AboutScreen(
                         stringResource(R.string.about_honest_no_business),
                         stringResource(R.string.about_honest_mic),
                         stringResource(R.string.about_honest_on_device),
-                        stringResource(R.string.about_honest_author),
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-                AboutSection(title = stringResource(R.string.about_credits_title)) {
-                    Body(stringResource(R.string.about_credits_body))
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-                AboutSection(title = stringResource(R.string.about_open_source_title)) {
-                    Body(stringResource(R.string.about_open_source_note))
-                    Spacer(modifier = Modifier.height(10.dp))
-                    AboutLicenses.entries.forEach { row ->
-                        LicenseRow(row = row, onClick = { openLicense = row })
-                    }
-                    LicenseRow(
-                        row = AboutLicenses.notice,
-                        onClick = { openLicense = AboutLicenses.notice },
                     )
                 }
 
@@ -158,6 +137,7 @@ fun AboutScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
                 Footer(
+                    onOpenLicenses = { showLicenses = true },
                     onOpenRepo = {
                         if (!openLink(context, REPO_URL)) {
                             clipboard.setText(AnnotatedString(REPO_URL))
@@ -205,7 +185,10 @@ private fun Header(
 }
 
 @Composable
-private fun Footer(onOpenRepo: () -> Unit) {
+private fun Footer(
+    onOpenLicenses: () -> Unit,
+    onOpenRepo: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.about_copyright),
@@ -224,6 +207,21 @@ private fun Footer(onOpenRepo: () -> Unit) {
                 .semantics {
                     role = Role.Button
                     contentDescription = repoLabel
+                }
+                .padding(vertical = 4.dp),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        val licensesLabel = stringResource(R.string.about_licenses_link)
+        Text(
+            text = licensesLabel,
+            style = MaterialTheme.typography.bodySmall,
+            color = RudiColors.BrickBright,
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .clickable(onClick = onOpenLicenses)
+                .semantics {
+                    role = Role.Button
+                    contentDescription = licensesLabel
                 }
                 .padding(vertical = 4.dp),
         )
@@ -282,33 +280,5 @@ private fun Bullets(vararg lines: String) {
                 color = RudiColors.Muted,
             )
         }
-    }
-}
-
-@Composable
-private fun LicenseRow(
-    row: LicenseEntry,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .semantics { role = Role.Button }
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = row.component,
-            style = MaterialTheme.typography.bodyMedium,
-            color = RudiColors.Text,
-        )
-        Text(
-            text = row.license,
-            style = MaterialTheme.typography.bodySmall,
-            color = RudiColors.Muted,
-        )
     }
 }

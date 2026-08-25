@@ -26,18 +26,18 @@ import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.theme.RudiColors
 
 /**
- * The full text of one license, read from the assets of the installed app.
+ * The full license text of the app and of its third-party parts, read from the assets of the installed app.
  *
  * Monospace and unwrapped-by-paragraph: a license is a legal text, so it is shown
  * as it was written, without reflowing or trimming it.
  */
 @Composable
 fun LicenseTextScreen(
-    entry: LicenseEntry,
+    title: String,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    val text = remember(entry.assetPath) { readAsset(context, entry.assetPath) }
+    val text = remember { readAsset(context, AboutLicenses.ASSET) }
     val scroll = rememberScrollState()
 
     BackHandler(onBack = onBack)
@@ -49,7 +49,7 @@ fun LicenseTextScreen(
                 .padding(contentPadding)
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
-            AppToolbar(title = entry.license.uppercase(), onBack = onBack)
+            AppToolbar(title = title.uppercase(), onBack = onBack)
             Spacer(modifier = Modifier.height(14.dp))
             Column(
                 modifier = Modifier
