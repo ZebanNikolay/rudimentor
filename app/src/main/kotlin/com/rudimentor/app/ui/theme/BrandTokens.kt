@@ -61,7 +61,7 @@ object RudiColors {
     // Beat grid: these are the metronome beats, so they have to be readable at
     // arm's length on a bright pad-practice screen. The first values (#2E2E2E /
     // #232323 on the #161616 background) were invisible on device, which hid the
-    // metronome from the eye entirely (decision 145).
+    // metronome from the eye entirely (decision 147).
     val TrackBarStrong = Color(0xFF6A6A66)
     val TrackBar = Color(0xFF3C3C3A)
     // The three windows read as one heat scale away from the target: brick for

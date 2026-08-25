@@ -68,7 +68,7 @@ class PracticeSession(
      * The manual latency trim from settings, measured with a self-loopback on the
      * speaker path. The real hit compensation is this plus the measured output
      * latency, because a stroke played to the click carries the output latency too
-     * (decision 145).
+     * (decision 147).
      */
     private var baseLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS
     private var appliedLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS
@@ -149,7 +149,7 @@ class PracticeSession(
         // click written now is only heard `outputLatencyMs` later. Drawing the notes
         // on the render clock is what put the audible click roughly half a note away
         // from its own note over Bluetooth, and drifting because A2DP latency drifts
-        // (decision 145). The same shift has to reach the hit compensation, or a
+        // (decision 147). The same shift has to reach the hit compensation, or a
         // stroke played to the corrected picture would read late by the same amount.
         val outputLatencyMs = snapshot.outputLatencyMs
         if (kotlin.math.abs(baseLatencyMs + outputLatencyMs - appliedLatencyMs) > LATENCY_STEP_MS) {

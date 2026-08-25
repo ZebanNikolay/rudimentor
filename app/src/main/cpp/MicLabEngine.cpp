@@ -309,7 +309,7 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
     // distance between the render clock the notes are drawn on and the sound the
     // player hears. It has to be re-sampled during the run, not measured once:
     // Bluetooth latency drifts, which is why the click felt like it was slowly
-    // sliding away from the note (decision 145). A failed call leaves the last
+    // sliding away from the note (decision 147). A failed call leaves the last
     // good value in place.
     if (--latencyPollCountdown_ <= 0) {
         latencyPollCountdown_ =

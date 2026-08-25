@@ -45,7 +45,7 @@ class NativeMicLab {
         /**
          * Measured distance between the render clock [outputFrame] runs on and the
          * sound the player actually hears, in milliseconds. 0 means the device gave
-         * no timestamps, so no compensation is possible (decision 145).
+         * no timestamps, so no compensation is possible (decision 147).
          */
         val outputLatencyMs: Float = 0f,
     )

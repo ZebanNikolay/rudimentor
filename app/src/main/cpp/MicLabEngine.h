@@ -85,7 +85,7 @@ public:
          * into the buffer, so a frame written now is only heard this many
          * milliseconds later. On the low-latency speaker path this is ~10-30 ms;
          * over Bluetooth A2DP it is 150-300 ms and it drifts, which is what put
-         * the click half a note away from the note on device (decision 145).
+         * the click half a note away from the note on device (decision 147).
          * 0 means "the device gave us no timestamps", i.e. no compensation.
          */
         float outputLatencyMs;

@@ -131,10 +131,11 @@ fun PracticeTrack(
         notes.forEach { note ->
             val x = lineX + (note.timeMs - positionMs) * pxPerMs
             if (x < -side || x > width + side) return@forEach
-            // A phase level changes its sticking mid-attempt: the switch is announced by a
-            // mark in front of the first note of the new block, so it is seen coming instead
-            // of being discovered on the hit line (decision 141).
-            if (note.phaseStart && note.index > 0) {
+            // A phase level changes its sticking mid-attempt and a subdivision switch changes
+            // its density: both are announced by a mark in front of the first note of the new
+            // block, so the switch is seen coming instead of being discovered on the hit line
+            // (decisions 141 and 146).
+            if ((note.phaseStart || note.densityStart) && note.index > 0) {
                 drawPhaseSwitch(x = x - side * PHASE_MARK_GAP, height = height)
             }
             val judgement = attempt.judgementAt(note.index)
@@ -332,7 +333,7 @@ private fun DrawScope.drawBarLines(
     if (beatMs <= 0f) return
     // Widths in dp, not raw pixels: a 1 px line on a ~3x density panel is a third
     // of a hairline and disappeared on device, which is what made the metronome
-    // invisible on the track (decision 145).
+    // invisible on the track (decision 147).
     val thin = BAR_WIDTH.toPx()
     val thick = BAR_STRONG_WIDTH.toPx()
     val firstBeat = ((positionMs - lineX / pxPerMs) / beatMs).toInt() - 1

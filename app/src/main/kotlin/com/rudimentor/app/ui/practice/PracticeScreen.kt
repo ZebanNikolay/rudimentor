@@ -201,7 +201,7 @@ fun PracticeScreen(
         var skewLogged = false
         // Output latency is what the timeline is corrected by; over Bluetooth it is
         // hundreds of milliseconds and it drifts, so a jump belongs in the log next
-        // to the strokes it moved (decision 145).
+        // to the strokes it moved (decision 147).
         var loggedLatencyMs = -1f
         while (true) {
             val poll = session.poll()
