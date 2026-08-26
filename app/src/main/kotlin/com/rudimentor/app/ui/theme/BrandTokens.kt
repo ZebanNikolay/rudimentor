@@ -116,6 +116,15 @@ object RudiDimens {
     /** Smaller letters read better on the dense metronome grid. */
     const val PAD_LETTER_FRACTION_GRID = 0.32f
 
+    /**
+     * A glyph inside a pad is drawn to its own box, while a letter of the same fraction is
+     * only a type size whose cap height is far smaller, so an icon set at the letter
+     * fraction read as a speck next to the tile title (decision 160). The icon gets a
+     * fraction of its own, held just under the point where the box corner would reach the
+     * LED dot: at 0.5 the corner keeps about 2 dp of air from the lamp on a 50 dp pad.
+     */
+    const val PAD_ICON_FRACTION = 0.5f
+
     /** Bottom gap of the star row for a node of the given shape. */
     fun padStarBottomFraction(round: Boolean): Float =
         if (round) PAD_STAR_BOTTOM_FRACTION_ROUND else PAD_STAR_BOTTOM_FRACTION

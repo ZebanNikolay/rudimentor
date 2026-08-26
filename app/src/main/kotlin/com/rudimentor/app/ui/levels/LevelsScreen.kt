@@ -399,21 +399,26 @@ private fun RankDialog(
                 .clip(RoundedCornerShape(20.dp))
                 .background(RudiColors.SurfaceAlt)
                 .border(1.dp, RudiColors.Line, RoundedCornerShape(20.dp))
-                .padding(horizontal = 18.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
                 text = stringResource(R.string.levels_rank_dialog_title).uppercase(),
                 style = RudiTextStyles.Timer,
                 color = RudiColors.Text,
             )
+            // The art is a square canvas whose drawing lives in the middle half of it, so a
+            // square slot spent a third of the dialog height on transparent pixels (decision
+            // 160). The slot is a band instead and the picture is cropped to it: the width
+            // still sets the scale, so the drum keeps the size it had, and only the empty rows
+            // above and below it are cut.
             Image(
                 painter = painterResource(rankArt(pending)),
                 contentDescription = stringResource(R.string.levels_rank_art_cd, pending.displayName),
-                contentScale = ContentScale.FillWidth,
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f),
+                    .aspectRatio(RANK_ART_RATIO),
             )
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 PracticeRank.entries.forEach { option ->
@@ -462,6 +467,14 @@ private fun RankDialog(
 
 /** Material keeps 28.dp between a dialog and the screen edge; the window keeps the rest. */
 private val DIALOG_MARGIN = 24.dp
+
+/**
+ * Width over height of the illustration slot. The drawing of every rank art sits inside the
+ * middle 50% of its square, centred, so a 1.7 band keeps the whole drawing with a margin of
+ * about 8 dp above and below it and drops the rest.
+ */
+private const val RANK_ART_RATIO = 1.7f
+
 @Composable
 private fun LevelMap(
     catalog: LevelCatalog,

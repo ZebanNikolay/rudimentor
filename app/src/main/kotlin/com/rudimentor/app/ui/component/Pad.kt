@@ -57,8 +57,9 @@ enum class PadVariant {
  * Canvas.
  *
  * The centre of the face carries either a hand [letter] or an [iconRes] of the same
- * size and tint (decision 129): a menu tile keeps the pad as the container and only
- * swaps the glyph inside it.
+ * tint (decision 129): a menu tile keeps the pad as the container and only swaps the
+ * glyph inside it. The two carry their own fractions, because a letter fraction is a
+ * type size and an icon fraction is a drawn box (decision 160).
  */
 @Composable
 fun Pad(
@@ -72,6 +73,7 @@ fun Pad(
     showLetter: Boolean = true,
     pressed: Boolean = false,
     letterFraction: Float = RudiDimens.PAD_LETTER_FRACTION,
+    iconFraction: Float = RudiDimens.PAD_ICON_FRACTION,
     variant: PadVariant = PadVariant.Dark,
     stars: Int = 0,
     crown: Boolean = false,
@@ -152,7 +154,7 @@ fun Pad(
                 // Decorative: whatever labels the pad names the destination already.
                 contentDescription = null,
                 tint = palette.letter,
-                modifier = Modifier.size(size * letterFraction),
+                modifier = Modifier.size(size * iconFraction),
             )
         } else if (showLetter && !letter.isNullOrEmpty()) {
             Text(

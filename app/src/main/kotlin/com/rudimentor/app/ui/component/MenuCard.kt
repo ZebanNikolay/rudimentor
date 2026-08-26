@@ -23,12 +23,25 @@ import androidx.compose.ui.unit.dp
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
+/** Pad side inside a menu tile — see the note on [MenuCard]. */
+private val PAD_SIZE = 50.dp
+
+/**
+ * The pad grew from 44 dp to [PAD_SIZE] for the sake of the icon, so the letter of a debug
+ * tile is scaled back by the same ratio and keeps the size it read at before.
+ */
+private const val MENU_LETTER_FRACTION = RudiDimens.PAD_LETTER_FRACTION * 44f / 50f
+
 /**
  * A tile on the main menu: a large tappable card with a square pad on the left and
  * the destination title next to it. The pad is always the container (decision 139);
  * inside it sits either a Material Design Icons glyph (decisions 127 and 128) or,
  * for debug tiles, a hand letter. Its lit and tone states carry whether the
  * destination is open, exactly as they do for a letter.
+ *
+ * The pad is 50 dp inside an 84 dp tile: the glyph next to the title was a speck at the
+ * previous 44 dp, and this is as far as the pad can grow before the tile has to grow
+ * with it (decision 160).
  */
 @Composable
 fun MenuCard(
@@ -56,12 +69,15 @@ fun MenuCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Pad(
-                size = 44.dp,
+                size = PAD_SIZE,
                 shape = PadShape.Square,
                 tone = if (enabled) PadTone.Accent else PadTone.Normal,
                 lit = enabled,
                 letter = letter,
                 iconRes = iconRes,
+                // The pad grew inside the same tile, so the letter of a debug tile keeps the
+                // size it had at 44 dp while the icon takes the room the growth freed.
+                letterFraction = MENU_LETTER_FRACTION,
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
