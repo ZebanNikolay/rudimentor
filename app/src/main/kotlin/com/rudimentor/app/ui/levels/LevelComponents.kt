@@ -2,6 +2,7 @@ package com.rudimentor.app.ui.levels
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,10 +34,13 @@ import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
 /**
- * The sticking map of the level, as text (decision 153). The first draft drew the pattern
- * twice — a grid of pads and the same letters underneath — and the grid took a third of the
- * screen without adding anything. What was missing is structure, so every block now states
- * its pattern, how many notes it is at this rank and how many times the pattern runs.
+ * The sticking map of the level: one card per block, laid out left to right in reading order
+ * with an arrow between them, scrolling sideways when the chain is longer than the screen.
+ *
+ * The text-only map (decision 160) replaced a pad grid that drew the same letters twice, but a
+ * stack of bare three-line groups pinned to the left edge read as one long column: nothing said
+ * where a block ended, and four blocks pushed the rest of the screen down. Boxing each block and
+ * turning the chain sideways keeps the whole map at the height of one card (decision 163).
  */
 @Composable
 internal fun StickingMap(
@@ -45,48 +50,79 @@ internal fun StickingMap(
 ) {
     val blocks = level.stickingBlocks(target)
     if (blocks.isEmpty()) return
-    val passes = level.attemptPasses(target)
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        blocks.forEach { block ->
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                if (blocks.size > 1) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            blocks.forEachIndexed { position, block ->
+                if (position > 0) {
                     Text(
-                        text = stringResource(
-                            R.string.level_detail_phase_label,
-                            block.index + 1,
-                            block.beats,
-                        ).uppercase(),
-                        style = RudiTextStyles.RowNumber,
+                        text = stringResource(R.string.level_detail_block_arrow),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.bodyMedium,
                         color = RudiColors.Muted,
-                        letterSpacing = 1.4.sp,
                     )
                 }
-                Text(
-                    text = block.sticking,
-                    color = RudiColors.Text,
-                    fontFamily = JetBrainsMono,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 17.sp,
-                    letterSpacing = 3.sp,
-                    lineHeight = 24.sp,
-                )
-                Text(
-                    text = blockSize(block),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = RudiColors.RowNumber,
-                )
+                StickingBlockCard(block = block, numbered = blocks.size > 1)
             }
         }
-        chainLine(blockCount = blocks.size, passes = passes)?.let { line ->
+        chainLine(blockCount = blocks.size, passes = level.attemptPasses(target))?.let { line ->
             Text(
                 text = line,
                 style = MaterialTheme.typography.bodySmall,
                 color = RudiColors.Muted,
             )
         }
+    }
+}
+
+/** One block of the chain, boxed like the metric cards so the eye can tell where it ends. */
+@Composable
+private fun StickingBlockCard(
+    block: StickingBlock,
+    numbered: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .background(RudiColors.SurfaceAlt, RoundedCornerShape(12.dp))
+            .border(1.dp, RudiColors.Line, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (numbered) {
+            Text(
+                text = stringResource(
+                    R.string.level_detail_phase_label,
+                    block.index + 1,
+                    block.beats,
+                ).uppercase(),
+                style = RudiTextStyles.RowNumber,
+                color = RudiColors.Muted,
+                letterSpacing = 1.4.sp,
+            )
+        }
+        Text(
+            // The pattern never wraps: a long sticking runs off the card and the row scrolls,
+            // which keeps the letters in one line the way they are read.
+            text = block.sticking,
+            color = RudiColors.Text,
+            fontFamily = JetBrainsMono,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 17.sp,
+            letterSpacing = 3.sp,
+            softWrap = false,
+            maxLines = 1,
+        )
+        Text(
+            text = blockSize(block),
+            style = MaterialTheme.typography.bodySmall,
+            color = RudiColors.RowNumber,
+        )
     }
 }
 
