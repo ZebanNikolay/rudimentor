@@ -46,6 +46,11 @@ data class TelemetryHeader(
     val goodMs: Float,
     val okMs: Float,
     val latencyMs: Float,
+    /**
+     * Whether [latencyMs] was measured on the calibration screen or is still the guessed
+     * default. A late run only means something once this is known (decision 154).
+     */
+    val latencyCalibrated: Boolean,
     val sensitivity: Float,
     val clickAudible: Boolean,
     val headphones: Boolean,
@@ -80,6 +85,15 @@ class PracticeTelemetry(
     private var debounced = 0
     private var missed = 0
 
+    // The output latency the engine measured during the run. Over Bluetooth it is
+    // hundreds of milliseconds and it moves, and that movement is what makes a run drift
+    // late halfway through, so the extremes are kept for the summary (decision 154).
+    private var latencySamples = 0
+    private var minOutputLatencyMs = Float.NaN
+    private var maxOutputLatencyMs = Float.NaN
+    private var lastOutputLatencyMs = Float.NaN
+    private var lastAppliedLatencyMs = Float.NaN
+
     private var result: PracticeResult? = null
     private var finalAudio: TelemetryAudio? = null
     private var aborted = false
@@ -92,6 +106,13 @@ class PracticeTelemetry(
         envelope: Float,
         threshold: Float,
         peak: Float,
+        /**
+         * For an extra stroke: how far it fell from the nearest note of the attempt.
+         * Without it an extra is a bare timestamp in the log, and a run that is simply
+         * late everywhere cannot be told from one that struck in the wrong places
+         * (decision 154). NaN when there was no note to compare against.
+         */
+        extraOffsetMs: Float = Float.NaN,
     ) {
         val json = Json("hit")
             .num("atMs", atMs)
@@ -109,7 +130,7 @@ class PracticeTelemetry(
 
             is HitOutcome.Extra -> {
                 extras += 1
-                json.text("outcome", "extra")
+                json.text("outcome", "extra").num("offsetMs", extraOffsetMs)
             }
 
             is HitOutcome.Debounced -> {
@@ -118,6 +139,32 @@ class PracticeTelemetry(
             }
         }
         add(json.done())
+    }
+
+    /**
+     * The measured output latency at this point of the run, and the compensation the
+     * detector is actually using because of it.
+     *
+     * Written only when it moved: the poll loop runs every few milliseconds and the log
+     * is meant to be read by a human.
+     */
+    fun latency(atMs: Float, outputLatencyMs: Float, appliedMs: Float) {
+        latencySamples += 1
+        lastOutputLatencyMs = outputLatencyMs
+        lastAppliedLatencyMs = appliedMs
+        if (minOutputLatencyMs.isNaN() || outputLatencyMs < minOutputLatencyMs) {
+            minOutputLatencyMs = outputLatencyMs
+        }
+        if (maxOutputLatencyMs.isNaN() || outputLatencyMs > maxOutputLatencyMs) {
+            maxOutputLatencyMs = outputLatencyMs
+        }
+        add(
+            Json("latency")
+                .num("atMs", atMs)
+                .num("outputMs", outputLatencyMs)
+                .num("appliedMs", appliedMs)
+                .done(),
+        )
     }
 
     /** A note whose window passed without a stroke. */
@@ -196,9 +243,10 @@ class PracticeTelemetry(
     }
 
     /**
-     * Six lines a human can read on the phone: what ran it, what was played, how the
-     * audio path behaved, and how it scored. The log list shows exactly this text, so
-     * nothing on the screen has to parse the JSONL body.
+     * A handful of lines a human can read on the phone: what ran it, what was played, how
+     * the audio path behaved, how it scored, and how the output latency moved underneath
+     * it. The log list shows exactly this text, so nothing on the screen has to parse the
+     * JSONL body.
      */
     fun summary(): String {
         val audio = finalAudio ?: header.audio
@@ -214,7 +262,9 @@ class PracticeTelemetry(
         )
         lines.add(
             "windows perfect ±${ms(header.perfectMs)} / good ±${ms(header.goodMs)} / " +
-                "ok ±${ms(header.okMs)} · latency ${ms(header.latencyMs)} · " +
+                "ok ±${ms(header.okMs)} · " +
+                "latency ${ms(header.latencyMs)} " +
+                "(${if (header.latencyCalibrated) "measured" else "guessed"}) · " +
                 "click ${onOff(header.clickAudible)} · " +
                 "headphones ${yesNo(header.headphones)} · " +
                 "sensitivity ${decimal(header.sensitivity, ACCURACY_DIGITS)}",
@@ -252,6 +302,16 @@ class PracticeTelemetry(
                     "${outcome.offsets.size} offsets",
             )
         }
+        lines.add(
+            if (latencySamples == 0) {
+                "output latency not reported"
+            } else {
+                "output latency ${ms(lastOutputLatencyMs)} " +
+                    "(${minOutputLatencyMs.roundToInt()}..${ms(maxOutputLatencyMs)}, " +
+                    "drift ${ms(maxOutputLatencyMs - minOutputLatencyMs)}) · " +
+                    "applied ${ms(lastAppliedLatencyMs)} · $latencySamples changes"
+            },
+        )
         if (aborted) lines.add("ABORTED at ${ms(abortedAtMs)}")
         return lines.joinToString(separator = "\n")
     }
@@ -307,6 +367,7 @@ class PracticeTelemetry(
         .num("goodMs", header.goodMs)
         .num("okMs", header.okMs)
         .num("latencyMs", header.latencyMs)
+        .bool("latencyCalibrated", header.latencyCalibrated)
         .num("sensitivity", header.sensitivity, ACCURACY_DIGITS)
         .bool("clickAudible", header.clickAudible)
         .done()

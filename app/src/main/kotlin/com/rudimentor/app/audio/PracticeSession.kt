@@ -54,6 +54,11 @@ class PracticeSession(
          * it is hundreds and it moves.
          */
         val outputLatencyMs: Float = 0f,
+        /**
+         * Compensation actually pushed into the detector, in milliseconds: the trim from
+         * settings plus whatever the latency model added to it (decision 154).
+         */
+        val appliedLatencyMs: Float = 0f,
     )
 
     var bpm: Int = MicLab.DEFAULT_BPM
@@ -74,13 +79,25 @@ class PracticeSession(
     private var anchorFrame: Long? = null
 
     /**
-     * The manual latency trim from settings, measured with a self-loopback on the
-     * speaker path. The real hit compensation is this plus the measured output
-     * latency, because a stroke played to the click carries the output latency too
-     * (decision 147).
+     * The latency trim from settings. What the engine does with it depends on where it
+     * came from (decision 154):
+     *
+     *  * guessed (`latencyCalibrated == false`) -- it is the residual of the speaker path
+     *    only, so the measured output latency is added on top of it, as before
+     *    (decision 147);
+     *  * measured by the calibration screen -- it already *is* the whole round trip,
+     *    output included, so adding the output latency again would compensate twice. Only
+     *    the drift away from the latency that held while calibrating is applied.
      */
     private var baseLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS
     private var appliedLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS
+    private var latencyCalibrated: Boolean = false
+
+    /**
+     * Output latency the first anchored poll of the attempt reported, the reference the
+     * drift of a calibrated trim is measured from. Null until the stream reports one.
+     */
+    private var anchorOutputLatencyMs: Float? = null
     private val hitScratch = ArrayList<NativeMicLab.HitEvent>(32)
     private val tickScratch = ArrayList<NativeMicLab.TickEvent>(32)
     private val hitPositions = ArrayList<Hit>(8)
@@ -93,6 +110,7 @@ class PracticeSession(
         bpm: Int,
         clickAudible: Boolean = false,
         inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
+        latencyCalibrated: Boolean = false,
         sensitivity: Float = MicLab.DEFAULT_SENSITIVITY,
         tempoPlan: IntArray = IntArray(0),
     ): Boolean {
@@ -102,6 +120,8 @@ class PracticeSession(
             tempoPlan[it].coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
         }
         anchorFrame = null
+        anchorOutputLatencyMs = null
+        this.latencyCalibrated = latencyCalibrated
         hitScratch.clear()
         tickScratch.clear()
         native.setBpm(this.bpm)
@@ -120,12 +140,14 @@ class PracticeSession(
         native.stop()
         running = false
         anchorFrame = null
+        anchorOutputLatencyMs = null
     }
 
     fun setClickAudible(audible: Boolean) = native.setClickAudible(audible)
 
-    fun setInputLatencyMs(millis: Float) {
-        baseLatencyMs = millis.coerceIn(-100f, 300f)
+    fun setInputLatencyMs(millis: Float, calibrated: Boolean = latencyCalibrated) {
+        baseLatencyMs = millis.coerceIn(LATENCY_TRIM_MIN_MS, LATENCY_TRIM_MAX_MS)
+        latencyCalibrated = calibrated
         appliedLatencyMs = baseLatencyMs
         native.setInputLatencyMillis(baseLatencyMs)
     }
@@ -166,10 +188,33 @@ class PracticeSession(
         // from its own note over Bluetooth, and drifting because A2DP latency drifts
         // (decision 147). The same shift has to reach the hit compensation, or a
         // stroke played to the corrected picture would read late by the same amount.
+        //
+        // A calibrated trim is the exception: it was measured through the very same
+        // output path, so it already carries that latency. Adding it again put the hits
+        // a whole round trip early -- the 190-230 ms offsets of the dev.36 field log
+        // (decision 154). For it only the drift since the anchor is applied, and it is
+        // applied to the picture and to the hits alike.
         val outputLatencyMs = snapshot.outputLatencyMs
-        if (kotlin.math.abs(baseLatencyMs + outputLatencyMs - appliedLatencyMs) > LATENCY_STEP_MS) {
-            appliedLatencyMs = baseLatencyMs + outputLatencyMs
+        if (anchorOutputLatencyMs == null && outputLatencyMs > 0f) {
+            anchorOutputLatencyMs = outputLatencyMs
+        }
+        val target = if (latencyCalibrated) {
+            baseLatencyMs + (outputLatencyMs - (anchorOutputLatencyMs ?: outputLatencyMs))
+        } else {
+            baseLatencyMs + outputLatencyMs
+        }
+        if (kotlin.math.abs(target - appliedLatencyMs) > LATENCY_STEP_MS) {
+            appliedLatencyMs = target
             native.setInputLatencyMillis(appliedLatencyMs)
+        }
+        // How far the notes are drawn ahead of the render clock. Normally that is the
+        // measured output latency; when the OS reports none -- A2DP on this device gives
+        // no timestamps -- a calibrated round trip still knows roughly how much of it
+        // was the output side, which is better than drawing on the render clock.
+        val visualShiftMs = when {
+            outputLatencyMs > 0f -> outputLatencyMs
+            latencyCalibrated -> (baseLatencyMs - INPUT_PART_MS).coerceAtLeast(0f)
+            else -> 0f
         }
 
         val anchor = anchorFrame
@@ -204,7 +249,7 @@ class PracticeSession(
         // while the notes were drawn ahead of their own sound (decision 101).
         return Poll(
             anchored = true,
-            positionMs = (snapshot.outputFrame - anchor) / framesPerMs - outputLatencyMs,
+            positionMs = (snapshot.outputFrame - anchor) / framesPerMs - visualShiftMs,
             hits = if (hitPositions.isEmpty()) emptyList() else ArrayList(hitPositions),
             envelope = snapshot.envelope,
             threshold = snapshot.threshold,
@@ -212,6 +257,7 @@ class PracticeSession(
             running = snapshot.running,
             clockSkewMs = (snapshot.inputFrame - snapshot.outputFrame) / framesPerMs,
             outputLatencyMs = outputLatencyMs,
+            appliedLatencyMs = appliedLatencyMs,
         )
     }
 
@@ -237,5 +283,16 @@ class PracticeSession(
          * enough not to write an atomic on every poll.
          */
         private const val LATENCY_STEP_MS = 2f
+
+        /** Range the native hit compensation accepts, in milliseconds. */
+        private const val LATENCY_TRIM_MIN_MS = -100f
+        private const val LATENCY_TRIM_MAX_MS = 400f
+
+        /**
+         * Rough input side of a round trip: microphone buffer plus onset detection. Only
+         * used to split a calibrated round trip when the OS reports no output latency
+         * at all (decision 154).
+         */
+        const val INPUT_PART_MS = 25f
     }
 }

@@ -1,9 +1,11 @@
 package com.rudimentor.app.ui.practice
 
+import com.rudimentor.app.data.levels.CompletionMode
 import com.rudimentor.app.data.levels.Execution
 import com.rudimentor.app.data.levels.LevelColumn
 import com.rudimentor.app.data.levels.LevelType
 import com.rudimentor.app.data.levels.Lesson
+import com.rudimentor.app.data.levels.LevelModifier
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.MapNode
 import com.rudimentor.app.data.levels.Pattern
@@ -183,6 +185,33 @@ class PracticeNotesTest {
         assertEquals(0, buildTempoPlan(level(lesson(hands = "RL", beatCount = 8)), PracticeRank.Practice, bpm = 60).size)
     }
 
+    @Test
+    fun `a timed level plays the duration at the chosen tempo, rounded up to a cycle`() {
+        // singles.EN-01 shaped: RL, two minutes, no beat count in the package.
+        val level = level(
+            lesson(hands = "RL", beatCount = 0).copy(
+                modifiers = setOf(LevelModifier.Endurance),
+                execution = Execution(
+                    durationSeconds = 120,
+                    completionMode = CompletionMode.CompletePatternCycle,
+                ),
+            ),
+        )
+        val notes = buildPracticeNotes(level, PracticeRank.Practice, bpm = 60)
+
+        // 120 s at 60 bpm is 120 beats, one note per beat at Practice.
+        assertEquals(120, notes.size)
+        assertEquals(notes.size, level.noteCount(level.target(PracticeRank.Practice), bpm = 60))
+        assertEquals("RL".repeat(60), notes.hands())
+        // The grid starts after the count-in and the last note lands on the last beat.
+        val countInMs = PracticeScoring.COUNT_IN_BEATS * 1000f
+        assertEquals(countInMs, notes.first().timeMs, 0.01f)
+        assertEquals(countInMs + 119_000f, notes.last().timeMs, 0.01f)
+        // A tempo that does not divide the duration evenly plays on to the end of the
+        // sticking cycle instead of cutting it short.
+        assertEquals(184, buildPracticeNotes(level, PracticeRank.Practice, bpm = 92).size)
+    }
+
     private fun rampLevel() = level(
         lesson(hands = "RRLL", beatCount = 16).copy(
             type = LevelType.TempoRamp,
@@ -204,6 +233,19 @@ class PracticeNotesTest {
             ),
         ),
     )
+
+    @Test
+    fun `an extra stroke is measured against the closest note with a sign`() {
+        val notes = listOf(
+            PracticeNote(index = 0, hand = PatternHand.Right, timeMs = 1_000f),
+            PracticeNote(index = 1, hand = PatternHand.Left, timeMs = 1_500f),
+        )
+        // Late after the first note, early before the second, and exactly on one.
+        assertEquals(30f, nearestNoteOffsetMs(notes, 1_030f), 0.01f)
+        assertEquals(-40f, nearestNoteOffsetMs(notes, 1_460f), 0.01f)
+        assertEquals(0f, nearestNoteOffsetMs(notes, 1_500f), 0.01f)
+        assertTrue(nearestNoteOffsetMs(emptyList(), 1_000f).isNaN())
+    }
 
     private fun List<PracticeNote>.hands(): String = joinToString("") {
         if (it.hand == PatternHand.Right) "R" else "L"

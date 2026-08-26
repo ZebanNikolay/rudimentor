@@ -139,6 +139,36 @@ fun SettingsSliderRow(
     }
 }
 
+/**
+ * A label with a value the panel only reports: nothing to drag, nothing to switch.
+ *
+ * The latency reads like this now. It is measured on the calibration screen and
+ * nowhere else, so a slider next to it would only invite guessing (decision 154).
+ */
+@Composable
+fun SettingsValueRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = RudiColors.Text,
+        )
+        Text(
+            text = value,
+            style = RudiTextStyles.StepperValue,
+            color = RudiColors.Text,
+        )
+    }
+}
+
 /** A short warning or hint under the row it belongs to. */
 @Composable
 fun SettingsNote(text: String, modifier: Modifier = Modifier) {

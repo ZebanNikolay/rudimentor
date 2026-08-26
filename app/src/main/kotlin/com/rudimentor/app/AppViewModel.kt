@@ -7,6 +7,7 @@ import com.rudimentor.app.audio.BeatGrid
 import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.SettingsRepository
 import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.data.levels.LevelProgressRepository
@@ -98,14 +99,27 @@ class AppViewModel(
      */
     fun setShowOffsetMs(show: Boolean) = update { copy(showOffsetMs = show) }
 
-    fun setInputLatencyMs(latencyMs: Float) = update {
+    /**
+     * The latency compensation, plus whether the number came from the calibration screen.
+     * A measured value is the whole round trip, so the engine must not add the output
+     * latency on top of it again (decision 154). A hand-typed value keeps the old
+     * behaviour, so nothing changes for a user who never calibrates.
+     */
+    fun setInputLatencyMs(latencyMs: Float, calibrated: Boolean = false) = update {
         copy(
             inputLatencyMs = latencyMs.coerceIn(
                 AppSettings.LATENCY_MIN_MS,
                 AppSettings.LATENCY_MAX_MS,
             ),
+            latencyCalibrated = calibrated,
         )
     }
+
+    /**
+     * Commits a whole settings draft at once. Only Save reaches this, so a switch the
+     * user flipped and then backed out of never lands in storage (decision 154).
+     */
+    fun applyDraft(draft: SettingsDraft) = update { draft.applyTo(this) }
 
     /**
      * Stores the outcome of one practice attempt at one rank. Only improvements are kept:
