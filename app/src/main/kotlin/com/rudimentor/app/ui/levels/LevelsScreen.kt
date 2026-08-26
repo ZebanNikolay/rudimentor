@@ -409,7 +409,7 @@ private fun RankDialog(
             )
             // The art is a square canvas whose drawing lives in the middle half of it, so a
             // square slot spent a third of the dialog height on transparent pixels (decision
-            // 160). The slot is a band instead and the picture is cropped to it: the width
+            // 163). The slot is a band instead and the picture is cropped to it: the width
             // still sets the scale, so the drum keeps the size it had, and only the empty rows
             // above and below it are cut.
             Image(

@@ -59,7 +59,7 @@ enum class PadVariant {
  * The centre of the face carries either a hand [letter] or an [iconRes] of the same
  * tint (decision 129): a menu tile keeps the pad as the container and only swaps the
  * glyph inside it. The two carry their own fractions, because a letter fraction is a
- * type size and an icon fraction is a drawn box (decision 160).
+ * type size and an icon fraction is a drawn box (decision 163).
  */
 @Composable
 fun Pad(

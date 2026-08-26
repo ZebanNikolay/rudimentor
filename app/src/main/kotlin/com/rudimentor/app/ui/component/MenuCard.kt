@@ -41,7 +41,7 @@ private const val MENU_LETTER_FRACTION = RudiDimens.PAD_LETTER_FRACTION * 44f / 
  *
  * The pad is 50 dp inside an 84 dp tile: the glyph next to the title was a speck at the
  * previous 44 dp, and this is as far as the pad can grow before the tile has to grow
- * with it (decision 160).
+ * with it (decision 163).
  */
 @Composable
 fun MenuCard(
