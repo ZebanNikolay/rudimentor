@@ -43,6 +43,15 @@ data class AppSettings(
      * stroke landed on, and the numbers pulled the eye off the lane (decision 130).
      */
     val showOffsetMs: Boolean = false,
+    /**
+     * Saved outputs with their own latency, newest use first after the built-in one
+     * (decision 161). [inputLatencyMs] and [latencyCalibrated] above always mirror the
+     * selected profile: the engine reads them and knows nothing about profiles.
+     */
+    // Empty means "not stored yet": the built-in profile is then built from the latency
+    // fields above, which is what carries an install from before decision 161 across.
+    val outputProfiles: List<OutputProfile> = emptyList(),
+    val selectedProfileId: String = OutputProfile.DEFAULT_ID,
 ) {
     val safeActiveRow: Int = activeRow.coerceIn(0, grid.rowCount - 1)
 
@@ -61,12 +70,64 @@ data class AppSettings(
      * Return a copy with every value forced into the domain-allowed range.
      * Called before writing to storage so a bad in-memory value never persists.
      */
-    fun sanitized(): AppSettings = copy(
-        bpm = Bpm.clamp(bpm),
-        activeRow = safeActiveRow,
-        inputLatencyMs = inputLatencyMs.coerceIn(LATENCY_MIN_MS, LATENCY_MAX_MS),
-        micThresholdLevel = MicThreshold.clamp(micThresholdLevel),
-    )
+    fun sanitized(): AppSettings {
+        val profiles = normalizedProfiles()
+        val selected = profiles.firstOrNull { it.id == selectedProfileId } ?: profiles.first()
+        return copy(
+            bpm = Bpm.clamp(bpm),
+            activeRow = safeActiveRow,
+            // The selected profile is the single source of truth for the latency, so a value
+            // written straight into the field cannot drift away from the list.
+            inputLatencyMs = selected.latencyMs.coerceIn(LATENCY_MIN_MS, LATENCY_MAX_MS),
+            latencyCalibrated = selected.latencyCalibrated,
+            micThresholdLevel = MicThreshold.clamp(micThresholdLevel),
+            outputProfiles = profiles,
+            selectedProfileId = selected.id,
+        )
+    }
+
+    /** The profile the latency currently comes from. */
+    val selectedProfile: OutputProfile
+        get() = sanitized().let { safe ->
+            safe.outputProfiles.first { it.id == safe.selectedProfileId }
+        }
+
+    /**
+     * The list as it is allowed to be stored: the built-in profile first and present, no
+     * duplicate ids or bindings, and at most [OutputProfile.MAX_PROFILES] entries. When the
+     * list is too long the profile used longest ago is dropped -- the built-in one never is.
+     */
+    private fun normalizedProfiles(): List<OutputProfile> {
+        val cleaned = outputProfiles.map { it.sanitized() }
+        val builtIn = cleaned.firstOrNull { it.id == OutputProfile.DEFAULT_ID }
+            ?: OutputProfile.default(inputLatencyMs, latencyCalibrated)
+        val seenIds = mutableSetOf(builtIn.id)
+        val seenKeys = mutableSetOf<String>()
+        val extras = cleaned
+            .filter { it.id != OutputProfile.DEFAULT_ID }
+            .filter { profile ->
+                val key = profile.boundKey
+                seenIds.add(profile.id) && (key == null || seenKeys.add(key))
+            }
+            .sortedByDescending { it.lastUsedAt }
+            .take(OutputProfile.MAX_PROFILES - 1)
+        return listOf(builtIn.copy(kind = OutputKind.Default, boundKey = null)) + extras
+    }
+
+    /** The profile bound to [device], if one was saved for it. */
+    fun profileFor(device: OutputDevice): OutputProfile? =
+        outputProfiles.firstOrNull { it.boundKey == device.key }
+
+    /** Select a profile, remembering when it was last used so eviction stays fair. */
+    fun withSelectedProfile(id: String, now: Long): AppSettings {
+        val target = outputProfiles.firstOrNull { it.id == id } ?: return this
+        return copy(
+            selectedProfileId = target.id,
+            outputProfiles = outputProfiles.map {
+                if (it.id == target.id) it.copy(lastUsedAt = now) else it
+            },
+        ).sanitized()
+    }
 
     companion object {
         /**

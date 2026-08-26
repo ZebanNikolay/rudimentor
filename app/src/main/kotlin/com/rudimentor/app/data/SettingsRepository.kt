@@ -59,6 +59,12 @@ class DataStoreSettingsRepository(
             micThresholdLevel = preferences[Keys.MicThresholdLevel]
                 ?: MicThreshold.DEFAULT_LEVEL,
             showOffsetMs = preferences[Keys.ShowOffsetMs] ?: false,
+            outputProfiles = parseProfiles(
+                raw = preferences[Keys.OutputProfiles],
+                fallbackLatencyMs = preferences[Keys.InputLatencyMs] ?: MicLab.DEFAULT_LATENCY_MS,
+                fallbackCalibrated = preferences[Keys.LatencyCalibrated] ?: false,
+            ),
+            selectedProfileId = preferences[Keys.SelectedProfile] ?: OutputProfile.DEFAULT_ID,
         ).sanitized()
     }
 
@@ -74,6 +80,8 @@ class DataStoreSettingsRepository(
         this[Keys.LatencyCalibrated] = safe.latencyCalibrated
         this[Keys.MicThresholdLevel] = safe.micThresholdLevel
         this[Keys.ShowOffsetMs] = safe.showOffsetMs
+        this[Keys.OutputProfiles] = safe.outputProfiles.serialize()
+        this[Keys.SelectedProfile] = safe.selectedProfileId
     }
 
     private object Keys {
@@ -88,5 +96,7 @@ class DataStoreSettingsRepository(
         val LatencyCalibrated = booleanPreferencesKey("practice_latency_calibrated")
         val MicThresholdLevel = floatPreferencesKey("practice_mic_threshold_level")
         val ShowOffsetMs = booleanPreferencesKey("practice_show_offset_ms")
+        val OutputProfiles = stringPreferencesKey("practice_output_profiles")
+        val SelectedProfile = stringPreferencesKey("practice_output_profile_selected")
     }
 }

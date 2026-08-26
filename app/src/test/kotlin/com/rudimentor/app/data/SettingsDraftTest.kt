@@ -17,7 +17,7 @@ class SettingsDraftTest {
         val settings = AppSettings()
         val draft = SettingsDraft.from(settings)
         assertFalse(draft.differsFrom(settings))
-        assertEquals(settings, draft.applyTo(settings))
+        assertEquals(settings.sanitized(), draft.applyTo(settings))
     }
 
     @Test

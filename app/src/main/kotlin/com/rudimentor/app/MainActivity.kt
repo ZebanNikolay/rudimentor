@@ -108,6 +108,7 @@ class MainActivity : ComponentActivity() {
                     onSelectTab = viewModel::selectFamily,
                     onSelectRank = viewModel::selectRank,
                     onApplyDraft = viewModel::applyDraft,
+                    onOutputChanged = viewModel::selectProfileForOutput,
                     onAttemptFinished = { level, rank, result ->
                         viewModel.recordAttempt(
                             levelId = level.id,

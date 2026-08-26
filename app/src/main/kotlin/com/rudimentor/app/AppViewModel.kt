@@ -7,6 +7,7 @@ import com.rudimentor.app.audio.BeatGrid
 import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.OutputDevice
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.SettingsRepository
 import com.rudimentor.app.data.levels.LearningProgress
@@ -120,6 +121,19 @@ class AppViewModel(
      * user flipped and then backed out of never lands in storage (decision 154).
      */
     fun applyDraft(draft: SettingsDraft) = update { draft.applyTo(this) }
+
+    /**
+     * Selects the profile saved for the output that just became active (decision 161).
+     *
+     * This one writes straight to the settings rather than through a draft: it is the app
+     * following the hardware, not the learner editing anything. An output with no profile
+     * changes nothing -- the latency in force stays in force, and the screens say it may be
+     * the wrong one.
+     */
+    fun selectProfileForOutput(device: OutputDevice) = update {
+        val match = profileFor(device) ?: return@update this
+        if (match.id == selectedProfileId) this else withSelectedProfile(match.id, System.currentTimeMillis())
+    }
 
     /**
      * Stores the outcome of one practice attempt at one rank. Only improvements are kept:

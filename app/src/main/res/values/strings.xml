@@ -130,6 +130,24 @@
     <string name="settings_latency_measured">Measured on this device and output.</string>
     <string name="settings_latency_guessed">Not measured yet: a guess for the speaker path.</string>
     <string name="settings_calibrate">Calibrate…</string>
+    <string name="practice_output_current">Latency in force: \u201c%1$s\u201d.</string>
+    <string name="practice_output_unknown">These headphones have no calibration of their own, so the latency of \u201c%1$s\u201d is being used. Calibrate them, or save them as an output in settings.</string>
+    <string name="settings_output_title">Output</string>
+    <string name="settings_output_note">Every pair of headphones has its own delay, so each one keeps its own latency. Pick the one you are practising through; calibration writes into it.</string>
+    <string name="settings_output_row_measured">%1$d ms, measured</string>
+    <string name="settings_output_row_guessed">%1$d ms, not measured yet</string>
+    <string name="settings_output_kind_default">default</string>
+    <string name="settings_output_kind_bluetooth">bluetooth</string>
+    <string name="settings_output_kind_wired">wired</string>
+    <string name="settings_output_kind_usb">usb</string>
+    <string name="settings_output_rename">Rename</string>
+    <string name="settings_output_rename_title">Name these headphones</string>
+    <string name="settings_output_delete">Delete</string>
+    <string name="settings_output_default_note">The default output always stays. Its latency can be changed, but it cannot be deleted.</string>
+    <string name="settings_output_add">Save \u201c%1$s\u201d as an output</string>
+    <string name="settings_output_add_none">Connect headphones to save them as an output</string>
+    <string name="settings_output_full">%1$d outputs are all there is room for. Delete one to save another.</string>
+    <string name="settings_latency_profile">This latency belongs to \u201c%1$s\u201d.</string>
     <string name="settings_latency_note">Drag to set it by hand, or calibrate to measure it.</string>
     <string name="settings_gate_label">Microphone gate</string>
     <string name="settings_gate_value">%1$d dB</string>
@@ -172,7 +190,11 @@
 
     <string name="calibration_step2_title">STEP 2 · LATENCY</string>
     <string name="calibration_step2_intro">Wear the headphones you practise with. Press Start: a click plays out loud on purpose, because it is what is being measured. Play one stroke on every click, evenly, for about half a minute. The first few strokes are ignored while you settle in, and only strokes above the gate from step 1 are counted.</string>
-    <string name="calibration_step2_gate">Strokes quieter than the step 1 gate are ignored in this round.</string>
+    <string name="calibration_stalled">The round stopped: not one stroke was counted. Check that the phone can hear the pad, play harder, or lower the gate in step\u00a01.</string>
+    <string name="calibration_quiet_dropped">%1$d strokes were too quiet to count. Play harder, or lower the gate in step\u00a01.</string>
+    <string name="calibration_stray_dropped">%1$d strokes landed too far from a click to be a round trip.</string>
+    <string name="calibration_step2_profile">The measurement is saved for \u201c%1$s\u201d. Switch outputs on the settings screen before measuring another pair.</string>
+    <string name="calibration_step2_gate">Only strokes above the step\u00a01 gate are counted, at half that level, so a softer stroke still counts. Anything dropped is reported under the counter.</string>
 
     <!-- Practice result screen -->
     <string name="practice_result_passed">LEVEL PASSED</string>

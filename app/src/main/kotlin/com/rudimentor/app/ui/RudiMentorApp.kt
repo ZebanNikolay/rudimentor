@@ -28,6 +28,7 @@ import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.AudioOutputMonitor
 import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.OutputDevice
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelCourse
@@ -81,6 +82,7 @@ fun RudiMentorApp(
     onSelectTab: (String) -> Unit,
     onSelectRank: (PracticeRank) -> Unit,
     onApplyDraft: (SettingsDraft) -> Unit,
+    onOutputChanged: (OutputDevice) -> Unit,
     onAttemptFinished: (Level, PracticeRank, PracticeResult) -> Unit,
 ) {
     // The click follows the audio output until the learner overrides it by hand, so
@@ -92,6 +94,18 @@ fun RudiMentorApp(
         initialValue = AudioOutputMonitor.isConnected(context),
     )
     val clickAudible = settings.clickAudibleWith(headphonesConnected)
+
+    // Which output the sound is going through, so the latency saved for those headphones is
+    // the one in force. An output nobody saved leaves the current latency alone and warns
+    // instead, because guessing a delay is worse than saying it is unknown (decision 161).
+    val outputFlow = remember(context) { AudioOutputMonitor.deviceFlow(context) }
+    val currentOutput by outputFlow.collectAsStateWithLifecycle(
+        initialValue = AudioOutputMonitor.currentDevice(context),
+    )
+    LaunchedEffect(currentOutput) {
+        currentOutput?.let(onOutputChanged)
+    }
+    val unknownOutput = currentOutput != null && settings.profileFor(currentOutput!!) == null
 
     var screenName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
     var selectedLevelId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -214,6 +228,7 @@ fun RudiMentorApp(
                             showOffsetMs = settings.showOffsetMs,
                             buildInfo = buildInfo,
                             headphonesConnected = headphonesConnected,
+                            unknownOutput = unknownOutput,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
                                 DevLog.log(
@@ -254,6 +269,7 @@ fun RudiMentorApp(
                         result = result,
                         buildInfo = buildInfo,
                         settings = settings,
+                        unknownOutput = unknownOutput,
                         headphonesConnected = headphonesConnected,
                         onApplyDraft = onApplyDraft,
                         onRetry = {
@@ -289,6 +305,7 @@ fun RudiMentorApp(
                         draft = draft,
                         settings = settings,
                         headphonesConnected = headphonesConnected,
+                        currentOutput = currentOutput,
                         buildInfo = buildInfo,
                         onDraftChange = { settingsDraft = it },
                         onCalibrate = { screenName = Screen.Calibration.name },
@@ -311,6 +328,8 @@ fun RudiMentorApp(
                 micThresholdLevel = settingsDraft?.micThresholdLevel
                     ?: settings.micThresholdLevel,
                 headphonesConnected = headphonesConnected,
+                profileName = settingsDraft?.selectedProfile?.name
+                    ?: settings.selectedProfile.name,
                 buildInfo = buildInfo,
                 onApply = { measuredMs, micThreshold ->
                     // Straight into the draft: the numbers are stored only if the settings

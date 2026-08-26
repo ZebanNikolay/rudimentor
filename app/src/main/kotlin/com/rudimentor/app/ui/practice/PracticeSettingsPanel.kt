@@ -42,6 +42,8 @@ import kotlin.math.roundToInt
 fun PracticeSettingsPanel(
     settings: AppSettings,
     headphonesConnected: Boolean,
+    /** True when the sound goes through an output with no profile of its own. */
+    unknownOutput: Boolean,
     buildInfo: BuildInfo,
     onApply: (SettingsDraft) -> Unit,
     onDone: () -> Unit,
@@ -51,6 +53,20 @@ fun PracticeSettingsPanel(
         title = stringResource(R.string.practice_settings_title),
         buildLabel = buildInfo.displayLabel,
     ) {
+        // Which headphones the latency belongs to. An output nobody calibrated keeps the
+        // previous number, so the panel says so rather than letting it pass for measured
+        // (decision 161).
+        SettingsNote(
+            text = if (unknownOutput) {
+                stringResource(
+                    R.string.practice_output_unknown,
+                    draft.selectedProfile.name,
+                )
+            } else {
+                stringResource(R.string.practice_output_current, draft.selectedProfile.name)
+            },
+        )
+        SettingsGap()
         SettingsSwitchRow(
             label = stringResource(R.string.practice_click_label),
             checked = draft.effectiveClickAudible(headphonesConnected),

@@ -97,6 +97,8 @@ fun CalibrationScreen(
     latencyCalibrated: Boolean,
     micThresholdLevel: Float,
     headphonesConnected: Boolean,
+    /** The output profile this round writes into, shown so it is never a surprise. */
+    profileName: String,
     buildInfo: BuildInfo,
     onApply: (Float?, Float) -> Unit,
     onBack: () -> Unit,
@@ -112,6 +114,14 @@ fun CalibrationScreen(
     var audioFailed by remember { mutableStateOf(false) }
     var threshold by remember { mutableFloatStateOf(MicThreshold.clamp(micThresholdLevel)) }
     var probeStrokes by remember { mutableStateOf(0) }
+    // What the latency round threw away, and why. The round used to drop a quiet or an
+    // out-of-range stroke in complete silence, so a gate set too high looked exactly like
+    // a broken counter: the clicks went on forever and "0 of 32" never moved (decision 160).
+    var quietStrokes by remember { mutableStateOf(0) }
+    var strayStrokes by remember { mutableStateOf(0) }
+    // Set when a round was stopped because nothing at all was counted, so the screen can
+    // say why instead of leaving the click running (decision 160).
+    var stalled by remember { mutableStateOf(false) }
     var probeResult by remember { mutableStateOf<ThresholdProbe.Result?>(null) }
     // Loudest onset of the last few seconds, so the meter shows how far above the gate the
     // learner's own strokes actually land.
@@ -167,7 +177,7 @@ fun CalibrationScreen(
         // The probe has to hear the room as the detector hears it, so it listens with the
         // gate open; the latency round measures through the gate the learner just set.
         micLab.setMicThresholdLevel(
-            if (clickAudible) threshold else MicThreshold.MIN_LEVEL,
+            if (clickAudible) MicThreshold.softened(threshold) else MicThreshold.MIN_LEVEL,
         )
         val started = micLab.start(scope)
         if (!started) DevLog.error("calibration", "audio engine refused to start")
@@ -204,7 +214,11 @@ fun CalibrationScreen(
                     val outcome = if (event.loud) {
                         calibration.add(event.offsetMs)
                     } else {
+                        quietStrokes += 1
                         LatencyCalibration.Outcome.Rejected
+                    }
+                    if (event.loud && outcome == LatencyCalibration.Outcome.Rejected) {
+                        strayStrokes += 1
                     }
                     reading = calibration.reading()
                     telemetry.stroke(
@@ -241,6 +255,9 @@ fun CalibrationScreen(
     }
 
     fun startRound() {
+        quietStrokes = 0
+        strayStrokes = 0
+        stalled = false
         val started = startEngine(clickAudible = true)
         telemetry.roundStarted(elapsedMs(), started)
         mode = if (started) CalibrationMode.Latency else CalibrationMode.Idle
@@ -259,6 +276,23 @@ fun CalibrationScreen(
         val started = startEngine(clickAudible = false)
         telemetry.probeStarted(elapsedMs())
         mode = if (started) CalibrationMode.ProbeNoise else CalibrationMode.Idle
+    }
+
+    // A round that counts nothing is stopped instead of clicking forever: a gate set too
+    // high, a microphone the pad cannot reach, a phone in a pocket (decision 160).
+    LaunchedEffect(mode) {
+        if (mode != CalibrationMode.Latency) return@LaunchedEffect
+        delay(STALL_TIMEOUT_MS)
+        if (mode != CalibrationMode.Latency) return@LaunchedEffect
+        if (reading.samples.isEmpty() && reading.skipped == 0) {
+            stalled = true
+            DevLog.error(
+                "calibration",
+                "round counted nothing in ${STALL_TIMEOUT_MS / 1000} s, " +
+                    "gate $threshold, quiet $quietStrokes, stray $strayStrokes",
+            )
+            stopRound(CalibrationTelemetry.REASON_STOPPED)
+        }
     }
 
     // The silent half: the room alone, for a couple of seconds, sampled off the live meter.
@@ -439,7 +473,17 @@ fun CalibrationScreen(
                     },
                 )
                 SettingsGap()
-                CalibrationHint(reading = reading)
+                if (stalled) {
+                    SettingsNote(text = stringResource(R.string.calibration_stalled))
+                    SettingsGap()
+                }
+                CalibrationHint(
+                    reading = reading,
+                    quietStrokes = quietStrokes,
+                    strayStrokes = strayStrokes,
+                )
+                SettingsGap()
+                SettingsNote(text = stringResource(R.string.calibration_step2_profile, profileName))
                 SettingsGap()
                 SettingsNote(text = stringResource(R.string.calibration_step2_gate))
                 SettingsGap()
@@ -472,6 +516,8 @@ fun CalibrationScreen(
                         text = stringResource(R.string.calibration_reset),
                         onClick = {
                             telemetry.reset(elapsedMs(), reading.samples.size)
+                            quietStrokes = 0
+                            strayStrokes = 0
                             calibration.reset()
                             micLab.resetStats()
                             reading = calibration.reading()
@@ -583,7 +629,11 @@ private fun GateHint(
 
 /** What the learner should do next: play more, play evener, or take the number. */
 @Composable
-private fun CalibrationHint(reading: LatencyCalibration.Reading) {
+private fun CalibrationHint(
+    reading: LatencyCalibration.Reading,
+    quietStrokes: Int,
+    strayStrokes: Int,
+) {
     val text = when {
         reading.complete -> stringResource(R.string.calibration_complete)
         !reading.ready -> stringResource(
@@ -599,6 +649,22 @@ private fun CalibrationHint(reading: LatencyCalibration.Reading) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.calibration_skipped, reading.skipped),
+                style = MaterialTheme.typography.bodySmall,
+                color = RudiColors.Muted,
+            )
+        }
+        if (quietStrokes > 0) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.calibration_quiet_dropped, quietStrokes),
+                style = MaterialTheme.typography.bodySmall,
+                color = RudiColors.Brick,
+            )
+        }
+        if (strayStrokes > 0) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.calibration_stray_dropped, strayStrokes),
                 style = MaterialTheme.typography.bodySmall,
                 color = RudiColors.Muted,
             )
@@ -641,6 +707,9 @@ private const val SOURCE_SLIDER = "slider"
 
 /** How often the silent half samples the live envelope. */
 private const val NOISE_SAMPLE_INTERVAL_MS = 16L
+
+/** How long a round may count nothing before it stops itself. */
+private const val STALL_TIMEOUT_MS = 20_000L
 
 /** Decay of the peak mark on the meter: visible for a few seconds, then gone. */
 private const val PEAK_DECAY_INTERVAL_MS = 100L

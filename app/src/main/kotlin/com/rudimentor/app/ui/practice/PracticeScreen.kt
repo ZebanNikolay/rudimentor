@@ -105,6 +105,7 @@ fun PracticeScreen(
     showOffsetMs: Boolean,
     buildInfo: BuildInfo,
     headphonesConnected: Boolean,
+    unknownOutput: Boolean,
     onExit: () -> Unit,
     onFinished: (PracticeResult) -> Unit,
 ) {

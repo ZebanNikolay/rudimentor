@@ -2,6 +2,7 @@ package com.rudimentor.app.ui.settings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +19,29 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.OutputDevice
+import com.rudimentor.app.data.OutputKind
+import com.rudimentor.app.data.OutputProfile
 import com.rudimentor.app.audio.MicThreshold
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.ui.component.AppToolbar
@@ -54,6 +77,7 @@ fun SettingsScreen(
     draft: SettingsDraft,
     settings: AppSettings,
     headphonesConnected: Boolean,
+    currentOutput: OutputDevice?,
     buildInfo: BuildInfo,
     onDraftChange: (SettingsDraft) -> Unit,
     onCalibrate: () -> Unit,
@@ -75,6 +99,13 @@ fun SettingsScreen(
                 onBack = onCancel,
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            OutputProfilePanel(
+                draft = draft,
+                currentOutput = currentOutput,
+                onDraftChange = onDraftChange,
+            )
+            Spacer(modifier = Modifier.height(14.dp))
 
             SettingsPanel(
                 title = stringResource(R.string.settings_title),
@@ -135,6 +166,12 @@ fun SettingsScreen(
                         },
                     ),
                 )
+                SettingsNote(
+                    text = stringResource(
+                        R.string.settings_latency_profile,
+                        draft.selectedProfile.name,
+                    ),
+                )
                 SettingsNote(text = stringResource(R.string.settings_latency_note))
 
                 SettingsGap()
@@ -179,4 +216,185 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+}
+
+
+/**
+ * The saved outputs: one latency per pair of headphones (decision 161).
+ *
+ * The list is short on purpose -- the built-in profile plus two -- and the choice is made by
+ * hand here, because Android cannot tell the app which of several attached outputs it is
+ * really routing to. Calibration writes into whichever profile is selected here.
+ */
+@Composable
+private fun OutputProfilePanel(
+    draft: SettingsDraft,
+    currentOutput: OutputDevice?,
+    onDraftChange: (SettingsDraft) -> Unit,
+) {
+    var renaming by remember { mutableStateOf<OutputProfile?>(null) }
+
+    SettingsPanel(title = stringResource(R.string.settings_output_title)) {
+        SettingsNote(text = stringResource(R.string.settings_output_note))
+        SettingsGap()
+        draft.outputProfiles.forEach { profile ->
+            OutputProfileRow(
+                profile = profile,
+                selected = profile.id == draft.selectedProfileId,
+                onSelect = { onDraftChange(draft.withSelectedProfile(profile.id)) },
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        val selected = draft.selectedProfile
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            RudiButton(
+                text = stringResource(R.string.settings_output_rename),
+                onClick = { renaming = selected },
+                style = RudiButtonStyle.Secondary,
+                enabled = selected.removable,
+                modifier = Modifier.weight(1f),
+            )
+            RudiButton(
+                text = stringResource(R.string.settings_output_delete),
+                onClick = { onDraftChange(draft.withoutProfile(selected.id)) },
+                style = RudiButtonStyle.Secondary,
+                enabled = selected.removable,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (!selected.removable) {
+            SettingsGap()
+            SettingsNote(text = stringResource(R.string.settings_output_default_note))
+        }
+        SettingsGap()
+        val alreadySaved = currentOutput != null &&
+            draft.outputProfiles.any { it.boundKey == currentOutput.key }
+        RudiButton(
+            text = if (currentOutput == null) {
+                stringResource(R.string.settings_output_add_none)
+            } else {
+                stringResource(R.string.settings_output_add, currentOutput.name)
+            },
+            onClick = {
+                currentOutput?.let {
+                    onDraftChange(draft.withAddedProfile(it, System.currentTimeMillis()))
+                }
+            },
+            style = RudiButtonStyle.Secondary,
+            enabled = currentOutput != null && !alreadySaved && draft.canAddProfile,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (currentOutput != null && !alreadySaved && !draft.canAddProfile) {
+            SettingsGap()
+            SettingsNote(
+                text = stringResource(
+                    R.string.settings_output_full,
+                    OutputProfile.MAX_PROFILES,
+                ),
+            )
+        }
+    }
+
+    renaming?.let { profile ->
+        RenameProfileDialog(
+            profile = profile,
+            onDismiss = { renaming = null },
+            onConfirm = { name ->
+                onDraftChange(draft.withRenamedProfile(profile.id, name))
+                renaming = null
+            },
+        )
+    }
+}
+
+@Composable
+private fun OutputProfileRow(
+    profile: OutputProfile,
+    selected: Boolean,
+    onSelect: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) RudiColors.SurfaceAlt else RudiColors.Bg)
+            .border(
+                BorderStroke(1.dp, if (selected) RudiColors.BrickBright else RudiColors.Line),
+                RoundedCornerShape(12.dp),
+            )
+            .clickable(onClick = onSelect)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(if (selected) RudiColors.Brick else RudiColors.Line),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = profile.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = RudiColors.Text,
+            )
+            Text(
+                text = stringResource(
+                    if (profile.latencyCalibrated) {
+                        R.string.settings_output_row_measured
+                    } else {
+                        R.string.settings_output_row_guessed
+                    },
+                    profile.latencyMs.roundToInt(),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = RudiColors.Muted,
+            )
+        }
+        Text(
+            text = stringResource(profile.kind.labelRes()),
+            style = MaterialTheme.typography.bodySmall,
+            color = RudiColors.Muted,
+        )
+    }
+}
+
+private fun OutputKind.labelRes(): Int = when (this) {
+    OutputKind.Default -> R.string.settings_output_kind_default
+    OutputKind.Bluetooth -> R.string.settings_output_kind_bluetooth
+    OutputKind.Wired -> R.string.settings_output_kind_wired
+    OutputKind.Usb -> R.string.settings_output_kind_usb
+}
+
+@Composable
+private fun RenameProfileDialog(
+    profile: OutputProfile,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var name by remember { mutableStateOf(profile.name) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = RudiColors.Surface,
+        title = { Text(text = stringResource(R.string.settings_output_rename_title)) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it.take(OutputProfile.MAX_NAME_LENGTH) },
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(name) }) {
+                Text(text = stringResource(R.string.settings_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.settings_cancel))
+            }
+        },
+    )
 }

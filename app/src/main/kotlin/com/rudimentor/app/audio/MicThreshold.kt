@@ -36,6 +36,9 @@ object MicThreshold {
      */
     const val DEFAULT_LEVEL = 0.02f
 
+    /** How much of the gate the calibration round applies. See [softened]. */
+    const val SOFT_FRACTION = 0.5f
+
     /** Bottom of the meter and of the slider, in dB relative to full scale. */
     const val FLOOR_DB = -60f
 
@@ -45,6 +48,17 @@ object MicThreshold {
     /** Whether one onset is loud enough to be treated as a stroke. */
     fun passes(envelope: Float, level: Float): Boolean =
         level <= MIN_LEVEL || (envelope.isFinite() && envelope >= level)
+
+    /**
+     * The gate as the latency round should apply it: half the level the learner set.
+     *
+     * The measured gate sits between the room and the median stroke, which is right for
+     * scoring an attempt. Inside the calibration round it was too strict: a stroke a little
+     * softer than the ones the probe heard was dropped without a word, so the click ran on
+     * and the "0 of 32" counter never moved (decision 160). Half the level is still several
+     * times above room noise, which is all the round needs it for.
+     */
+    fun softened(level: Float): Float = clamp(clamp(level) * SOFT_FRACTION)
 
     /** Level in dB relative to full scale, floored at [FLOOR_DB]. */
     fun decibels(level: Float): Float {
