@@ -40,7 +40,7 @@ import com.rudimentor.app.ui.theme.RudiTextStyles
  * The text-only map (decision 160) replaced a pad grid that drew the same letters twice, but a
  * stack of bare three-line groups pinned to the left edge read as one long column: nothing said
  * where a block ended, and four blocks pushed the rest of the screen down. Boxing each block and
- * turning the chain sideways keeps the whole map at the height of one card (decision 163).
+ * turning the chain sideways keeps the whole map at the height of one card (decision 165).
  */
 @Composable
 internal fun StickingMap(
