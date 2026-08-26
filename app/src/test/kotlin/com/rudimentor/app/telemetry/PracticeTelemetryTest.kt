@@ -105,35 +105,12 @@ class PracticeTelemetryTest {
         )
         val summary = telemetry.summary()
         val lines = summary.lines()
-        assertEquals(7, lines.size)
+        assertEquals(6, lines.size)
         assertTrue(lines.none { it.isBlank() })
         assertTrue(summary.contains("48000 Hz"))
         assertTrue(summary.contains("xruns 0/2"))
         assertTrue(summary.contains("debounced 4"))
         assertTrue(summary.contains("preset unprocessed"))
-        // An uncalibrated run has to say so, and no latency was polled here.
-        assertTrue(summary.contains("(guessed)"))
-        assertTrue(summary.contains("output latency not reported"))
-    }
-
-    @Test
-    fun `the summary reports the drift of the polled output latency`() {
-        val telemetry = PracticeTelemetry(header = header())
-        telemetry.latency(atMs = 0f, outputLatencyMs = 24f, appliedMs = 24f)
-        telemetry.latency(atMs = 900f, outputLatencyMs = 31f, appliedMs = 31f)
-        telemetry.latency(atMs = 1_800f, outputLatencyMs = 27f, appliedMs = 27f)
-        telemetry.finish(
-            atMs = 3_000f,
-            result = result(),
-            debouncedTotal = 0,
-            audio = audio(),
-            aborted = false,
-        )
-        val summary = telemetry.summary()
-        assertTrue(summary.contains("output latency 27 ms"))
-        assertTrue(summary.contains("24..31 ms"))
-        assertTrue(summary.contains("drift 7 ms"))
-        assertTrue(summary.contains("3 changes"))
     }
 
     @Test
@@ -167,7 +144,6 @@ class PracticeTelemetryTest {
         goodMs = HitWindows.Default.goodMs,
         okMs = HitWindows.Default.okMs,
         latencyMs = 40f,
-        latencyCalibrated = false,
         sensitivity = 0.5f,
         clickAudible = true,
         headphones = true,

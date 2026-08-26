@@ -98,13 +98,6 @@ fun describeLevel(level: Level, family: Family): String = buildString {
             "hits per beat",
             if (densities.size > 1) densities.joinToString(" / ") + " (per block)" else target.hitsPerBeat,
         )
-        if (level.durationSeconds != null) {
-            line(
-                "timed attempt",
-                "${level.beatsPerAttempt(target)} beats at ${target.bpm} bpm, " +
-                    "cycle ${level.cycleBeats(target.hitsPerBeat)} beat(s)",
-            )
-        }
         line("notes per attempt", level.noteCount(target))
         line("attempt repeats", target.attemptRepeats)
         target.subdivisionPlan?.let { plan ->

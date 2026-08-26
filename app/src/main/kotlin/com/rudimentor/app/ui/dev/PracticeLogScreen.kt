@@ -106,12 +106,6 @@ fun PracticeLogScreen(onBack: () -> Unit) {
                             clipboard.setText(AnnotatedString(entry.summary))
                             notice = "Summary copied."
                         },
-                        onCopyAll = {
-                            clipboard.setText(
-                                AnnotatedString(PracticeLogStore.combinedText(entry)),
-                            )
-                            notice = "Summary and events copied."
-                        },
                         onShare = { notice = shareAttempt(context, entry) },
                     )
                 }
@@ -153,7 +147,6 @@ private fun AttemptCard(
     open: Boolean,
     onToggle: () -> Unit,
     onCopy: () -> Unit,
-    onCopyAll: () -> Unit,
     onShare: () -> Unit,
 ) {
     Column(
@@ -182,43 +175,31 @@ private fun AttemptCard(
         )
         if (open) {
             Spacer(modifier = Modifier.height(10.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    RudiButton(
-                        text = "Copy",
-                        onClick = onCopy,
-                        style = RudiButtonStyle.Secondary,
-                    )
-                    RudiButton(text = "Share", onClick = onShare)
-                }
-                // Copying the whole log escapes the share sheet entirely, which is the
-                // reliable route when a file manager mangles the attachment.
-                RudiButton(
-                    text = "Copy all",
-                    onClick = onCopyAll,
-                    style = RudiButtonStyle.Ghost,
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                RudiButton(text = "Copy", onClick = onCopy, style = RudiButtonStyle.Secondary)
+                RudiButton(text = "Share", onClick = onShare)
             }
         }
     }
 }
 
 /**
- * Writes the summary and the event body into one cached file and opens the system share
- * sheet with it. A single `ACTION_SEND` is used on purpose: file managers and chat apps
- * routinely drop or corrupt one half of a two-file share (decision 154).
+ * Copies the summary and the event body into the shared cache folder and opens the
+ * system share sheet with both files.
  */
 private fun shareAttempt(context: Context, entry: PracticeLogStore.Entry): String {
-    val file = PracticeLogStore.exportForSharing(context, entry) ?: return "Nothing to share."
-    val uri = uriFor(context, file) ?: return "Could not share the file."
-    val intent = Intent(Intent.ACTION_SEND).apply {
+    val files = PracticeLogStore.exportForSharing(context, entry)
+    if (files.isEmpty()) return "Nothing to share."
+    val uris = files.mapNotNull { file -> uriFor(context, file) }
+    if (uris.isEmpty()) return "Could not share the files."
+    val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
         type = "text/plain"
-        putExtra(Intent.EXTRA_STREAM, uri)
+        putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
         putExtra(Intent.EXTRA_SUBJECT, entry.name)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, "Send practice log"))
-    return "Shared ${file.name}."
+    return "Shared ${files.size} files."
 }
 
 private fun uriFor(context: Context, file: File): Uri? = runCatching {

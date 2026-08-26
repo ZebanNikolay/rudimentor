@@ -365,10 +365,10 @@ data class Level(
 
     /**
      * Whether the practice engine can run this level today. Phase levels are played since
-     * decision 141 and timed lessons since decision 154, which turns a duration into beats.
-     * A unison lesson still needs two hands on one position, so it stays a preview.
+     * decision 141; timed lessons still need a duration-driven attempt and unison lessons two
+     * hands on one position — until then those levels are previewed, not played.
      */
-    val playable: Boolean = supportsBeatGrid && (beatCount > 0 || (durationSeconds ?: 0) > 0)
+    val playable: Boolean = supportsBeatGrid && !lesson.execution.timed && beatCount > 0
 
     fun target(rank: PracticeRank): RankTarget = rankTargets.single { it.rank == rank }
 
@@ -377,69 +377,23 @@ data class Level(
      * play for the click to stay on the notes of a tempo ramp. A level without a ramp
      * yields one tempo repeated, which the audio engine treats as a plain fixed tempo.
      */
-    fun tempoPlan(target: RankTarget, bpm: Int = target.bpm): IntArray =
-        IntArray(beatsPerAttempt(target, bpm)) { beat -> target.bpmAtBeat(beat) }
-
-    /**
-     * Beats of one full sticking cycle at [hitsPerBeat]: a pattern can span a fraction of a
-     * beat (`RL` at four hits per beat) or several beats (`RL` at one hit per beat), so the
-     * cycle is the least common multiple of the two densities, read back as beats.
-     */
-    fun cycleBeats(hitsPerBeat: Int): Int {
-        val steps = pattern.size
-        if (steps <= 0 || hitsPerBeat <= 0) return 1
-        var a = steps
-        var b = hitsPerBeat
-        while (b != 0) {
-            val rest = a % b
-            a = b
-            b = rest
-        }
-        return steps / a
-    }
-
-    /**
-     * Beats a timed attempt plays at [bpm]: the stated duration is a floor, and the attempt
-     * runs on to the end of the sticking cycle it lands in (`complete_pattern_cycle`,
-     * decision 105). The length therefore depends on the tempo the learner picked, which is
-     * why every beat-count entry point below takes a tempo.
-     */
-    fun timedBeats(target: RankTarget, bpm: Int = target.bpm): Int {
-        val seconds = durationSeconds ?: return 0
-        if (seconds <= 0 || bpm <= 0 || pattern.isEmpty()) return 0
-        val cycle = cycleBeats(target.hitsPerBeat)
-        val floorBeats = kotlin.math.ceil(seconds * bpm / 60.0).toInt()
-        val cycles = kotlin.math.ceil(floorBeats / cycle.toDouble()).toInt()
-        return cycle * maxOf(1, cycles)
-    }
-
-    /**
-     * The blocks one pass of an attempt at [target] plays. A timed lesson has no authored
-     * beat count, so its single block is sized from the duration at [bpm]; every other
-     * lesson plays the blocks the package authored ([phases]).
-     */
-    fun attemptPhases(target: RankTarget, bpm: Int = target.bpm): List<PracticePhase> =
-        if (durationSeconds != null) {
-            listOf(PracticePhase(index = 0, beatCount = timedBeats(target, bpm), steps = pattern))
-        } else {
-            phases
-        }
+    fun tempoPlan(target: RankTarget): IntArray =
+        IntArray(beatsPerAttempt(target)) { beat -> target.bpmAtBeat(beat) }
 
     /** Beats one official attempt plays: the block chain, every pass of it. */
-    fun beatsPerAttempt(target: RankTarget, bpm: Int = target.bpm): Int =
-        phaseRepeats * target.attemptRepeats *
-            attemptPhases(target, bpm).sumOf { if (it.steps.isEmpty()) 0 else it.beatCount }
+    fun beatsPerAttempt(target: RankTarget): Int =
+        phaseRepeats * target.attemptRepeats * phases.sumOf { if (it.steps.isEmpty()) 0 else it.beatCount }
 
     /**
      * How many notes one official attempt at [target] plays: every beat of every block of
      * every pass, at the density that beat is played on. Shown by the debug dump and used
      * by the tests, so both read the same number the practice engine builds.
      */
-    fun noteCount(target: RankTarget, bpm: Int = target.bpm): Int {
+    fun noteCount(target: RankTarget): Int {
         var beat = 0
         var notes = 0
         repeat(phaseRepeats * target.attemptRepeats) {
-            attemptPhases(target, bpm).forEach { phase ->
+            phases.forEach { phase ->
                 if (phase.steps.isEmpty()) return@forEach
                 repeat(phase.beatCount) {
                     notes += target.hitsPerBeatAtBeat(beat)

@@ -30,14 +30,12 @@ data class PracticeNote(
 /**
  * Builds the note list of one attempt.
  *
- * The attempt walks the blocks of the level ([Level.attemptPhases]) and plays that chain
+ * The attempt walks the blocks of the level ([Level.phases]) and plays that chain
  * `phaseRepeats * attemptRepeats` times: a one-pattern level is a single block repeated once,
  * a transition level is a chain of sticking blocks, and a tempo ramp plays its pass several
  * times per attempt (decision 141). Every block starts its sticking from the top — the
  * package authors each phase to fit its own beats, so carrying a cycle across a switch would
- * shift the hands of the next block. A timed lesson states minutes instead of beats: its
- * single block is as long as the duration at the chosen tempo, rounded up to a whole
- * sticking cycle ([Level.timedBeats], decision 154).
+ * shift the hands of the next block.
  *
  * The beat is the unit of the walk, not the note: a subdivision switch plays the same beat
  * grid at a density that changes between blocks, so the pulse survives the switch and only
@@ -56,14 +54,13 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
     if (bpm <= 0) return emptyList()
     val beatBpms = attemptBeatBpms(level, rank, bpm)
     val beatTimes = buildBeatTimesMs(level, rank, bpm)
-    val attemptPhases = level.attemptPhases(target, bpm)
     val notes = ArrayList<PracticeNote>()
     // Beats since the start of the attempt: it places the note in time and it is what the
     // subdivision plan is read with, so both stay in step across phases and repeats.
     var beat = 0
     var previousHitsPerBeat = 0
     repeat(level.phaseRepeats * target.attemptRepeats) {
-        attemptPhases.forEach { phase ->
+        level.phases.forEach { phase ->
             val steps = phase.steps
             if (steps.isEmpty()) return@forEach
             var position = 0
@@ -113,7 +110,7 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
  */
 fun attemptBeatBpms(level: Level, rank: PracticeRank, bpm: Int): IntArray {
     val target = practiceTarget(level, rank) ?: return IntArray(0)
-    val beats = level.beatsPerAttempt(target, bpm)
+    val beats = level.beatsPerAttempt(target)
     if (beats <= 0 || bpm <= 0) return IntArray(0)
     val plan = target.tempoRampPlan
     if (plan == null || target.bpm <= 0) return IntArray(beats) { bpm }
@@ -205,24 +202,6 @@ fun minNoteIntervalMs(notes: List<PracticeNote>): Float? {
         if (gap > 0f && gap < minInterval) minInterval = gap
     }
     return if (minInterval == Float.MAX_VALUE) null else minInterval
-}
-
-/**
- * Signed distance from [atMs] to the closest note in [notes]: negative when the hit
- * landed early, positive when it landed late. Returns [Float.NaN] when there is no
- * note to compare against. Used by the practice log to describe extra strokes, which
- * carry no note of their own (decision 154).
- */
-fun nearestNoteOffsetMs(notes: List<PracticeNote>, atMs: Float): Float {
-    if (notes.isEmpty()) return Float.NaN
-    var nearest = Float.NaN
-    for (note in notes) {
-        val offset = atMs - note.timeMs
-        if (nearest.isNaN() || kotlin.math.abs(offset) < kotlin.math.abs(nearest)) {
-            nearest = offset
-        }
-    }
-    return nearest
 }
 
 /** What became of one detected stick hit. */

@@ -28,7 +28,6 @@ import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.AudioOutputMonitor
 import com.rudimentor.app.data.AppSettings
-import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelCourse
 import com.rudimentor.app.data.levels.LearningProgress
@@ -47,8 +46,6 @@ import com.rudimentor.app.ui.miclab.MicLabScreen
 import com.rudimentor.app.ui.practice.PracticeResult
 import com.rudimentor.app.ui.practice.PracticeResultScreen
 import com.rudimentor.app.ui.practice.PracticeScreen
-import com.rudimentor.app.ui.settings.CalibrationScreen
-import com.rudimentor.app.ui.settings.SettingsScreen
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.util.DevLog
@@ -62,8 +59,6 @@ private enum class Screen {
     Practice,
     PracticeResult,
     Metronome,
-    Settings,
-    Calibration,
     About,
     Dev,
     MicLab,
@@ -80,7 +75,10 @@ fun RudiMentorApp(
     actions: MetronomeActions,
     onSelectTab: (String) -> Unit,
     onSelectRank: (PracticeRank) -> Unit,
-    onApplyDraft: (SettingsDraft) -> Unit,
+    onClickAudible: (Boolean) -> Unit,
+    onClickFollowsHeadphones: (Boolean) -> Unit,
+    onInputLatencyMs: (Float) -> Unit,
+    onShowOffsetMs: (Boolean) -> Unit,
     onAttemptFinished: (Level, PracticeRank, PracticeResult) -> Unit,
 ) {
     // The click follows the audio output until the learner overrides it by hand, so
@@ -102,10 +100,6 @@ fun RudiMentorApp(
     // restored across process death, it is replayed instead.
     var practiceResult by remember { mutableStateOf<PracticeResult?>(null) }
     var practiceRunId by rememberSaveable { mutableIntStateOf(0) }
-    // The settings the learner is editing. It lives here and not on the settings screen
-    // so that walking into the calibration screen and back does not throw it away
-    // (decision 154). Null means nobody is editing anything.
-    var settingsDraft by remember { mutableStateOf<SettingsDraft?>(null) }
     val practiceRank = PracticeRank.entries.firstOrNull { it.name == practiceRankName }
         ?: PracticeRank.Practice
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
@@ -138,10 +132,6 @@ fun RudiMentorApp(
                     screenName = Screen.Metronome.name
                 },
                 onOpenLevels = { screenName = Screen.Levels.name },
-                onOpenSettings = {
-                    settingsDraft = SettingsDraft.from(settings)
-                    screenName = Screen.Settings.name
-                },
                 onOpenAbout = { screenName = Screen.About.name },
                 onOpenDev = { screenName = Screen.Dev.name },
             )
@@ -207,7 +197,6 @@ fun RudiMentorApp(
                             bpm = practiceBpm,
                             clickAudible = clickAudible,
                             latencyMs = settings.inputLatencyMs,
-                            latencyCalibrated = settings.latencyCalibrated,
                             showOffsetMs = settings.showOffsetMs,
                             buildInfo = buildInfo,
                             headphonesConnected = headphonesConnected,
@@ -250,9 +239,14 @@ fun RudiMentorApp(
                         bpm = practiceBpm,
                         result = result,
                         buildInfo = buildInfo,
-                        settings = settings,
-                        headphonesConnected = headphonesConnected,
-                        onApplyDraft = onApplyDraft,
+                        clickAudible = clickAudible,
+                        onClickAudible = onClickAudible,
+                        clickFollowsHeadphones = settings.clickFollowsHeadphones,
+                        onClickFollowsHeadphones = onClickFollowsHeadphones,
+                        latencyMs = settings.inputLatencyMs,
+                        onLatencyMs = onInputLatencyMs,
+                        showOffsetMs = settings.showOffsetMs,
+                        onShowOffsetMs = onShowOffsetMs,
                         onRetry = {
                             practiceRunId += 1
                             screenName = Screen.Practice.name
@@ -272,43 +266,6 @@ fun RudiMentorApp(
                 buildInfo = buildInfo,
                 actions = actions,
                 onBack = { screenName = metronomeBackTargetName },
-            )
-            Screen.Settings -> {
-                val draft = settingsDraft
-                if (draft == null) {
-                    LaunchedEffect(Unit) {
-                        if (screen != Screen.Settings) return@LaunchedEffect
-                        DevLog.error("nav", "settings without a draft, back to the menu")
-                        screenName = Screen.Menu.name
-                    }
-                } else {
-                    SettingsScreen(
-                        draft = draft,
-                        settings = settings,
-                        headphonesConnected = headphonesConnected,
-                        buildInfo = buildInfo,
-                        onDraftChange = { settingsDraft = it },
-                        onCalibrate = { screenName = Screen.Calibration.name },
-                        onSave = {
-                            onApplyDraft(draft)
-                            settingsDraft = null
-                            screenName = Screen.Menu.name
-                        },
-                        onCancel = {
-                            settingsDraft = null
-                            screenName = Screen.Menu.name
-                        },
-                    )
-                }
-            }
-            Screen.Calibration -> CalibrationScreen(
-                onApply = { measuredMs ->
-                    // Straight into the draft: the number is stored only if the settings
-                    // screen is then saved (decision 154).
-                    settingsDraft = settingsDraft?.withCalibration(measuredMs)
-                    screenName = Screen.Settings.name
-                },
-                onBack = { screenName = Screen.Settings.name },
             )
             Screen.About -> AboutScreen(
                 buildInfo = buildInfo,
@@ -336,7 +293,6 @@ private fun MainMenu(
     buildInfo: BuildInfo,
     onOpenMetronome: () -> Unit,
     onOpenLevels: () -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenDev: () -> Unit,
 ) {
@@ -363,12 +319,14 @@ private fun MainMenu(
                 enabled = true,
                 onClick = onOpenLevels,
             )
+            // Settings has its icon and its place in the menu, but no screen yet: it
+            // stays grey and untappable until that screen lands.
             Spacer(modifier = Modifier.height(12.dp))
             MenuCard(
                 title = stringResource(R.string.menu_settings),
                 iconRes = R.drawable.ic_menu_settings,
-                enabled = true,
-                onClick = onOpenSettings,
+                enabled = false,
+                onClick = {},
             )
             Spacer(modifier = Modifier.height(12.dp))
             MenuCard(

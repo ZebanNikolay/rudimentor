@@ -18,9 +18,8 @@ import java.util.concurrent.Executors
  *
  * Files live in `filesDir/telemetry` and are written on one background thread -- the
  * attempt hands over a finished [PracticeTelemetry] and returns to the poll loop
- * immediately. Sharing joins the two into a single `.txt` inside `cacheDir/logs`, the
- * folder the manifest already exposes through `FileProvider`: file managers mishandle
- * a two-file `ACTION_SEND_MULTIPLE`, so one attempt travels as one file (decision 154).
+ * immediately. Sharing copies them into `cacheDir/logs`, the folder the manifest
+ * already exposes through `FileProvider`.
  */
 object PracticeLogStore {
 
@@ -90,31 +89,17 @@ object PracticeLogStore {
     }
 
     /**
-     * The whole attempt as one text block: the summary, a blank line, then the JSONL
-     * body. Both Share and Copy all hand this over, so a pasted log carries every event
-     * and not just the verdict.
+     * Copies the files of [entry] into the shared cache folder and returns them, so the
+     * share sheet cannot hold a file the next attempt is rewriting.
      */
-    fun combinedText(entry: Entry): String {
-        val summary = entry.summary.trimEnd()
-        val body = entry.jsonFile
-            ?.let { file -> runCatching { file.readText().trimEnd() }.getOrNull() }
-            .orEmpty()
-        return if (body.isEmpty()) summary + "\n" else summary + "\n\n" + body + "\n"
-    }
-
-    /**
-     * Writes [combinedText] into the shared cache folder and returns that one file, so
-     * the share sheet cannot hold a file the next attempt is rewriting.
-     */
-    fun exportForSharing(context: Context, entry: Entry): File? {
+    fun exportForSharing(context: Context, entry: Entry): List<File> {
         val target = File(context.cacheDir, "logs")
-        if (!target.exists() && !target.mkdirs()) return null
-        val name = entry.name.removeSuffix(TEXT_SUFFIX) + "-full" + TEXT_SUFFIX
-        return runCatching {
-            File(target, name).apply { writeText(combinedText(entry)) }
+        if (!target.exists() && !target.mkdirs()) return emptyList()
+        return listOfNotNull(entry.textFile, entry.jsonFile).mapNotNull { source ->
+            runCatching { source.copyTo(File(target, source.name), overwrite = true) }
+                .onFailure { error -> DevLog.error("telemetry", "export failed", error) }
+                .getOrNull()
         }
-            .onFailure { error -> DevLog.error("telemetry", "export failed", error) }
-            .getOrNull()
     }
 
     /** Deletes every saved attempt. */

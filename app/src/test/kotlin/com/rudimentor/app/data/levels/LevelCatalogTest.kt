@@ -267,43 +267,7 @@ class LevelCatalogTest {
     }
 
     @Test
-    fun `a timed lesson sizes its attempt from the duration and the tempo`() {
-        // Practice walks RL at one hit per beat, so a sticking cycle is two beats: 180 s at
-        // 90 bpm is 270 beats, which is already a whole number of cycles.
-        val level = timedLevel(durationSeconds = 180)
-        val practice = level.target(PracticeRank.Practice)
-
-        assertTrue(level.playable)
-        assertEquals(2, level.cycleBeats(hitsPerBeat = 1))
-        assertEquals(270, level.beatsPerAttempt(practice))
-        assertEquals(270, level.noteCount(practice))
-        // The learner can pick another tempo: the floor stays, the beat count follows it.
-        assertEquals(180, level.beatsPerAttempt(practice, bpm = 60))
-        // 61 bpm gives 183 beats, one short of a whole cycle, so the attempt plays 184.
-        assertEquals(184, level.beatsPerAttempt(practice, bpm = 61))
-        // Stage plays four hits per beat, so a cycle is half a beat: the beats stay, the
-        // notes are four per beat.
-        val stage = level.target(PracticeRank.Stage)
-        assertEquals(1, level.cycleBeats(hitsPerBeat = 4))
-        assertEquals(270, level.beatsPerAttempt(stage))
-        assertEquals(4 * 270, level.noteCount(stage))
-    }
-
-    private fun timedLevel(durationSeconds: Int) = catalog(
-        lessons = listOf(
-            lesson("f.EN-01").copy(
-                modifiers = setOf(LevelModifier.Endurance),
-                execution = Execution(
-                    durationSeconds = durationSeconds,
-                    completionMode = CompletionMode.CompletePatternCycle,
-                ),
-            ),
-        ),
-        nodes = listOf(node("f.EN-01")),
-    ).levels.single()
-
-    @Test
-    fun `a timed lesson reports seconds instead of beats`() {
+    fun `a timed lesson reports seconds instead of beats and waits for the engine`() {
         val level = catalog(
             lessons = listOf(
                 lesson("f.EN-01").copy(
@@ -319,6 +283,7 @@ class LevelCatalogTest {
 
         assertEquals(0, level.beatCount)
         assertEquals(180, level.durationSeconds)
+        assertFalse(level.playable)
     }
 
     @Test

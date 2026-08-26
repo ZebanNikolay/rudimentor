@@ -47,16 +47,11 @@ import kotlin.math.roundToInt
  *
  * Once the finish pad is lit the rubric says so instead of naming the level: the run
  * is over and the result screen is one moment away (decision 116).
- *
- * A timed level counts down instead of counting notes, so [countdown] carries either the
- * time left of the stated duration or the note that the attempt is now playing out its last
- * sticking cycle (decision 154). It sits after the chips, where the eye already looks.
  */
 @Composable
 fun PracticeHud(
     rubric: String,
     chips: List<String>,
-    countdown: String? = null,
     accuracy: Float,
     misses: Int,
     extras: Int,
@@ -79,15 +74,6 @@ fun PracticeHud(
         )
         if (!finished) {
             chips.forEach { chip -> RudiChip(text = chip) }
-            if (countdown != null) {
-                Text(
-                    text = countdown,
-                    style = RudiTextStyles.Rubric,
-                    color = RudiColors.BrickLit,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
         }
         Spacer(modifier = Modifier.weight(1f))
         Column(horizontalAlignment = Alignment.End) {
