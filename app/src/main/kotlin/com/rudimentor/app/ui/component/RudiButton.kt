@@ -65,12 +65,20 @@ fun RudiButton(
         RudiButtonStyle.Secondary -> RudiColors.Text
         RudiButtonStyle.Ghost -> RudiColors.Muted
     }
+    // A disabled button used to be pixel-identical to a live one: same fill, same border,
+    // same text, only the click did nothing. On the calibration screen that read as a
+    // broken button rather than as one that is not ready yet (decision 159).
+    val alpha = if (enabled) 1f else DISABLED_ALPHA
     Row(
         modifier = modifier
             .height(BUTTON_HEIGHT)
             .clip(shape)
-            .background(color = background, shape = shape)
-            .border(width = 1.dp, color = border, shape = shape)
+            .background(color = background.copy(alpha = background.alpha * alpha), shape = shape)
+            .border(
+                width = 1.dp,
+                color = border.copy(alpha = border.alpha * alpha),
+                shape = shape,
+            )
             .clickable(
                 enabled = enabled,
                 indication = ripple(color = RudiColors.Text),
@@ -88,11 +96,14 @@ fun RudiButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            color = content,
+            color = if (enabled) content else RudiColors.Muted,
             maxLines = 1,
         )
     }
 }
+
+/** How far a disabled button is faded: clearly dimmer, still legible. */
+private const val DISABLED_ALPHA = 0.4f
 
 private val BUTTON_HEIGHT = 44.dp
 private val BUTTON_CORNER = 13.dp

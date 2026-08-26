@@ -137,12 +137,12 @@
 
     <!-- Calibration screen -->
     <string name="calibration_title">CALIBRATION</string>
-    <string name="calibration_intro">Wear the headphones you practise with. Press Start and play one stroke on every click, evenly, for about half a minute. The first few strokes are ignored while you settle in.</string>
-    <string name="calibration_click_note">The click plays out loud here on purpose: it is what is being measured.</string>
+    <string name="calibration_intro">Two things are measured here, in this order: how loud a stroke of yours is, and how late the microphone hears it. Step 2 uses the level from step 1, so measure step 1 first.</string>
     <string name="calibration_start">Start</string>
     <string name="calibration_stop">Stop</string>
     <string name="calibration_reset">Reset</string>
-    <string name="calibration_apply">Use this value</string>
+    <string name="calibration_apply">Apply</string>
+    <string name="calibration_apply_nothing">Measure a step, or move a slider, and this becomes available.</string>
     <string name="calibration_strokes_label">Strokes</string>
     <string name="calibration_strokes_value">%1$d of %2$d</string>
     <string name="calibration_roundtrip_label">Round trip</string>
@@ -150,23 +150,29 @@
     <string name="calibration_spread_value">±%1$d ms</string>
     <string name="calibration_pending">—</string>
     <string name="calibration_need_more">%1$d more strokes needed.</string>
-    <string name="calibration_ready">Steady enough. Use this value, or keep playing to tighten it.</string>
+    <string name="calibration_ready">Steady enough. Apply it, or keep playing to tighten it.</string>
     <string name="calibration_wide_spread">The strokes scatter a lot. Play more evenly, or reset and try again.</string>
     <string name="calibration_skipped">%1$d warm-up strokes ignored.</string>
     <string name="calibration_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
     <string name="calibration_permission_body">Calibration needs the microphone to hear your strokes.</string>
-    <string name="calibration_complete">Enough strokes. The round stopped by itself: use this value, or reset to measure again.</string>
-    <string name="calibration_gate_title">MICROPHONE GATE</string>
+    <string name="calibration_complete">Enough strokes. The round stopped by itself: apply the value, or reset to measure again.</string>
+
+    <string name="calibration_step1_title">STEP 1 · STROKE LOUDNESS</string>
+    <string name="calibration_step1_intro">Nothing plays in this step. Press Measure, keep quiet while it listens to the room, then play 8 strokes at your normal loudness. The mark on the bar is the result: anything quieter is ignored, here and in a level.</string>
     <string name="calibration_gate_label">Gate</string>
     <string name="calibration_gate_value">%1$d dB</string>
-    <string name="calibration_gate_measure">Measure the gate</string>
+    <string name="calibration_gate_measure">Measure loudness</string>
     <string name="calibration_gate_cancel">Stop measuring</string>
-    <string name="calibration_gate_hint">The mark on the bar is the gate: anything quieter is ignored, in calibration and in a level. Drag it just above the room, or measure it.</string>
+    <string name="calibration_gate_hint">Not measured yet in this visit. Measure it, or drag the gate just above the room by hand.</string>
     <string name="calibration_gate_silence">Keep quiet for a moment: listening to the room.</string>
     <string name="calibration_gate_strokes">Now play %2$d strokes at your normal loudness (%1$d of %2$d).</string>
     <string name="calibration_gate_measured">Room %1$d dB, your strokes %2$d dB. The gate sits between them.</string>
     <string name="calibration_gate_too_noisy">The room is almost as loud as your strokes. Move somewhere quieter, or set the gate by hand.</string>
     <string name="calibration_meter_cd">Microphone level with the gate mark</string>
+
+    <string name="calibration_step2_title">STEP 2 · LATENCY</string>
+    <string name="calibration_step2_intro">Wear the headphones you practise with. Press Start: a click plays out loud on purpose, because it is what is being measured. Play one stroke on every click, evenly, for about half a minute. The first few strokes are ignored while you settle in, and only strokes above the gate from step 1 are counted.</string>
+    <string name="calibration_step2_gate">Strokes quieter than the step 1 gate are ignored in this round.</string>
 
     <!-- Practice result screen -->
     <string name="practice_result_passed">LEVEL PASSED</string>
