@@ -23,8 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,9 +37,7 @@ import com.rudimentor.app.data.levels.RankProgress
 import com.rudimentor.app.data.levels.RankTarget
 import com.rudimentor.app.data.levels.WeakStrategy
 import com.rudimentor.app.ui.component.AppToolbar
-import com.rudimentor.app.ui.component.Pad
-import com.rudimentor.app.ui.component.PadShape
-import com.rudimentor.app.ui.component.PadTone
+import com.rudimentor.app.ui.component.ResultMarks
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.dev.LevelDataSheet
@@ -141,17 +137,16 @@ fun LevelDetailScreen(
                     color = RudiColors.Muted,
                 )
 
-                PatternPreview(
+                Spacer(modifier = Modifier.height(22.dp))
+                SectionLabel(stringResource(R.string.level_detail_sticking))
+                StickingMap(
                     level = level,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
+                    target = target,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 TargetTempo(
                     bpm = target.bpm,
-                    stars = rankProgress.clampedStars,
-                    crown = rankProgress.crown,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 22.dp),
@@ -187,6 +182,21 @@ fun LevelDetailScreen(
                             },
                         ),
                         modifier = Modifier.weight(1f),
+                        trailing = {
+                            ResultMarks(
+                                stars = rankProgress.clampedStars,
+                                crown = rankProgress.crown,
+                                contentDescription = stringResource(
+                                    if (rankProgress.crown) {
+                                        R.string.level_detail_marks_crown
+                                    } else {
+                                        R.string.level_detail_marks
+                                    },
+                                    rankProgress.clampedStars,
+                                    RankProgress.MAX_STARS,
+                                ),
+                            )
+                        },
                     )
                 }
 
@@ -281,15 +291,13 @@ private fun attemptCaption(level: Level, target: RankTarget): String? {
 }
 
 /**
- * The tempo the level asks for at the selected rank, plus what the learner earned at that
- * rank: stars as pad LEDs and the crown, drawn the way the map node draws them (decision 126)
- * instead of the gold text stars of the first draft.
+ * The tempo the level asks for at the selected rank. What the learner earned at that rank used
+ * to hang under it on a pad of its own, which read as a circle with stars in it and explained
+ * nothing; the marks moved into the best-run card (decision 153).
  */
 @Composable
 private fun TargetTempo(
     bpm: Int,
-    stars: Int,
-    crown: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -306,21 +314,6 @@ private fun TargetTempo(
             style = RudiTextStyles.RowNumber,
             color = RudiColors.Muted,
             letterSpacing = 1.8.sp,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Pad(
-            size = 44.dp,
-            shape = PadShape.Round,
-            tone = PadTone.Normal,
-            showLetter = false,
-            stars = stars,
-            crown = crown,
-            modifier = Modifier.semantics {
-                contentDescription = buildString {
-                    append("$stars of ${RankProgress.MAX_STARS} stars")
-                    if (crown) append(", crown earned")
-                }
-            },
         )
     }
 }

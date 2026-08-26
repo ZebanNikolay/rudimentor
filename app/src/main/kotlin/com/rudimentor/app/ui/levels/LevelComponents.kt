@@ -3,13 +3,12 @@ package com.rudimentor.app.ui.levels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,18 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelModifier
 import com.rudimentor.app.data.levels.LevelType
-import com.rudimentor.app.data.levels.PatternHand
-import com.rudimentor.app.data.levels.PatternStep
-import com.rudimentor.app.ui.component.Pad
-import com.rudimentor.app.ui.component.PadShape
-import com.rudimentor.app.ui.component.PadTone
+import com.rudimentor.app.data.levels.RankTarget
 import com.rudimentor.app.ui.component.TransportButton
 import com.rudimentor.app.ui.component.TransportSize
 import com.rudimentor.app.ui.theme.JetBrainsMono
@@ -38,130 +32,91 @@ import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
 
 /**
- * The sticking of the level, drawn as pads. Every block of the attempt is shown, not only the
- * first one: a transition level plays a chain of patterns, and the preview used to draw the
- * first phase twice instead (decision 152). A long pattern wraps at [PATTERN_ROW_STEPS] pads
- * so a 16-step figure fits the screen.
+ * The sticking map of the level, as text (decision 153). The first draft drew the pattern
+ * twice — a grid of pads and the same letters underneath — and the grid took a third of the
+ * screen without adding anything. What was missing is structure, so every block now states
+ * its pattern, how many notes it is at this rank and how many times the pattern runs.
  */
 @Composable
-internal fun PatternPreview(
+internal fun StickingMap(
     level: Level,
+    target: RankTarget,
     modifier: Modifier = Modifier,
 ) {
-    val blocks = level.phases.filter { it.steps.isNotEmpty() }
+    val blocks = level.stickingBlocks(target)
+    if (blocks.isEmpty()) return
+    val passes = level.attemptPasses(target)
     Column(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        blocks.forEach { phase ->
-            PatternBlock(
-                steps = phase.steps,
-                label = if (blocks.size > 1) {
-                    stringResource(
-                        R.string.level_detail_phase_label,
-                        phase.index + 1,
-                        phase.beatCount,
+        blocks.forEach { block ->
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                if (blocks.size > 1) {
+                    Text(
+                        text = stringResource(
+                            R.string.level_detail_phase_label,
+                            block.index + 1,
+                            block.beats,
+                        ).uppercase(),
+                        style = RudiTextStyles.RowNumber,
+                        color = RudiColors.Muted,
+                        letterSpacing = 1.4.sp,
                     )
-                } else {
-                    null
-                },
-            )
-        }
-        if (blocks.size > 1 && level.phaseRepeats > 1) {
-            Text(
-                text = stringResource(R.string.level_detail_phase_repeats, level.phaseRepeats),
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.RowNumber,
-                letterSpacing = 1.4.sp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PatternBlock(
-    steps: List<PatternStep>,
-    label: String?,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        if (label != null) {
-            Text(
-                text = label.uppercase(),
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.Muted,
-                letterSpacing = 1.4.sp,
-            )
-        }
-        steps.chunked(PATTERN_ROW_STEPS).forEach { row ->
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                row.forEach { step -> PatternStepPad(step) }
+                }
+                Text(
+                    text = block.sticking,
+                    color = RudiColors.Text,
+                    fontFamily = JetBrainsMono,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 17.sp,
+                    letterSpacing = 3.sp,
+                    lineHeight = 24.sp,
+                )
+                Text(
+                    text = blockSize(block),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RudiColors.RowNumber,
+                )
             }
         }
-        Text(
-            text = steps
-                .chunked(STICKING_GROUP)
-                .joinToString(" · ") { chunk -> chunk.joinToString("") { it.label } },
-            color = RudiColors.RowNumber,
-            fontFamily = JetBrainsMono,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 12.sp,
-            letterSpacing = 2.2.sp,
-            textAlign = TextAlign.Center,
-        )
+        chainLine(blockCount = blocks.size, passes = passes)?.let { line ->
+            Text(
+                text = line,
+                style = MaterialTheme.typography.bodySmall,
+                color = RudiColors.Muted,
+            )
+        }
     }
 }
 
+/** `32 sixteenth notes · pattern ×8`, the density named the way a drummer counts it. */
 @Composable
-private fun PatternStepPad(step: PatternStep) {
-    // The package marks accents per lesson, not per step, so every step renders unaccented.
-    val tone = PadTone.Normal
-    // A rest keeps the slot in the pattern, drawn as a dark pad with no letter.
-    if (step.rest) {
-        Pad(
-            size = 31.dp,
-            shape = PadShape.Square,
-            tone = PadTone.Mute,
-            showLetter = false,
-        )
-        return
+private fun blockSize(block: StickingBlock): String {
+    val density = when (block.hitsPerBeat) {
+        1 -> R.string.level_detail_density_quarters
+        2 -> R.string.level_detail_density_eighths
+        3 -> R.string.level_detail_density_eighth_triplets
+        4 -> R.string.level_detail_density_sixteenths
+        6 -> R.string.level_detail_density_sixteenth_triplets
+        8 -> R.string.level_detail_density_thirty_seconds
+        else -> null
     }
-    if (step.hands.size == 1) {
-        val hand = step.hands.single()
-        Pad(
-            size = 31.dp,
-            shape = if (hand == PatternHand.Left) PadShape.Round else PadShape.Square,
-            tone = tone,
-            letter = hand.storageName,
-            letterFraction = 0.34f,
-        )
-        return
+    val notes = if (density == null) {
+        stringResource(R.string.level_detail_block_notes, block.notes)
+    } else {
+        stringResource(R.string.level_detail_block_notes_named, block.notes, stringResource(density))
     }
+    val cycles = block.cycles ?: return notes
+    return stringResource(R.string.level_detail_block_cycles, notes, cycles)
+}
 
-    Box(modifier = Modifier.size(36.dp)) {
-        Pad(
-            size = 27.dp,
-            shape = PadShape.Square,
-            tone = tone,
-            letter = PatternHand.Right.storageName,
-            letterFraction = 0.3f,
-            modifier = Modifier.align(Alignment.TopStart),
-        )
-        Pad(
-            size = 27.dp,
-            shape = PadShape.Round,
-            tone = tone,
-            letter = PatternHand.Left.storageName,
-            letterFraction = 0.3f,
-            modifier = Modifier.align(Alignment.BottomEnd),
-        )
-    }
+/** How the blocks add up to one attempt, when there is more than one pass to state. */
+@Composable
+private fun chainLine(blockCount: Int, passes: Int): String? = when {
+    passes <= 1 -> null
+    blockCount > 1 -> stringResource(R.string.level_detail_sticking_chain, blockCount, passes)
+    else -> stringResource(R.string.level_detail_phase_repeats, passes)
 }
 
 /**
@@ -204,13 +159,19 @@ internal fun LevelPlayButton(
     )
 }
 
-/** One fact about the level or about the learner's best run at it, boxed. */
+/**
+ * One fact about the level or about the learner's best run at it, boxed. [trailing] fills the
+ * empty space to the right of the value: the best-run card puts the earned stars and the crown
+ * there (decision 153), where they read as part of the result instead of as marks floating on a
+ * pad of their own.
+ */
 @Composable
 internal fun MetricCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
     caption: String? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -225,11 +186,18 @@ internal fun MetricCard(
             letterSpacing = 1.4.sp,
         )
         Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium.copy(fontFamily = JetBrainsMono),
-            color = RudiColors.Text,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium.copy(fontFamily = JetBrainsMono),
+                color = RudiColors.Text,
+                modifier = Modifier.weight(1f, fill = trailing != null),
+            )
+            if (trailing != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                trailing()
+            }
+        }
         if (caption != null) {
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -257,7 +225,3 @@ internal val LevelModifier.displayName: String
         LevelModifier.Weak -> "Weak"
         LevelModifier.Endurance -> "Endurance"
     }
-
-private const val PATTERN_ROW_STEPS = 8
-
-private const val STICKING_GROUP = 4

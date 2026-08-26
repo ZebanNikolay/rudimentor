@@ -14,9 +14,12 @@ import com.rudimentor.app.data.levels.PatternMode
 import com.rudimentor.app.data.levels.PatternStep
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankTarget
+import com.rudimentor.app.data.levels.SubdivisionPlan
 import com.rudimentor.app.data.levels.Technique
 import com.rudimentor.app.data.levels.TempoRampPhase
 import com.rudimentor.app.data.levels.TempoRampPlan
+import com.rudimentor.app.data.levels.TransitionPhase
+import com.rudimentor.app.data.levels.TransitionPlan
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
@@ -95,6 +98,79 @@ class LevelLabelsTest {
     }
 
     @Test
+    fun `a one-pattern level is one sticking block sized at the rank`() {
+        val level = level(lesson("singles.ST-01"))
+
+        // 64 beats at two notes per beat: 128 notes, so the two-step pattern runs 64 times.
+        val blocks = level.stickingBlocks(level.target(PracticeRank.Groove))
+
+        assertEquals(1, blocks.size)
+        val block = blocks.single()
+        assertEquals("RL", block.sticking)
+        assertEquals(64, block.beats)
+        assertEquals(128, block.notes)
+        assertEquals(64, block.cycles)
+        assertEquals(2, block.hitsPerBeat)
+    }
+
+    @Test
+    fun `a phase level lists every block and the passes of the chain`() {
+        val level = level(
+            lesson("singles.TR-01", type = LevelType.Transition).copy(
+                pattern = null,
+                transitionPlan = TransitionPlan(
+                    repeatCount = 3,
+                    phases = listOf(
+                        TransitionPhase(beatCount = 8, pattern = pattern("RL")),
+                        TransitionPhase(beatCount = 4, pattern = pattern("RRLL")),
+                    ),
+                ),
+            ),
+        )
+        val target = level.target(PracticeRank.Practice)
+
+        val blocks = level.stickingBlocks(target)
+
+        assertEquals(listOf("RL", "RRLL"), blocks.map { it.sticking })
+        assertEquals(listOf(8, 4), blocks.map { it.notes })
+        assertEquals(listOf(4, 1), blocks.map { it.cycles })
+        assertEquals(3, level.attemptPasses(target))
+    }
+
+    @Test
+    fun `a sticking longer than four steps is grouped in fours`() {
+        val level = level(
+            lesson("singles.SP-01").copy(pattern = pattern("RLRRLRLL")),
+        )
+
+        assertEquals("RLRR LRLL", level.stickingBlocks(level.target(PracticeRank.Practice)).single().sticking)
+    }
+
+    @Test
+    fun `a block whose density changes states no single density`() {
+        val level = level(
+            lesson("singles.SS-01", type = LevelType.SubdivisionSwitch).copy(
+                execution = Execution(beatCount = 16),
+                rankTargets = listOf(
+                    RankTarget(
+                        rank = PracticeRank.Practice,
+                        bpm = 90,
+                        hitsPerBeat = 1,
+                        subdivisionPlan = SubdivisionPlan(blockBeats = 8, hitsPerBeat = listOf(1, 2)),
+                    ),
+                ),
+            ),
+        )
+
+        val block = level.stickingBlocks(level.target(PracticeRank.Practice)).single()
+
+        // Eight beats of one note plus eight of two: 24 notes, and no one density to name.
+        assertEquals(24, block.notes)
+        assertEquals(null, block.hitsPerBeat)
+        assertEquals(12, block.cycles)
+    }
+
+    @Test
     fun `durations read as seconds under a minute and as minutes above it`() {
         assertEquals("32 s", formatSeconds(32))
         assertEquals("1:07", formatSeconds(67))
@@ -112,15 +188,17 @@ class LevelLabelsTest {
         id = id,
         type = type,
         modifiers = modifiers,
-        pattern = Pattern(
-            mode = PatternMode.Repeat,
-            steps = "RL".map { PatternStep(hands = setOf(PatternHand.fromStorageName(it.toString()))) },
-        ),
+        pattern = pattern("RL"),
         technique = Technique(strokeStyle = "full_rebound", dynamics = "even", accents = "none"),
         execution = Execution(beatCount = 64),
         rankTargets = PracticeRank.entries.mapIndexed { index, rank ->
             RankTarget(rank = rank, bpm = 120, hitsPerBeat = 1 shl index)
         },
+    )
+
+    private fun pattern(sticking: String): Pattern = Pattern(
+        mode = PatternMode.Repeat,
+        steps = sticking.map { PatternStep(hands = setOf(PatternHand.fromStorageName(it.toString()))) },
     )
 
     private fun level(lesson: Lesson): Level = Level(

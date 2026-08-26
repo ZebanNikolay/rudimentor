@@ -86,6 +86,57 @@ internal fun Level.attemptSeconds(target: RankTarget): Int {
     return plan.sumOf { bpm -> 60.0 / bpm }.roundToInt()
 }
 
+/**
+ * One block of the sticking map: the pattern of the block and how much of the attempt it is.
+ *
+ * The map is text only (decision 153): the pad grid above it drew the same information a
+ * second time and took a third of the screen. Sizes are for *one pass* through the block
+ * chain, and a subdivision plan is read at the beats of that first pass, so a level whose
+ * density cycles across passes states the density it starts with.
+ */
+internal data class StickingBlock(
+    val index: Int,
+    val beats: Int,
+    /** The pattern of the block, grouped for reading: `RLRL RLRL`. */
+    val sticking: String,
+    val notes: Int,
+    /** How many times the pattern runs inside the block; null when it does not divide evenly. */
+    val cycles: Int?,
+    /** Notes per beat; null when the density changes inside the block. */
+    val hitsPerBeat: Int?,
+)
+
+/** Every block one pass of an attempt plays, in order. A one-pattern level has one block. */
+internal fun Level.stickingBlocks(target: RankTarget): List<StickingBlock> {
+    var beat = 0
+    val blocks = mutableListOf<StickingBlock>()
+    phases.forEach { phase ->
+        if (phase.steps.isEmpty()) return@forEach
+        var notes = 0
+        val densities = mutableSetOf<Int>()
+        repeat(phase.beatCount) {
+            val hits = target.hitsPerBeatAtBeat(beat)
+            densities += hits
+            notes += hits
+            beat += 1
+        }
+        blocks += StickingBlock(
+            index = phase.index,
+            beats = phase.beatCount,
+            sticking = phase.steps
+                .chunked(STICKING_GROUP)
+                .joinToString(" ") { group -> group.joinToString("") { it.label } },
+            notes = notes,
+            cycles = notes.takeIf { it > 0 && it % phase.steps.size == 0 }?.div(phase.steps.size),
+            hitsPerBeat = densities.singleOrNull(),
+        )
+    }
+    return blocks
+}
+
+/** How many times one attempt plays the whole block chain: phase passes times ramp passes. */
+internal fun Level.attemptPasses(target: RankTarget): Int = phaseRepeats * target.attemptRepeats
+
 /** `43 s` under a minute, `2:07` above it. */
 internal fun formatSeconds(seconds: Int): String = if (seconds < 60) {
     "$seconds s"
@@ -111,6 +162,9 @@ internal val PracticeRank.hitsPerBeat: Int
 private fun String.humanized(): String = replace('_', ' ')
 
 private const val SEPARATOR = " · "
+
+/** Sticking is read in fours: `RLRL RLRL` instead of `RLRLRLRL`. */
+private const val STICKING_GROUP = 4
 
 /**
  * Track code -> exercise name. A key may be prefixed with the family id when the same code
