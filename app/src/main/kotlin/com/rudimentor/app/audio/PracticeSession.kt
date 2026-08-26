@@ -37,6 +37,12 @@ class PracticeSession(
         val positionMs: Float,
         /** Stick hits detected since the previous poll, in the same milliseconds. */
         val hits: List<Hit>,
+        /**
+         * Onsets the loudness gate dropped since the previous poll (decision 158).
+         * Scoring never sees them; the log does, so a stroke that was gated away can be
+         * told apart from a stroke that was never played.
+         */
+        val quietHits: List<Hit> = emptyList(),
         val envelope: Float,
         val threshold: Float,
         /** Loudest envelope value the detector has seen since the last reset. */
@@ -94,6 +100,13 @@ class PracticeSession(
     private var latencyCalibrated: Boolean = false
 
     /**
+     * Loudness an onset has to reach to be scored at all (decision 158). The onset
+     * detector's own threshold is adaptive and sits on its floor in a noisy room, where it
+     * reported room noise as strokes and the scoring counted it.
+     */
+    private var micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL
+
+    /**
      * Output latency the first anchored poll of the attempt reported, the reference the
      * drift of a calibrated trim is measured from. Null until the stream reports one.
      */
@@ -101,6 +114,7 @@ class PracticeSession(
     private val hitScratch = ArrayList<NativeMicLab.HitEvent>(32)
     private val tickScratch = ArrayList<NativeMicLab.TickEvent>(32)
     private val hitPositions = ArrayList<Hit>(8)
+    private val quietPositions = ArrayList<Hit>(8)
 
     /**
      * Starts the engine. The click is silent by default: without headphones the
@@ -112,6 +126,7 @@ class PracticeSession(
         inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
         latencyCalibrated: Boolean = false,
         sensitivity: Float = MicLab.DEFAULT_SENSITIVITY,
+        micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
         tempoPlan: IntArray = IntArray(0),
     ): Boolean {
         if (running) return true
@@ -122,6 +137,7 @@ class PracticeSession(
         anchorFrame = null
         anchorOutputLatencyMs = null
         this.latencyCalibrated = latencyCalibrated
+        this.micThresholdLevel = MicThreshold.clamp(micThresholdLevel)
         hitScratch.clear()
         tickScratch.clear()
         native.setBpm(this.bpm)
@@ -154,6 +170,10 @@ class PracticeSession(
 
     fun setSensitivity(value: Float) = native.setSensitivity(value.coerceIn(0f, 1f))
 
+    fun setMicThresholdLevel(level: Float) {
+        micThresholdLevel = MicThreshold.clamp(level)
+    }
+
     /**
      * Audio stream parameters and fault counters. This takes the engine lock, so
      * it is meant for the start and the end of an attempt, never for the poll loop.
@@ -164,6 +184,7 @@ class PracticeSession(
         tickScratch.clear()
         hitScratch.clear()
         hitPositions.clear()
+        quietPositions.clear()
         native.drainTicks(tickScratch)
         native.drainHits(hitScratch)
         val snapshot = native.snapshot()
@@ -231,16 +252,19 @@ class PracticeSession(
         }
 
         for (hit in hitScratch) {
-            hitPositions.add(
-                Hit(
-                    // The native drain already subtracted the anchor-relative latency
-                    // compensation (trim + measured output latency), so the hit lands
-                    // on the same presentation timeline the notes are drawn on.
-                    positionMs = (hit.frame - anchor) / framesPerMs,
-                    envelope = hit.envelope,
-                    threshold = hit.threshold,
-                ),
+            val entry = Hit(
+                // The native drain already subtracted the anchor-relative latency
+                // compensation (trim + measured output latency), so the hit lands
+                // on the same presentation timeline the notes are drawn on.
+                positionMs = (hit.frame - anchor) / framesPerMs,
+                envelope = hit.envelope,
+                threshold = hit.threshold,
             )
+            if (MicThreshold.passes(hit.envelope, micThresholdLevel)) {
+                hitPositions.add(entry)
+            } else {
+                quietPositions.add(entry)
+            }
         }
         // The position runs on the output clock, the same clock the ticks -- and so
         // the anchor, and the hit frames after their re-anchoring -- are stamped on.
@@ -251,6 +275,7 @@ class PracticeSession(
             anchored = true,
             positionMs = (snapshot.outputFrame - anchor) / framesPerMs - visualShiftMs,
             hits = if (hitPositions.isEmpty()) emptyList() else ArrayList(hitPositions),
+            quietHits = if (quietPositions.isEmpty()) emptyList() else ArrayList(quietPositions),
             envelope = snapshot.envelope,
             threshold = snapshot.threshold,
             peak = snapshot.peak,

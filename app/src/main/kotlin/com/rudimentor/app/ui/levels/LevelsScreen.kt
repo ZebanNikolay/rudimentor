@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -70,6 +71,7 @@ import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankProgress
 import com.rudimentor.app.data.levels.UnlockRule
 import com.rudimentor.app.ui.component.AppToolbar
+import com.rudimentor.app.ui.component.SquareIconButton
 import com.rudimentor.app.ui.component.Pad
 import com.rudimentor.app.ui.component.PadShape
 import com.rudimentor.app.ui.component.PadTone
@@ -94,6 +96,7 @@ fun LevelsScreen(
     onSelectRank: (PracticeRank) -> Unit,
     onBack: () -> Unit,
     onOpenLevel: (String) -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
     var rankDialogVisible by remember { mutableStateOf(false) }
@@ -114,6 +117,21 @@ fun LevelsScreen(
                 onBack = onBack,
                 rightContent = {
                     RankButton(rank = rank, onClick = { rankDialogVisible = true })
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // The settings of practising belong to the map, not to the main menu:
+                    // the metronome has its own sheet and the two were read as one
+                    // (decision 158).
+                    SquareIconButton(
+                        onClick = onOpenSettings,
+                        contentDescription = stringResource(R.string.menu_settings),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_menu_settings),
+                            contentDescription = null,
+                            tint = RudiColors.Text,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 },
             )
             Spacer(modifier = Modifier.height(12.dp))

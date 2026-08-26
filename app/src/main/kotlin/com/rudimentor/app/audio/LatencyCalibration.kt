@@ -23,6 +23,21 @@ class LatencyCalibration(
     private val capacity: Int = MAX_SAMPLES,
 ) {
 
+    /** What became of one detected stroke. The screen logs this, nothing else. */
+    enum class Outcome {
+        /** Counted towards the median. */
+        Accepted,
+
+        /** One of the first strokes of the round, dropped as count-in. */
+        WarmUp,
+
+        /** Outside anything an audio path can produce: noise, or a double trigger. */
+        Rejected,
+
+        /** The round already holds every stroke it needs, so this one is ignored. */
+        Full,
+    }
+
     /** What one round of calibration has produced so far. */
     data class Reading(
         /** Round trips accepted, oldest first. Diagnostics for the screen's own list. */
@@ -33,6 +48,13 @@ class LatencyCalibration(
         val medianMs: Float?,
         /** How far the samples scatter: the widest deviation from the median. */
         val spreadMs: Float,
+        /**
+         * True once the round holds [MAX_SAMPLES] strokes. The round ends there instead of
+         * running forever behind a sliding window: the counter on the screen said "of 32"
+         * and then kept going, so the learner had no way of knowing when to stop
+         * (decision 157).
+         */
+        val complete: Boolean,
     ) {
         val ready: Boolean = medianMs != null
     }
@@ -48,15 +70,18 @@ class LatencyCalibration(
      * outside anything an audio path can produce are dropped too -- a chair creak or a
      * double trigger must not drag the median.
      */
-    fun add(roundTripMs: Float) {
-        if (!roundTripMs.isFinite()) return
-        if (roundTripMs < MIN_PLAUSIBLE_MS || roundTripMs > MAX_PLAUSIBLE_MS) return
+    fun add(roundTripMs: Float): Outcome {
+        if (samples.size >= capacity) return Outcome.Full
+        if (!roundTripMs.isFinite()) return Outcome.Rejected
+        if (roundTripMs < MIN_PLAUSIBLE_MS || roundTripMs > MAX_PLAUSIBLE_MS) {
+            return Outcome.Rejected
+        }
         if (skipped < warmUp) {
             skipped += 1
-            return
+            return Outcome.WarmUp
         }
-        if (samples.size >= capacity) samples.removeAt(0)
         samples.add(roundTripMs)
+        return Outcome.Accepted
     }
 
     fun reset() {
@@ -71,6 +96,7 @@ class LatencyCalibration(
             skipped = skipped,
             medianMs = median,
             spreadMs = if (median == null) 0f else samples.maxOf { abs(it - median) },
+            complete = samples.size >= capacity,
         )
     }
 
@@ -81,7 +107,7 @@ class LatencyCalibration(
         /** Accepted strokes needed before a median is offered. */
         const val MIN_SAMPLES = 8
 
-        /** Strokes kept; beyond this the oldest fall off, so a long round stays honest. */
+        /** Strokes one round measures. The round is over once it has them. */
         const val MAX_SAMPLES = 32
 
         /**

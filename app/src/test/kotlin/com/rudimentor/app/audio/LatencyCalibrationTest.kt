@@ -54,13 +54,20 @@ class LatencyCalibrationTest {
     }
 
     @Test
-    fun `a long round keeps only the newest strokes`() {
+    fun `a full round is complete and ignores anything after it`() {
         val calibration = LatencyCalibration(warmUp = 0, capacity = 8)
         repeat(8) { calibration.add(100f) }
-        repeat(8) { calibration.add(300f) }
+        assertTrue(calibration.reading().complete)
+        // The round used to slide its window forward for ever, so the counter never
+        // filled up and the screen asked for strokes until the learner gave up
+        // (decision 157). Now the extra strokes are ignored.
+        assertEquals(
+            LatencyCalibration.Outcome.Full,
+            calibration.add(300f),
+        )
         val reading = calibration.reading()
         assertEquals(8, reading.samples.size)
-        assertEquals(300f, reading.medianMs!!, 0.01f)
+        assertEquals(100f, reading.medianMs!!, 0.01f)
     }
 
     @Test

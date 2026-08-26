@@ -40,14 +40,13 @@ import androidx.core.content.ContextCompat
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.MicLab
-import com.rudimentor.app.audio.NativeMicLab
 import com.rudimentor.app.audio.PracticeSession
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.telemetry.PracticeLogStore
 import com.rudimentor.app.telemetry.PracticeTelemetry
-import com.rudimentor.app.telemetry.TelemetryAudio
+import com.rudimentor.app.telemetry.toTelemetry
 import com.rudimentor.app.telemetry.TelemetryHeader
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
@@ -98,6 +97,11 @@ fun PracticeScreen(
      * (decision 154).
      */
     latencyCalibrated: Boolean,
+    /**
+     * The loudness gate: onsets quieter than this are logged and thrown away instead of
+     * scored. Room noise was being judged as playing before it existed (decision 158).
+     */
+    micThresholdLevel: Float,
     showOffsetMs: Boolean,
     buildInfo: BuildInfo,
     headphonesConnected: Boolean,
@@ -280,6 +284,16 @@ fun PracticeScreen(
                         },
                     )
                 }
+                // Everything the gate threw away is still written down: it is the only way
+                // to tell "the room is too loud" from "the detector is deaf" afterwards.
+                poll.quietHits.forEach { hit ->
+                    log?.quiet(
+                        atMs = hit.positionMs,
+                        envelope = hit.envelope,
+                        threshold = hit.threshold,
+                        gate = micThresholdLevel,
+                    )
+                }
                 attempt.expireMissedNotes(now).forEach { index ->
                     log?.miss(atMs = now, noteIndex = index)
                 }
@@ -380,7 +394,11 @@ fun PracticeScreen(
                     .padding(horizontal = 18.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PracticeMicMeter(envelope = envelope, threshold = threshold)
+                PracticeMicMeter(
+                    envelope = envelope,
+                    threshold = threshold,
+                    gate = micThresholdLevel,
+                )
                 Spacer(modifier = Modifier.weight(1f))
                 // Reserve the corner the floating transport button sits in.
                 Spacer(modifier = Modifier.width(TRANSPORT_RESERVE))
@@ -428,6 +446,7 @@ fun PracticeScreen(
                         clickAudible = clickAudible,
                         inputLatencyMs = latencyMs,
                         latencyCalibrated = latencyCalibrated,
+                        micThresholdLevel = micThresholdLevel,
                         tempoPlan = tempoPlan,
                     )
                     if (!started) DevLog.error("practice", "audio engine refused to start")
@@ -528,22 +547,6 @@ private fun closeTelemetry(
     )
     PracticeLogStore.save(context, log)
 }
-
-private fun NativeMicLab.StreamInfo.toTelemetry(): TelemetryAudio = TelemetryAudio(
-    sampleRate = sampleRate,
-    outputBurstFrames = outputBurstFrames,
-    outputBufferFrames = outputBufferFrames,
-    inputBurstFrames = inputBurstFrames,
-    inputBufferFrames = inputBufferFrames,
-    inputCapacityFrames = inputCapacityFrames,
-    outputExclusive = outputExclusive,
-    inputExclusive = inputExclusive,
-    inputPreset = inputPresetName,
-    outputXRuns = outputXRuns,
-    inputXRuns = inputXRuns,
-    errorCount = errorCount,
-    lastErrorCode = lastErrorCode,
-)
 
 /** Wall-clock stamp of the attempt, the one line a human reads first. */
 private fun logStamp(): String =

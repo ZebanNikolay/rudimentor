@@ -1,5 +1,6 @@
 package com.rudimentor.app.data
 
+import com.rudimentor.app.audio.MicThreshold
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -73,5 +74,32 @@ class SettingsDraftTest {
         val applied = SettingsDraft.from(settings).withCalibration(196f).applyTo(settings)
         assertEquals(196f, applied.inputLatencyMs, 0.01f)
         assertTrue(applied.latencyCalibrated)
+    }
+
+    @Test
+    fun `a hand-set latency counts as calibrated`() {
+        // A number the learner dialled in is a whole round trip they are claiming, so the
+        // engine must not add the measured output latency on top of it (decision 158).
+        val draft = SettingsDraft.from(AppSettings()).withLatency(240f)
+        assertTrue(draft.latencyCalibrated)
+        assertEquals(240f, draft.latencyMs, 0.01f)
+    }
+
+    @Test
+    fun `the microphone gate is clamped and only stored on apply`() {
+        val settings = AppSettings()
+        val draft = SettingsDraft.from(settings).withMicThreshold(9f)
+        assertEquals(MicThreshold.MAX_LEVEL, draft.micThresholdLevel, 0.0001f)
+        assertEquals(
+            MicThreshold.MIN_LEVEL,
+            draft.withMicThreshold(-1f).micThresholdLevel,
+            0.0001f,
+        )
+        assertTrue(draft.differsFrom(settings))
+        assertEquals(
+            MicThreshold.MAX_LEVEL,
+            draft.applyTo(settings).micThresholdLevel,
+            0.0001f,
+        )
     }
 }

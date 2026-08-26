@@ -83,6 +83,7 @@ class PracticeTelemetry(
     private var judged = 0
     private var extras = 0
     private var debounced = 0
+    private var quiet = 0
     private var missed = 0
 
     // The output latency the engine measured during the run. Over Bluetooth it is
@@ -114,7 +115,7 @@ class PracticeTelemetry(
          */
         extraOffsetMs: Float = Float.NaN,
     ) {
-        val json = Json("hit")
+        val json = TelemetryJson("hit")
             .num("atMs", atMs)
             .num("env", envelope, ENVELOPE_DIGITS)
             .num("thr", threshold, ENVELOPE_DIGITS)
@@ -159,10 +160,28 @@ class PracticeTelemetry(
             maxOutputLatencyMs = outputLatencyMs
         }
         add(
-            Json("latency")
+            TelemetryJson("latency")
                 .num("atMs", atMs)
                 .num("outputMs", outputLatencyMs)
                 .num("appliedMs", appliedMs)
+                .done(),
+        )
+    }
+
+    /**
+     * An onset the loudness gate refused, with the numbers that decided it.
+     *
+     * The dev.37 log had no such line, so room noise at envelope 0.012 was
+     * indistinguishable from playing and was scored as it (decision 158).
+     */
+    fun quiet(atMs: Float, envelope: Float, threshold: Float, gate: Float) {
+        quiet += 1
+        add(
+            TelemetryJson("quiet")
+                .num("atMs", atMs)
+                .num("env", envelope, LEVEL_DIGITS)
+                .num("thr", threshold, LEVEL_DIGITS)
+                .num("gate", gate, LEVEL_DIGITS)
                 .done(),
         )
     }
@@ -171,7 +190,7 @@ class PracticeTelemetry(
     fun miss(atMs: Float, noteIndex: Int) {
         missed += 1
         add(
-            Json("miss")
+            TelemetryJson("miss")
                 .num("atMs", atMs)
                 .int("note", noteIndex)
                 .done(),
@@ -184,7 +203,7 @@ class PracticeTelemetry(
      */
     fun audioEvent(atMs: Float, kind: String, detail: String) {
         add(
-            Json("audio")
+            TelemetryJson("audio")
                 .num("atMs", atMs)
                 .text("kind", kind)
                 .text("detail", detail)
@@ -208,7 +227,7 @@ class PracticeTelemetry(
         // off the tail of the ring would otherwise quietly lower the count.
         this.debounced = debouncedTotal
         add(
-            Json(if (aborted) "abort" else "result")
+            TelemetryJson(if (aborted) "abort" else "result")
                 .num("atMs", atMs)
                 .num("accuracy", result.accuracy, ACCURACY_DIGITS)
                 .int("stars", result.stars)
@@ -237,7 +256,7 @@ class PracticeTelemetry(
         lines.add(attemptLine())
         lines.addAll(events)
         if (dropped > 0) {
-            lines.add(Json("truncated").int("droppedEvents", dropped).done())
+            lines.add(TelemetryJson("truncated").int("droppedEvents", dropped).done())
         }
         return lines
     }
@@ -287,14 +306,17 @@ class PracticeTelemetry(
         )
         val outcome = result
         if (outcome == null) {
-            lines.add("result none · judged $judged · extra $extras · debounced $debounced")
+            lines.add(
+                "result none · judged $judged · extra $extras · debounced $debounced · " +
+                    "quiet $quiet",
+            )
         } else {
             lines.add(
                 "result ${percent(outcome.accuracy)} · ${outcome.stars}★" +
                     (if (outcome.crown) " + crown" else "") +
                     " · perfect ${outcome.perfect} good ${outcome.good} ok ${outcome.ok} " +
                     "miss ${outcome.misses} · extra ${outcome.extras} · " +
-                    "debounced $debounced · combo ${outcome.maxCombo}",
+                    "debounced $debounced · quiet $quiet · combo ${outcome.maxCombo}",
             )
             lines.add(
                 "timing mean ${signed(outcome.meanOffsetMs)} · " +
@@ -332,7 +354,7 @@ class PracticeTelemetry(
     }
 
     private fun sessionLine(): String {
-        val json = Json("session")
+        val json = TelemetryJson("session")
             .text("startedAt", header.startedAt)
             .text("device", header.device)
             .text("android", header.androidVersion)
@@ -355,7 +377,7 @@ class PracticeTelemetry(
         return json.done()
     }
 
-    private fun attemptLine(): String = Json("attempt")
+    private fun attemptLine(): String = TelemetryJson("attempt")
         .text("level", header.levelId)
         .text("levelLabel", header.levelLabel)
         .text("family", header.family)
@@ -371,63 +393,6 @@ class PracticeTelemetry(
         .num("sensitivity", header.sensitivity, ACCURACY_DIGITS)
         .bool("clickAudible", header.clickAudible)
         .done()
-
-    /** Minimal JSON object writer: the log format is fixed, so a builder is enough. */
-    private class Json(type: String) {
-        private val out = StringBuilder(160)
-        private var first = true
-
-        init {
-            out.append('{')
-            text("type", type)
-        }
-
-        fun text(key: String, value: String): Json {
-            key(key)
-            out.append('"')
-            for (char in value) {
-                when (char) {
-                    '"' -> out.append("\\\"")
-                    '\\' -> out.append("\\\\")
-                    '\n' -> out.append("\\n")
-                    '\r' -> out.append("\\r")
-                    '\t' -> out.append("\\t")
-                    else -> if (char < ' ') out.append(' ') else out.append(char)
-                }
-            }
-            out.append('"')
-            return this
-        }
-
-        fun int(key: String, value: Int): Json {
-            key(key)
-            out.append(value)
-            return this
-        }
-
-        fun bool(key: String, value: Boolean): Json {
-            key(key)
-            out.append(value)
-            return this
-        }
-
-        fun num(key: String, value: Float, digits: Int = OFFSET_DIGITS): Json {
-            key(key)
-            // A non-finite number is not JSON: a missed note carries NaN as its offset.
-            if (value.isNaN() || value.isInfinite()) out.append("null") else {
-                out.append(decimal(value, digits))
-            }
-            return this
-        }
-
-        fun done(): String = out.append('}').toString()
-
-        private fun key(name: String) {
-            if (!first) out.append(',')
-            first = false
-            out.append('"').append(name).append("\":")
-        }
-    }
 
     companion object {
         /** Events one attempt may hold. Above this the tail is counted, not kept. */
@@ -448,6 +413,9 @@ class PracticeTelemetry(
             }
             return sqrt(sum / offsets.size).toFloat()
         }
+
+        /** Envelope levels are small: three decimals is what tells 0.012 from 0.02. */
+        private const val LEVEL_DIGITS = 4
 
         private fun decimal(value: Float, digits: Int): String =
             String.format(Locale.US, "%.${digits}f", value)

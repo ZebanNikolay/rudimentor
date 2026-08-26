@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.audio.MicLab
+import com.rudimentor.app.audio.MicThreshold
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -55,6 +56,8 @@ class DataStoreSettingsRepository(
             clickFollowsHeadphones = preferences[Keys.ClickFollowsHeadphones] ?: true,
             inputLatencyMs = preferences[Keys.InputLatencyMs] ?: MicLab.DEFAULT_LATENCY_MS,
             latencyCalibrated = preferences[Keys.LatencyCalibrated] ?: false,
+            micThresholdLevel = preferences[Keys.MicThresholdLevel]
+                ?: MicThreshold.DEFAULT_LEVEL,
             showOffsetMs = preferences[Keys.ShowOffsetMs] ?: false,
         ).sanitized()
     }
@@ -69,6 +72,7 @@ class DataStoreSettingsRepository(
         this[Keys.ClickFollowsHeadphones] = safe.clickFollowsHeadphones
         this[Keys.InputLatencyMs] = safe.inputLatencyMs
         this[Keys.LatencyCalibrated] = safe.latencyCalibrated
+        this[Keys.MicThresholdLevel] = safe.micThresholdLevel
         this[Keys.ShowOffsetMs] = safe.showOffsetMs
     }
 
@@ -82,6 +86,7 @@ class DataStoreSettingsRepository(
             booleanPreferencesKey("practice_click_follows_headphones")
         val InputLatencyMs = floatPreferencesKey("practice_input_latency_ms")
         val LatencyCalibrated = booleanPreferencesKey("practice_latency_calibrated")
+        val MicThresholdLevel = floatPreferencesKey("practice_mic_threshold_level")
         val ShowOffsetMs = booleanPreferencesKey("practice_show_offset_ms")
     }
 }

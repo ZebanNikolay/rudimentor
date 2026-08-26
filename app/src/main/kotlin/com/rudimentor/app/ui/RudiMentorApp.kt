@@ -126,7 +126,9 @@ fun RudiMentorApp(
     // hand the orientation back and forth between themselves.
     LandscapeStage(
         landscape = screen == Screen.Practice || screen == Screen.PracticeResult,
-        keepScreenOn = screen == Screen.Practice,
+        // The calibration round is half a minute of playing without touching the phone,
+        // and the screen timing out took the audio streams with it (decision 158).
+        keepScreenOn = screen == Screen.Practice || screen == Screen.Calibration,
     )
 
     AnimatedContent(targetState = screen, label = "screen") { currentScreen ->
@@ -138,10 +140,6 @@ fun RudiMentorApp(
                     screenName = Screen.Metronome.name
                 },
                 onOpenLevels = { screenName = Screen.Levels.name },
-                onOpenSettings = {
-                    settingsDraft = SettingsDraft.from(settings)
-                    screenName = Screen.Settings.name
-                },
                 onOpenAbout = { screenName = Screen.About.name },
                 onOpenDev = { screenName = Screen.Dev.name },
             )
@@ -156,6 +154,10 @@ fun RudiMentorApp(
                 onOpenLevel = { levelId ->
                     selectedLevelId = levelId
                     screenName = Screen.LevelDetail.name
+                },
+                onOpenSettings = {
+                    settingsDraft = SettingsDraft.from(settings)
+                    screenName = Screen.Settings.name
                 },
             )
             Screen.LevelDetail -> {
@@ -208,6 +210,7 @@ fun RudiMentorApp(
                             clickAudible = clickAudible,
                             latencyMs = settings.inputLatencyMs,
                             latencyCalibrated = settings.latencyCalibrated,
+                            micThresholdLevel = settings.micThresholdLevel,
                             showOffsetMs = settings.showOffsetMs,
                             buildInfo = buildInfo,
                             headphonesConnected = headphonesConnected,
@@ -292,20 +295,29 @@ fun RudiMentorApp(
                         onSave = {
                             onApplyDraft(draft)
                             settingsDraft = null
-                            screenName = Screen.Menu.name
+                            screenName = Screen.Levels.name
                         },
                         onCancel = {
                             settingsDraft = null
-                            screenName = Screen.Menu.name
+                            screenName = Screen.Levels.name
                         },
                     )
                 }
             }
             Screen.Calibration -> CalibrationScreen(
-                onApply = { measuredMs ->
-                    // Straight into the draft: the number is stored only if the settings
+                latencyMs = settingsDraft?.latencyMs ?: settings.inputLatencyMs,
+                latencyCalibrated = settingsDraft?.latencyCalibrated
+                    ?: settings.latencyCalibrated,
+                micThresholdLevel = settingsDraft?.micThresholdLevel
+                    ?: settings.micThresholdLevel,
+                headphonesConnected = headphonesConnected,
+                buildInfo = buildInfo,
+                onApply = { measuredMs, micThreshold ->
+                    // Straight into the draft: the numbers are stored only if the settings
                     // screen is then saved (decision 154).
-                    settingsDraft = settingsDraft?.withCalibration(measuredMs)
+                    settingsDraft = settingsDraft
+                        ?.withMicThreshold(micThreshold)
+                        ?.let { draft -> if (measuredMs == null) draft else draft.withLatency(measuredMs) }
                     screenName = Screen.Settings.name
                 },
                 onBack = { screenName = Screen.Settings.name },
@@ -336,7 +348,6 @@ private fun MainMenu(
     buildInfo: BuildInfo,
     onOpenMetronome: () -> Unit,
     onOpenLevels: () -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenDev: () -> Unit,
 ) {
@@ -362,13 +373,6 @@ private fun MainMenu(
                 iconRes = R.drawable.ic_menu_levels,
                 enabled = true,
                 onClick = onOpenLevels,
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            MenuCard(
-                title = stringResource(R.string.menu_settings),
-                iconRes = R.drawable.ic_menu_settings,
-                enabled = true,
-                onClick = onOpenSettings,
             )
             Spacer(modifier = Modifier.height(12.dp))
             MenuCard(

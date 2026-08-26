@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.audio.MicThreshold
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.RudiButton
@@ -26,6 +27,7 @@ import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.SettingsGap
 import com.rudimentor.app.ui.component.SettingsNote
 import com.rudimentor.app.ui.component.SettingsPanel
+import com.rudimentor.app.ui.component.SettingsSliderRow
 import com.rudimentor.app.ui.component.SettingsSwitchRow
 import com.rudimentor.app.ui.component.SettingsValueRow
 import com.rudimentor.app.ui.theme.RudiColors
@@ -39,8 +41,13 @@ import kotlin.math.roundToInt
  * draft (decision 154). The drawer during an attempt keeps the same contract, so a
  * setting is never changed by accident in either place.
  *
- * The latency is the one row that cannot be typed or dragged: it is only ever a
- * measurement, so it reads its value out and sends the learner to the calibration screen.
+ * The latency can be dragged as well as measured. Calibration is the honest way to get it,
+ * but a learner who knows their headphones -- or wants to check what 30 ms more feels like --
+ * should not have to sit through a round to try a number (decision 158).
+ *
+ * The panel opens from the levels screen, next to the rank button, because these are the
+ * settings of practising. The main menu no longer carries them: the metronome has its own
+ * sheet, and the two were being confused for each other (decision 158).
  */
 @Composable
 fun SettingsScreen(
@@ -109,12 +116,15 @@ fun SettingsScreen(
                 SettingsNote(text = stringResource(R.string.practice_offset_ms_note))
 
                 SettingsGap()
-                SettingsValueRow(
+                SettingsSliderRow(
                     label = stringResource(R.string.settings_latency_label),
-                    value = stringResource(
+                    valueLabel = stringResource(
                         R.string.practice_latency_value,
                         draft.latencyMs.roundToInt(),
                     ),
+                    value = draft.latencyMs,
+                    valueRange = 0f..AppSettings.LATENCY_MAX_MS,
+                    onValueChange = { onDraftChange(draft.withLatency(it)) },
                 )
                 SettingsNote(
                     text = stringResource(
@@ -125,6 +135,20 @@ fun SettingsScreen(
                         },
                     ),
                 )
+                SettingsNote(text = stringResource(R.string.settings_latency_note))
+
+                SettingsGap()
+                // The gate is measured against the room, so it is set on the calibration
+                // screen where the meter is; here it only reports itself (decision 158).
+                SettingsValueRow(
+                    label = stringResource(R.string.settings_gate_label),
+                    value = stringResource(
+                        R.string.settings_gate_value,
+                        MicThreshold.decibels(draft.micThresholdLevel).roundToInt(),
+                    ),
+                )
+                SettingsNote(text = stringResource(R.string.settings_gate_note))
+
                 SettingsGap()
                 RudiButton(
                     text = stringResource(R.string.settings_calibrate),

@@ -7,6 +7,7 @@ import com.rudimentor.app.audio.BeatState
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.audio.Hand
 import com.rudimentor.app.audio.MicLab
+import com.rudimentor.app.audio.MicThreshold
 
 /**
  * Everything the app remembers between runs: the metronome the user has built and
@@ -30,6 +31,12 @@ data class AppSettings(
      * of it a second time (decision 154).
      */
     val latencyCalibrated: Boolean = false,
+    /**
+     * Loudness an onset has to reach before it is treated as a stroke, as an envelope
+     * level. Room noise and a real stroke are 25-80x apart, and without this gate the
+     * detector scored the noise (decision 158). Zero means no gate.
+     */
+    val micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
     /**
      * Whether the verdict floater spells the deviation in milliseconds under its word.
      * Off by default: the dot on the rail already shows which side of the note the
@@ -58,6 +65,7 @@ data class AppSettings(
         bpm = Bpm.clamp(bpm),
         activeRow = safeActiveRow,
         inputLatencyMs = inputLatencyMs.coerceIn(LATENCY_MIN_MS, LATENCY_MAX_MS),
+        micThresholdLevel = MicThreshold.clamp(micThresholdLevel),
     )
 
     companion object {

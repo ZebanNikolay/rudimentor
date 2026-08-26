@@ -1,5 +1,7 @@
 package com.rudimentor.app.data
 
+import com.rudimentor.app.audio.MicThreshold
+
 /**
  * The settings the user is editing right now, before they have said Save.
  *
@@ -15,11 +17,26 @@ data class SettingsDraft(
     val showOffsetMs: Boolean,
     val latencyMs: Float,
     val latencyCalibrated: Boolean,
+    val micThresholdLevel: Float,
 ) {
     /** The draft with a freshly measured round-trip latency in it. */
     fun withCalibration(latencyMs: Float): SettingsDraft = copy(
         latencyMs = latencyMs.coerceIn(AppSettings.LATENCY_MIN_MS, AppSettings.LATENCY_MAX_MS),
         latencyCalibrated = true,
+    )
+
+    /**
+     * The draft with a latency the learner dialled in on the slider.
+     *
+     * A hand-set number counts as calibrated: it is a whole round trip the learner is
+     * claiming, so the engine must not add the measured output latency on top of it, the
+     * same way it does not for a measured one (decision 158).
+     */
+    fun withLatency(latencyMs: Float): SettingsDraft = withCalibration(latencyMs)
+
+    /** The draft with a new microphone gate, set by hand or measured (decision 158). */
+    fun withMicThreshold(level: Float): SettingsDraft = copy(
+        micThresholdLevel = MicThreshold.clamp(level),
     )
 
     /**
@@ -44,6 +61,7 @@ data class SettingsDraft(
         showOffsetMs = showOffsetMs,
         inputLatencyMs = latencyMs,
         latencyCalibrated = latencyCalibrated,
+        micThresholdLevel = micThresholdLevel,
     )
 
     /** True when Save would change something, so the button can say so. */
@@ -56,6 +74,7 @@ data class SettingsDraft(
             showOffsetMs = settings.showOffsetMs,
             latencyMs = settings.inputLatencyMs,
             latencyCalibrated = settings.latencyCalibrated,
+            micThresholdLevel = settings.micThresholdLevel,
         )
     }
 }

@@ -130,6 +130,10 @@
     <string name="settings_latency_measured">Measured on this device and output.</string>
     <string name="settings_latency_guessed">Not measured yet: a guess for the speaker path.</string>
     <string name="settings_calibrate">Calibrate…</string>
+    <string name="settings_latency_note">Drag to set it by hand, or calibrate to measure it.</string>
+    <string name="settings_gate_label">Microphone gate</string>
+    <string name="settings_gate_value">%1$d dB</string>
+    <string name="settings_gate_note">Quieter sounds than this are ignored. Set it on the calibration screen.</string>
 
     <!-- Calibration screen -->
     <string name="calibration_title">CALIBRATION</string>
@@ -151,6 +155,18 @@
     <string name="calibration_skipped">%1$d warm-up strokes ignored.</string>
     <string name="calibration_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
     <string name="calibration_permission_body">Calibration needs the microphone to hear your strokes.</string>
+    <string name="calibration_complete">Enough strokes. The round stopped by itself: use this value, or reset to measure again.</string>
+    <string name="calibration_gate_title">MICROPHONE GATE</string>
+    <string name="calibration_gate_label">Gate</string>
+    <string name="calibration_gate_value">%1$d dB</string>
+    <string name="calibration_gate_measure">Measure the gate</string>
+    <string name="calibration_gate_cancel">Stop measuring</string>
+    <string name="calibration_gate_hint">The mark on the bar is the gate: anything quieter is ignored, in calibration and in a level. Drag it just above the room, or measure it.</string>
+    <string name="calibration_gate_silence">Keep quiet for a moment: listening to the room.</string>
+    <string name="calibration_gate_strokes">Now play %2$d strokes at your normal loudness (%1$d of %2$d).</string>
+    <string name="calibration_gate_measured">Room %1$d dB, your strokes %2$d dB. The gate sits between them.</string>
+    <string name="calibration_gate_too_noisy">The room is almost as loud as your strokes. Move somewhere quieter, or set the gate by hand.</string>
+    <string name="calibration_meter_cd">Microphone level with the gate mark</string>
 
     <!-- Practice result screen -->
     <string name="practice_result_passed">LEVEL PASSED</string>

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
 import com.rudimentor.app.ui.component.BackButton
 import com.rudimentor.app.ui.component.RudiChip
+import com.rudimentor.app.audio.MicThreshold
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import kotlin.math.roundToInt
@@ -232,6 +233,7 @@ private val MEAN_HEIGHT = 24.dp
 fun PracticeMicMeter(
     envelope: Float,
     threshold: Float,
+    gate: Float,
     modifier: Modifier = Modifier,
 ) {
     val cd = stringResource(R.string.practice_mic_cd)
@@ -254,7 +256,10 @@ fun PracticeMicMeter(
                     color = RudiColors.SurfaceAlt,
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2f),
                 )
-                val level = envelope.coerceIn(0f, 1f)
+                // Logarithmic, like the calibration meter: on the old linear bar an
+                // envelope of 0.012 was under a pixel, which is why the noise that was
+                // being scored in the dev.37 log was invisible here (decision 158).
+                val level = MicThreshold.toFraction(envelope)
                 if (level > 0f) {
                     drawRoundRect(
                         color = if (envelope >= threshold) RudiColors.BrickLit else RudiColors.Line,
@@ -262,12 +267,20 @@ fun PracticeMicMeter(
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2f),
                     )
                 }
-                val thresholdX = size.width * threshold.coerceIn(0f, 1f)
+                val thresholdX = size.width * MicThreshold.toFraction(threshold)
                 drawLine(
                     color = RudiColors.Muted,
                     start = Offset(thresholdX, 0f),
                     end = Offset(thresholdX, size.height),
                     strokeWidth = 1f,
+                )
+                // The gate the learner set: everything left of it is thrown away.
+                val gateX = size.width * MicThreshold.toFraction(gate)
+                drawLine(
+                    color = RudiColors.Brick,
+                    start = Offset(gateX, 0f),
+                    end = Offset(gateX, size.height),
+                    strokeWidth = 3f,
                 )
             }
         }

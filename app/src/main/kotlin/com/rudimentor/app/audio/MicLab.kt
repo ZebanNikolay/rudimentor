@@ -42,6 +42,12 @@ class MicLab(
             val offsetMs: Float,
             val envelope: Float,
             val threshold: Float,
+            /**
+             * Whether the onset passed the loudness gate of [MicThreshold]. A quiet onset
+             * is still reported -- the calibration meter and the log want to see the room
+             * noise -- but it must not be measured as a stroke (decision 158).
+             */
+            val loud: Boolean,
         ) : MicLabEvent
     }
 
@@ -58,6 +64,7 @@ class MicLab(
         val clickAudible: Boolean = false,
         val sensitivity: Float = DEFAULT_SENSITIVITY,
         val inputLatencyMs: Float = DEFAULT_LATENCY_MS,
+        val micThresholdLevel: Float = MicThreshold.MIN_LEVEL,
         val hitCount: Int = 0,
         val meanOffsetMs: Float = 0f,
         val stdDevMs: Float = 0f,
@@ -114,6 +121,7 @@ class MicLab(
         _status.value = Status(
             bpm = _status.value.bpm,
             sensitivity = _status.value.sensitivity,
+            micThresholdLevel = _status.value.micThresholdLevel,
             inputLatencyMs = _status.value.inputLatencyMs,
             clickAudible = _status.value.clickAudible,
         )
@@ -136,11 +144,25 @@ class MicLab(
         _status.value = _status.value.copy(sensitivity = clamped)
     }
 
+    /**
+     * Sets the loudness gate quiet onsets are dropped by (decision 158). Zero disables it,
+     * which is what the threshold probe needs while it is listening to the room.
+     */
+    fun setMicThresholdLevel(level: Float) {
+        _status.value = _status.value.copy(micThresholdLevel = MicThreshold.clamp(level))
+    }
+
     fun setInputLatencyMs(value: Float) {
         val clamped = value.coerceIn(-100f, 300f)
         native.setInputLatencyMillis(clamped)
         _status.value = _status.value.copy(inputLatencyMs = clamped)
     }
+
+    /**
+     * The native stream numbers, as [PracticeSession.streamInfo] reports them for an
+     * attempt. The calibration log states the audio path it measured (decision 157).
+     */
+    fun streamInfo(): NativeMicLab.StreamInfo = native.streamInfo()
 
     fun resetStats() {
         recentOffsets.clear()
@@ -163,6 +185,7 @@ class MicLab(
         val framesPerMs = snapshot.sampleRate / 1000f
         val bpm = _status.value.bpm
         val framesPerBeat = if (bpm > 0) snapshot.sampleRate * 60.0 / bpm else 0.0
+        val gate = _status.value.micThresholdLevel
         if (framesPerMs > 0f) {
             for (hit in hitScratch) {
                 val nearest = nearestTick(hit.frame, framesPerBeat)
@@ -170,7 +193,8 @@ class MicLab(
                 val nearestIndex = nearest?.index ?: -1L
                 val deltaFrames = (hit.frame - nearestFrame).toFloat()
                 val offsetMs = deltaFrames / framesPerMs
-                addOffset(offsetMs)
+                val loud = MicThreshold.passes(hit.envelope, gate)
+                if (loud) addOffset(offsetMs)
                 _events.emit(
                     MicLabEvent.Hit(
                         frame = hit.frame,
@@ -179,6 +203,7 @@ class MicLab(
                         offsetMs = offsetMs,
                         envelope = hit.envelope,
                         threshold = hit.threshold,
+                        loud = loud,
                     )
                 )
             }

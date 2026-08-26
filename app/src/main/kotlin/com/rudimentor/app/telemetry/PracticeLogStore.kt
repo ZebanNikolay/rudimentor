@@ -29,6 +29,7 @@ object PracticeLogStore {
 
     private const val DIRECTORY = "telemetry"
     private const val PREFIX = "attempt-"
+    private const val CALIBRATION_PREFIX = "calib-"
     private const val TEXT_SUFFIX = ".txt"
     private const val JSON_SUFFIX = ".jsonl"
 
@@ -51,11 +52,23 @@ object PracticeLogStore {
      * composition: everything after this happens on the log thread.
      */
     fun save(context: Context, telemetry: PracticeTelemetry) {
-        val directory = File(context.filesDir, DIRECTORY)
         val header = telemetry.header
         val base = PREFIX + stamp() + "-" + slug(header.levelId) + "-" + slug(header.rank)
-        val summary = telemetry.summary()
-        val body = telemetry.jsonLines()
+        queue(context, base, telemetry.summary(), telemetry.jsonLines())
+    }
+
+    /**
+     * Queues one calibration round for writing. A round lands in the same folder and the
+     * same list as the attempts, so a learner who is unsure whether the measurement worked
+     * shares it exactly the way they share an attempt (decision 157).
+     */
+    fun saveCalibration(context: Context, telemetry: CalibrationTelemetry) {
+        queue(context, CALIBRATION_PREFIX + stamp(), telemetry.summary(), telemetry.jsonLines())
+    }
+
+    /** Writes one summary and its body on the log thread, then prunes the folder. */
+    private fun queue(context: Context, base: String, summary: String, body: List<String>) {
+        val directory = File(context.filesDir, DIRECTORY)
         writer.execute {
             runCatching {
                 if (!directory.exists() && !directory.mkdirs()) return@runCatching
