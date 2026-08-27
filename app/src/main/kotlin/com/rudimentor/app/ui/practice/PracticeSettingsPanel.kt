@@ -49,6 +49,12 @@ fun PracticeSettingsPanel(
     onDone: () -> Unit,
 ) {
     var draft by remember { mutableStateOf(SettingsDraft.from(settings)) }
+    // Instant apply, as on the settings screen: a change here is a change made, and Done
+    // only closes the drawer (decision 166).
+    val update: (SettingsDraft) -> Unit = {
+        draft = it
+        onApply(it)
+    }
     SettingsPanel(
         title = stringResource(R.string.practice_settings_title),
         buildLabel = buildInfo.displayLabel,
@@ -70,7 +76,7 @@ fun PracticeSettingsPanel(
         SettingsSwitchRow(
             label = stringResource(R.string.practice_click_label),
             checked = draft.effectiveClickAudible(headphonesConnected),
-            onCheckedChange = { draft = draft.withClickAudible(it) },
+            onCheckedChange = { update(draft.withClickAudible(it)) },
         )
         if (draft.clickFollowsHeadphones) {
             SettingsNote(text = stringResource(R.string.practice_click_auto_note))
@@ -84,7 +90,7 @@ fun PracticeSettingsPanel(
             SettingsGap()
             RudiButton(
                 text = stringResource(R.string.practice_click_auto_restore),
-                onClick = { draft = draft.copy(clickFollowsHeadphones = true) },
+                onClick = { update(draft.copy(clickFollowsHeadphones = true)) },
                 style = RudiButtonStyle.Secondary,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -101,20 +107,13 @@ fun PracticeSettingsPanel(
         SettingsSwitchRow(
             label = stringResource(R.string.practice_offset_ms_label),
             checked = draft.showOffsetMs,
-            onCheckedChange = { draft = draft.copy(showOffsetMs = it) },
+            onCheckedChange = { update(draft.copy(showOffsetMs = it)) },
         )
         SettingsNote(text = stringResource(R.string.practice_offset_ms_note))
         SettingsGap()
-        if (draft.differsFrom(settings)) {
-            SettingsNote(text = stringResource(R.string.settings_unsaved_note))
-            SettingsGap()
-        }
         RudiButton(
             text = stringResource(R.string.practice_settings_done),
-            onClick = {
-                onApply(draft)
-                onDone()
-            },
+            onClick = onDone,
             style = RudiButtonStyle.Secondary,
             modifier = Modifier.fillMaxWidth(),
         )

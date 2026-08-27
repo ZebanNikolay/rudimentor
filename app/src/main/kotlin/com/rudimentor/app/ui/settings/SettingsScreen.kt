@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,10 +59,15 @@ import kotlin.math.roundToInt
 /**
  * The settings of the app, off the main menu.
  *
- * Everything on this screen is edited in a [SettingsDraft] and written nowhere until the
- * learner presses Save; Cancel, the back arrow and the system back gesture all drop the
- * draft (decision 154). The drawer during an attempt keeps the same contract, so a
- * setting is never changed by accident in either place.
+ * Every change on this screen takes effect at once, the way the system settings of the phone
+ * behave, and the back arrow simply closes it. There is no Save and no Cancel: the earlier
+ * draft-and-Save contract (decision 154) meant a measurement taken on the calibration screen
+ * had to be confirmed a second time on this one, so it produced two buttons for one
+ * intention and a caption under each explaining the other (decision 166). A change here is
+ * one tap to make and one tap to undo, so there is nothing a transaction protects.
+ *
+ * The drawer during an attempt behaves the same way, so a setting means the same thing in
+ * both places.
  *
  * The latency can be dragged as well as measured. Calibration is the honest way to get it,
  * but a learner who knows their headphones -- or wants to check what 30 ms more feels like --
@@ -74,22 +80,20 @@ import kotlin.math.roundToInt
 @Composable
 fun SettingsScreen(
     draft: SettingsDraft,
-    settings: AppSettings,
     headphonesConnected: Boolean,
     currentOutput: OutputDevice?,
     buildInfo: BuildInfo,
     onDraftChange: (SettingsDraft) -> Unit,
     onCalibrate: () -> Unit,
-    onSave: () -> Unit,
-    onCancel: () -> Unit,
+    onClose: () -> Unit,
 ) {
-    BackHandler { onCancel() }
+    BackHandler { onClose() }
 
     ToolbarScreen(
         toolbar = {
             AppToolbar(
                 title = stringResource(R.string.settings_title),
-                onBack = onCancel,
+                onBack = onClose,
             )
         },
     ) {
@@ -143,24 +147,6 @@ fun SettingsScreen(
 
         }
 
-        Spacer(modifier = Modifier.height(22.dp))
-        if (draft.differsFrom(settings)) {
-            SettingsNote(text = stringResource(R.string.settings_unsaved_note))
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            RudiButton(
-                text = stringResource(R.string.settings_save),
-                onClick = onSave,
-                modifier = Modifier.weight(1f),
-            )
-            RudiButton(
-                text = stringResource(R.string.settings_cancel),
-                onClick = onCancel,
-                style = RudiButtonStyle.Secondary,
-                modifier = Modifier.weight(1f),
-            )
-        }
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
@@ -243,15 +229,20 @@ private fun OutputProfilePanel(
         }
 
         SettingsGap()
+        // The dragged number lives here until the finger lifts, then it is stored once.
+        var draggedLatencyMs by remember(draft.latencyMs) {
+            mutableFloatStateOf(draft.latencyMs)
+        }
         SettingsSliderRow(
             label = stringResource(R.string.settings_latency_label),
             valueLabel = stringResource(
                 R.string.practice_latency_value,
-                draft.latencyMs.roundToInt(),
+                draggedLatencyMs.roundToInt(),
             ),
-            value = draft.latencyMs,
+            value = draggedLatencyMs,
             valueRange = 0f..AppSettings.LATENCY_MAX_MS,
-            onValueChange = { onDraftChange(draft.withLatency(it)) },
+            onValueChange = { draggedLatencyMs = it },
+            onValueChangeFinished = { onDraftChange(draft.withLatency(draggedLatencyMs)) },
         )
         SettingsNote(
             text = stringResource(

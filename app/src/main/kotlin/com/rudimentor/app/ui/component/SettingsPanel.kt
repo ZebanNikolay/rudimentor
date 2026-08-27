@@ -108,6 +108,12 @@ fun SettingsSliderRow(
     valueRange: ClosedFloatingPointRange<Float>,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Called once the finger leaves the track. Settings take effect as they are changed,
+     * so a slider that writes on every frame would write a hundred times per drag
+     * (decision 166); the caller keeps the dragged value and stores it here.
+     */
+    onValueChangeFinished: (() -> Unit)? = null,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -129,6 +135,7 @@ fun SettingsSliderRow(
         Slider(
             value = value,
             onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
             colors = SliderDefaults.colors(
                 thumbColor = RudiColors.Text,

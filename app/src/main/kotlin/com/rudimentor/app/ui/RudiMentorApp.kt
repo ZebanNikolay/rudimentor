@@ -304,18 +304,17 @@ fun RudiMentorApp(
                 } else {
                     SettingsScreen(
                         draft = draft,
-                        settings = settings,
                         headphonesConnected = headphonesConnected,
                         currentOutput = currentOutput,
                         buildInfo = buildInfo,
-                        onDraftChange = { settingsDraft = it },
-                        onCalibrate = { screenName = Screen.Calibration.name },
-                        onSave = {
-                            onApplyDraft(draft)
-                            settingsDraft = null
-                            screenName = Screen.Levels.name
+                        // Instant apply: a switch flipped here is a switch changed, with no
+                        // Save to remember and nothing to lose on the way out (decision 166).
+                        onDraftChange = {
+                            settingsDraft = it
+                            onApplyDraft(it)
                         },
-                        onCancel = {
+                        onCalibrate = { screenName = Screen.Calibration.name },
+                        onClose = {
                             settingsDraft = null
                             screenName = Screen.Levels.name
                         },
@@ -333,10 +332,10 @@ fun RudiMentorApp(
                     ?: settings.selectedProfile.name,
                 buildInfo = buildInfo,
                 onApply = { measuredMs, measuredSkewMs, micThreshold ->
-                    // Apply stores. A measurement that only reached the draft needed a
-                    // second Save on the settings screen to survive, and a dev.40 attempt
-                    // played with the previous 123 ms after a fresh 190 ms measurement was
-                    // applied and lost. One press, one meaning (decision 165).
+                    // The screen stores as it measures, and stays open: a finished round is
+                    // the act of choosing the number, so there is nothing left to confirm.
+                    // A dev.40 attempt played with the previous 123 ms because a fresh
+                    // 190 ms measurement waited for a Save that never came (decision 166).
                     val applied = (settingsDraft ?: SettingsDraft.from(settings))
                         .withMicThreshold(micThreshold)
                         .let { draft ->
@@ -348,7 +347,6 @@ fun RudiMentorApp(
                         }
                     settingsDraft = applied
                     onApplyDraft(applied)
-                    screenName = Screen.Settings.name
                 },
                 onBack = { screenName = Screen.Settings.name },
             )

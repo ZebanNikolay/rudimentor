@@ -139,7 +139,6 @@
     <string name="settings_title">SETTINGS</string>
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
-    <string name="settings_unsaved_note">Not saved yet. Save keeps these changes, Cancel drops them.</string>
     <string name="settings_latency_label">Latency compensation</string>
     <string name="settings_latency_measured">Measured on this device and output.</string>
     <string name="settings_latency_guessed">Not measured yet: a guess for the speaker path.</string>
@@ -174,9 +173,6 @@
     <string name="calibration_start">Start</string>
     <string name="calibration_stop">Stop</string>
     <string name="calibration_reset">Reset</string>
-    <string name="calibration_apply">Save</string>
-    <string name="calibration_apply_note">Saved right here. The settings screen needs no second Save.</string>
-    <string name="calibration_apply_nothing">Measure a step, or move a slider, and this becomes available.</string>
     <string name="calibration_strokes_label">Strokes</string>
     <string name="calibration_strokes_value">%1$d of %2$d</string>
     <string name="calibration_roundtrip_label">Round trip</string>

@@ -87,8 +87,12 @@ import kotlin.math.roundToInt
  * the practice log, so a round the learner is unsure about can be read afterwards instead of
  * guessed at (decision 157).
  *
- * The screen never writes a setting itself. Apply hands both numbers back to the settings
- * screen, which holds them in its draft until the learner says Save.
+ * Nothing here asks to be saved. A finished measurement and the loudness gate are written
+ * into the selected output profile as soon as they exist, the way the system settings of the
+ * phone behave. The screen used to end in an Apply button that only filled the settings
+ * draft, so a measurement was lost unless the learner also pressed Save one screen later --
+ * two buttons for one intention, and a caption under each explaining the other
+ * (decision 166).
  */
 @Composable
 fun CalibrationScreen(
@@ -134,6 +138,9 @@ fun CalibrationScreen(
     // Stream-start skew of the run the measurement is taken in, saved with the number
     // (decision 164).
     var measuredSkewMs by remember { mutableStateOf<Float?>(null) }
+    // Guards against writing the same number twice on every recomposition.
+    var storedMedianMs by remember { mutableStateOf<Float?>(null) }
+    var storedThreshold by remember { mutableFloatStateOf(MicThreshold.clamp(micThresholdLevel)) }
 
     // One log per visit to the screen: every probe, start, stroke, stop and reset lands in
     // it, and it is written to disk when the learner applies a value or walks away.
@@ -538,51 +545,40 @@ fun CalibrationScreen(
             SettingsNote(text = stringResource(R.string.calibration_audio_failed))
         }
 
-        // The gate alone is worth applying: a learner who only fixed the noise should
-        // not have to measure the latency too in order to keep it.
-        val canApply = mode == CalibrationMode.Idle &&
-            (reading.ready || threshold != MicThreshold.clamp(micThresholdLevel))
-        Spacer(modifier = Modifier.height(22.dp))
-        RudiButton(
-            text = stringResource(R.string.calibration_apply),
-            onClick = {
-                val median = reading.medianMs
-                DevLog.log(
-                    "calibration",
-                    "applied gate $threshold, latency ${median?.roundToInt() ?: -1} ms " +
-                        "from ${reading.samples.size} strokes " +
-                        "spread ±${reading.spreadMs.roundToInt()} ms",
-                )
-                stopRound(CalibrationTelemetry.REASON_STOPPED)
-                cancelProbe()
-                telemetry.thresholdApplied(
-                    atMs = elapsedMs(),
-                    level = threshold,
-                    source = if (probeResult == null) SOURCE_SLIDER else SOURCE_PROBE,
-                )
-                if (median != null) {
-                    telemetry.applied(
-                        atMs = elapsedMs(),
-                        medianMs = median,
-                        spreadMs = reading.spreadMs,
-                        samples = reading.samples.size,
-                    )
-                }
-                saveLog()
-                onApply(median, measuredSkewMs, threshold)
-            },
-            enabled = canApply,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        // The button stores. It used to say Apply and only filled the settings draft, so the
-        // screen after it still asked for a Save and a measurement could be lost between the
-        // two (decision 165).
-        SettingsNote(
-            text = stringResource(
-                if (canApply) R.string.calibration_apply_note else R.string.calibration_apply_nothing,
-            ),
-        )
+        // A finished round is stored the moment it finishes: the number is a measurement,
+        // not a preference to be weighed, and the round is the act of choosing it.
+        val measuredMs = reading.medianMs
+        LaunchedEffect(measuredMs, reading.ready, mode) {
+            if (mode != CalibrationMode.Idle) return@LaunchedEffect
+            if (!reading.ready || measuredMs == null) return@LaunchedEffect
+            if (storedMedianMs == measuredMs) return@LaunchedEffect
+            storedMedianMs = measuredMs
+            DevLog.log(
+                "calibration",
+                "stored latency ${measuredMs.roundToInt()} ms from ${reading.samples.size} " +
+                    "strokes spread ±${reading.spreadMs.roundToInt()} ms",
+            )
+            telemetry.applied(
+                atMs = elapsedMs(),
+                medianMs = measuredMs,
+                spreadMs = reading.spreadMs,
+                samples = reading.samples.size,
+            )
+            onApply(measuredMs, measuredSkewMs, threshold)
+        }
+        // The gate follows a dragged slider too, once the finger has been still for a
+        // moment, so a drag is one write instead of a hundred.
+        LaunchedEffect(threshold) {
+            if (threshold == storedThreshold) return@LaunchedEffect
+            delay(GATE_STORE_DELAY_MS)
+            storedThreshold = threshold
+            telemetry.thresholdApplied(
+                atMs = elapsedMs(),
+                level = threshold,
+                source = if (probeResult == null) SOURCE_SLIDER else SOURCE_PROBE,
+            )
+            onApply(null, null, threshold)
+        }
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
@@ -710,7 +706,10 @@ private fun logStamp(): String =
 /** Above this scatter the median is not worth trusting, and the screen says so. */
 private const val WIDE_SPREAD_MS = 40f
 
-/** How the applied gate came to be, as the log records it. */
+/** A dragged gate settles before it is written, so one drag is one write. */
+private const val GATE_STORE_DELAY_MS = 400L
+
+/** How the stored gate came to be, as the log records it. */
 private const val SOURCE_PROBE = "probe"
 private const val SOURCE_SLIDER = "slider"
 
