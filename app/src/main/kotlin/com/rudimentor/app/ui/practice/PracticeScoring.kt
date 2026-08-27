@@ -248,6 +248,13 @@ data class PracticeResult(
     val accuracy: Float,
     val meanOffsetMs: Float,
     val offsets: List<Float>,
+    /**
+     * How late the audio path reported the strokes of this run, after the attempt measured it
+     * on itself ([LatencyTracker]). This is what the stored latency of the output profile is
+     * retuned by once the attempt ends, so the next run starts where this one finished
+     * (decision 167).
+     */
+    val latencyBiasMs: Float = 0f,
     /** Windows the attempt was judged against, so the plots can colour by them. */
     val windows: HitWindows = HitWindows.Default,
 ) {
@@ -279,6 +286,7 @@ data class PracticeResult(
             accuracy = 0f,
             meanOffsetMs = 0f,
             offsets = emptyList(),
+            latencyBiasMs = 0f,
         )
     }
 }

@@ -1,6 +1,7 @@
 package com.rudimentor.app.data
 
 import com.rudimentor.app.audio.MicThreshold
+import kotlin.math.abs
 
 /**
  * The settings the user is editing right now, before they have said Save.
@@ -135,6 +136,23 @@ data class SettingsDraft(
      */
     fun withLatency(latencyMs: Float): SettingsDraft = withCalibration(latencyMs)
 
+    /**
+     * The draft retuned by what the last attempt measured on itself.
+     *
+     * A calibration round measures the round trip of *that* engine start; the next start over
+     * Bluetooth can be tens of milliseconds away from it, which is why a calibrated run still
+     * read every stroke +55 ms late in dev.41. The attempt measures its own bias while it is
+     * judging, and here it goes back into the profile, so the next run starts where the last
+     * one ended instead of on a number from another day (decision 167).
+     *
+     * Movements under [BIAS_APPLY_MIN_MS] are left alone: below that it is the player's own
+     * scatter, not the audio path.
+     */
+    fun withLatencyBias(biasMs: Float): SettingsDraft {
+        if (biasMs.isNaN() || abs(biasMs) < BIAS_APPLY_MIN_MS) return this
+        return withCalibration(latencyMs + biasMs, selectedProfile.calibrationSkewMs)
+    }
+
     /** The draft with a new microphone gate, set by hand or measured (decision 158). */
     fun withMicThreshold(level: Float): SettingsDraft = copy(
         micThresholdLevel = MicThreshold.clamp(level),
@@ -182,6 +200,12 @@ data class SettingsDraft(
         applyTo(settings) != settings.sanitized()
 
     companion object {
+        /**
+         * Smallest self-measured bias worth writing back. A steady player scatters a few
+         * milliseconds around zero either way, and the stored latency must not chase that.
+         */
+        const val BIAS_APPLY_MIN_MS = 4f
+
         fun from(settings: AppSettings): SettingsDraft = SettingsDraft(
             clickAudible = settings.clickAudible,
             clickFollowsHeadphones = settings.clickFollowsHeadphones,

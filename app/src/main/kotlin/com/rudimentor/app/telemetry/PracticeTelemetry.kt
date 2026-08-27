@@ -58,6 +58,12 @@ data class TelemetryHeader(
      */
     val calibrationSkewMs: Float? = null,
     val sensitivity: Float,
+    /**
+     * The loudness gate in force during the run. A stroke below it never reaches the score,
+     * so the summary states it next to the levels of the strokes that passed and the ones it
+     * refused (decision 167).
+     */
+    val micThresholdLevel: Float = Float.NaN,
     val clickAudible: Boolean,
     val headphones: Boolean,
     val audio: TelemetryAudio?,
@@ -111,6 +117,28 @@ class PracticeTelemetry(
      */
     private val driftOffsets = ArrayList<Float>(64)
 
+    /**
+     * Distance from the note of every judged stroke *before* the run's own latency bias was
+     * taken out, in playing order.
+     *
+     * This is the one series that separates the phone from the player: the graded offsets are
+     * corrected and therefore always look centred, while these say what the audio path really
+     * delivered and how it moved during the run. The summary prints their median per group of
+     * [PROFILE_GROUP] strokes, which is how a run like dev.41 -- +115 ms at the start, +30 ms at
+     * the end, spread only 25 ms -- names itself in one line instead of ten iterations
+     * (decision 167).
+     */
+    private val rawOffsets = ArrayList<Float>(64)
+
+    /** Envelope of every accepted stroke and of every one the gate refused. */
+    private val hitEnvelopes = ArrayList<Float>(64)
+    private val quietEnvelopes = ArrayList<Float>(32)
+
+    /** The latency bias the attempt measured on itself, and how it got there. */
+    private var biasMs = Float.NaN
+    private var biasCapturedMs = Float.NaN
+    private var biasSamples = 0
+
     private var result: PracticeResult? = null
     private var finalAudio: TelemetryAudio? = null
     private var aborted = false
@@ -131,6 +159,7 @@ class PracticeTelemetry(
          */
         extraOffsetMs: Float = Float.NaN,
     ) {
+        hitEnvelopes.add(envelope)
         val json = TelemetryJson("hit")
             .num("atMs", atMs)
             .num("env", envelope, ENVELOPE_DIGITS)
@@ -140,10 +169,14 @@ class PracticeTelemetry(
             is HitOutcome.Judged -> {
                 judged += 1
                 driftOffsets.add(outcome.judgement.offsetMs)
+                if (!outcome.rawOffsetMs.isNaN()) rawOffsets.add(outcome.rawOffsetMs)
                 json.text("outcome", "judged")
                     .int("note", outcome.noteIndex)
                     .text("window", outcome.judgement.window.name)
                     .num("offsetMs", outcome.judgement.offsetMs)
+                    // What the audio path delivered, before the self-tuning took the run's
+                    // systematic lateness out of it (decision 167).
+                    .num("rawOffsetMs", outcome.rawOffsetMs)
             }
 
             is HitOutcome.Extra -> {
@@ -194,6 +227,27 @@ class PracticeTelemetry(
     }
 
     /**
+     * The self-tuning of this run: how late the audio path reports the strokes, measured by the
+     * attempt itself rather than by the calibration screen.
+     *
+     * Written when the capture phase closes and whenever the tracked value moves a step, so the
+     * log shows both the number and its drift (decision 167).
+     */
+    fun latencyBias(atMs: Float, biasMs: Float, samples: Int, phase: String) {
+        this.biasMs = biasMs
+        this.biasSamples = samples
+        if (phase == PHASE_CAPTURE) biasCapturedMs = biasMs
+        add(
+            TelemetryJson("bias")
+                .num("atMs", atMs)
+                .num("biasMs", biasMs)
+                .int("strokes", samples)
+                .text("phase", phase)
+                .done(),
+        )
+    }
+
+    /**
      * An onset the loudness gate refused, with the numbers that decided it.
      *
      * The dev.37 log had no such line, so room noise at envelope 0.012 was
@@ -201,6 +255,7 @@ class PracticeTelemetry(
      */
     fun quiet(atMs: Float, envelope: Float, threshold: Float, gate: Float) {
         quiet += 1
+        quietEnvelopes.add(envelope)
         add(
             TelemetryJson("quiet")
                 .num("atMs", atMs)
@@ -267,6 +322,7 @@ class PracticeTelemetry(
                 .int("maxCombo", result.maxCombo)
                 .num("meanOffsetMs", result.meanOffsetMs)
                 .num("spreadMs", spreadMs(result.offsets))
+                .num("latencyBiasMs", result.latencyBiasMs)
                 .done(),
         )
     }
@@ -373,6 +429,35 @@ class PracticeTelemetry(
                     "spread ${ms(spreadMs(driftOffsets))} · ${driftOffsets.size} strokes"
             },
         )
+        // What the audio path itself delivered, and what the run did about it. These two lines
+        // are the whole diagnosis of a timing complaint: the first says how wrong the round trip
+        // was and whether it moved, the second says what the attempt corrected it by
+        // (decision 167).
+        lines.add(
+            if (rawOffsets.isEmpty()) {
+                "raw no strokes"
+            } else {
+                "raw median ${signed(medianOf(rawOffsets) ?: 0f)} · " +
+                    "spread ${ms(spreadMs(rawOffsets))} · " +
+                    "profile ${profileOf(rawOffsets)} (per $PROFILE_GROUP)"
+            },
+        )
+        lines.add(
+            if (biasMs.isNaN()) {
+                "self-tune not engaged"
+            } else {
+                "self-tune bias ${signed(biasMs)} · " +
+                    "captured ${signed(biasCapturedMs)} · $biasSamples strokes · " +
+                    "latency ${ms(header.latencyMs)} → ${ms(header.latencyMs + biasMs)}"
+            },
+        )
+        // The gate is the other way a steady run loses notes: a stroke it refused never
+        // reaches the score at all, so its levels belong next to the ones that passed.
+        lines.add(
+            "gate ${decimal(header.micThresholdLevel, ACCURACY_DIGITS)} · " +
+                "hits ${envelopeRange(hitEnvelopes)} · " +
+                "refused $quiet ${envelopeRange(quietEnvelopes)}",
+        )
         if (aborted) lines.add("ABORTED at ${ms(abortedAtMs)}")
         return lines.joinToString(separator = "\n")
     }
@@ -429,7 +514,9 @@ class PracticeTelemetry(
         .num("okMs", header.okMs)
         .num("latencyMs", header.latencyMs)
         .bool("latencyCalibrated", header.latencyCalibrated)
+        .num("calibrationSkewMs", header.calibrationSkewMs ?: Float.NaN)
         .num("sensitivity", header.sensitivity, ACCURACY_DIGITS)
+        .num("micGate", header.micThresholdLevel, LEVEL_DIGITS)
         .bool("clickAudible", header.clickAudible)
         .done()
 
@@ -440,6 +527,35 @@ class PracticeTelemetry(
         private const val OFFSET_DIGITS = 1
         private const val ENVELOPE_DIGITS = 4
         private const val ACCURACY_DIGITS = 3
+
+        /**
+         * Strokes per group of the raw-offset profile. Eight is two bars of quarters: enough
+         * to average a player's own scatter out, short enough to show a drift moving
+         * (decision 167).
+         */
+        const val PROFILE_GROUP = 8
+
+        /** Phase names of the self-tuning, as they appear in the log. */
+        const val PHASE_CAPTURE = "capture"
+        const val PHASE_TRACK = "track"
+
+        /**
+         * Median of every group of [PROFILE_GROUP] offsets, in playing order: "+115 / +88 /
+         * +60 / +34" is a drifting audio path, "+58 / +55 / +60 / +57" is a constant one that
+         * the calibration simply got wrong. One line, and the two are no longer confusable.
+         */
+        fun profileOf(offsets: List<Float>): String =
+            offsets.chunked(PROFILE_GROUP)
+                .map { group -> signed(medianOf(group) ?: 0f).removeSuffix(" ms") }
+                .joinToString(separator = " / ")
+
+        /** Loudest and quietest of a set of envelopes, for the gate line. */
+        fun envelopeRange(levels: List<Float>): String =
+            if (levels.isEmpty()) {
+                "none"
+            } else {
+                "${decimal(levels.min(), LEVEL_DIGITS)}..${decimal(levels.max(), LEVEL_DIGITS)}"
+            }
 
         /** Standard deviation of the offsets: how wide the timing scattered. */
         fun spreadMs(offsets: List<Float>): Float {

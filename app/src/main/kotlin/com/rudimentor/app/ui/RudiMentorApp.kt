@@ -240,6 +240,23 @@ fun RudiMentorApp(
                                         "stars=${result.stars} passed=${result.passed}",
                                 )
                                 onAttemptFinished(level, practiceRank, result)
+                                // The attempt measured the round trip of this very run while
+                                // it was judging; that number goes back into the output
+                                // profile, so the next run does not repeat the same
+                                // systematic lateness (decision 167).
+                                val current = settingsDraft ?: SettingsDraft.from(settings)
+                                val tuned = current.withLatencyBias(result.latencyBiasMs)
+                                if (tuned != current) {
+                                    DevLog.log(
+                                        "practice",
+                                        "self-tuned latency " +
+                                            "${current.latencyMs.roundToInt()} -> " +
+                                            "${tuned.latencyMs.roundToInt()} ms " +
+                                            "(bias ${result.latencyBiasMs.roundToInt()} ms)",
+                                    )
+                                    if (settingsDraft != null) settingsDraft = tuned
+                                    onApplyDraft(tuned)
+                                }
                                 practiceResult = result
                                 screenName = Screen.PracticeResult.name
                             },

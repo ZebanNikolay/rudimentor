@@ -141,7 +141,9 @@ fun PracticeScreen(
     // carries the windows of its own density, so a dense block does not tighten the sparse
     // beats of the same attempt (decision 151).
     val windows = remember(notes) { attemptWindowsFor(notes) }
-    val attempt = remember(notes) { PracticeAttempt(notes, windows) }
+    // A live latency tracker: this run measures its own round trip while judging
+    // (decision 167), instead of trusting a number measured on another engine start.
+    val attempt = remember(notes) { PracticeAttempt(notes, windows, LatencyTracker()) }
     val minIntervalMs = remember(notes) { minNoteIntervalMs(notes) ?: 0f }
     // One collector per attempt, created when the engine starts and written once the
     // run is over: a screen that is only opened and left behind logs nothing.
@@ -235,6 +237,11 @@ fun PracticeScreen(
         // hundreds of milliseconds and it drifts, so a jump belongs in the log next
         // to the strokes it moved (decision 147).
         var loggedLatencyMs = -1f
+        // The self-measured bias of this run (decision 167): logged when the capture phase
+        // closes and whenever tracking moves it a step, so the log carries the number the
+        // judging actually used, not just the calibrated one it started from.
+        var loggedBiasMs = Float.NaN
+        var loggedCaptured = false
         while (true) {
             val poll = session.poll()
             envelope = poll.envelope
@@ -300,6 +307,23 @@ fun PracticeScreen(
                             Float.NaN
                         },
                     )
+                    val bias = attempt.latency
+                    val moved = loggedBiasMs.isNaN() ||
+                        abs(bias.biasMs - loggedBiasMs) >= LatencyTracker.LOG_STEP_MS
+                    if (moved || bias.captured != loggedCaptured) {
+                        loggedBiasMs = bias.biasMs
+                        loggedCaptured = bias.captured
+                        log?.latencyBias(
+                            atMs = hit.positionMs,
+                            biasMs = bias.biasMs,
+                            samples = bias.sampleCount,
+                            phase = if (bias.captured) {
+                                PracticeTelemetry.PHASE_TRACK
+                            } else {
+                                PracticeTelemetry.PHASE_CAPTURE
+                            },
+                        )
+                    }
                 }
                 // Everything the gate threw away is still written down: it is the only way
                 // to tell "the room is too loud" from "the detector is deaf" afterwards.
@@ -494,6 +518,7 @@ fun PracticeScreen(
                                 latencyCalibrated = latencyCalibrated,
                                 calibrationSkewMs = calibrationSkewMs,
                                 sensitivity = MicLab.DEFAULT_SENSITIVITY,
+                                micThresholdLevel = micThresholdLevel,
                                 clickAudible = clickAudible,
                                 headphones = headphonesConnected,
                                 audio = session.streamInfo().toTelemetry(),

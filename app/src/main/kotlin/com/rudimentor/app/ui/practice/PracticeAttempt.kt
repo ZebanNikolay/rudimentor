@@ -227,8 +227,18 @@ fun nearestNoteOffsetMs(notes: List<PracticeNote>, atMs: Float): Float {
 
 /** What became of one detected stick hit. */
 sealed interface HitOutcome {
-    /** The hit was matched to a note and graded. */
-    data class Judged(val noteIndex: Int, val judgement: NoteJudgement) : HitOutcome
+    /**
+     * The hit was matched to a note and graded.
+     *
+     * [rawOffsetMs] is the distance before the run's own latency bias was taken out, i.e. what
+     * the audio path actually delivered. The log records both: the graded offset says how well
+     * the stroke was played, the raw one says how wrong the round trip still is (decision 167).
+     */
+    data class Judged(
+        val noteIndex: Int,
+        val judgement: NoteJudgement,
+        val rawOffsetMs: Float = Float.NaN,
+    ) : HitOutcome
 
     /** The hit landed too far from any open note and was charged as an extra. */
     data class Extra(val positionMs: Float) : HitOutcome
@@ -250,6 +260,12 @@ sealed interface HitOutcome {
 class PracticeAttempt(
     val notes: List<PracticeNote>,
     val windows: AttemptWindows = AttemptWindows.uniform(HitWindows.Default),
+    /**
+     * Self-calibration of this run: the attempt keeps its own estimate of how late the audio
+     * path reports a stroke, instead of trusting the number the calibration screen measured in
+     * a different engine start (decision 167).
+     */
+    val latency: LatencyTracker = LatencyTracker.disabled(),
 ) {
     /** A level of one density: every note judged by the same windows. */
     constructor(notes: List<PracticeNote>, windows: HitWindows) :
@@ -323,13 +339,21 @@ class PracticeAttempt(
             return HitOutcome.Debounced(gapMs = gap)
         }
         lastHitMs = positionMs
-        val note = nearestOpenNote(positionMs)
+        // Matching runs on the judging clock: the bias of this run is taken out first, and
+        // while it is still being captured the search gets that much extra slack, or the
+        // opening strokes would be charged as extras for a latency nobody has measured yet.
+        val adjusted = latency.adjust(positionMs)
+        val note = nearestOpenNote(adjusted, slackMs = latency.slackMs)
         if (note == null) {
-            extrasInternal.add(positionMs)
+            extrasInternal.add(adjusted)
             combo = 0
-            return HitOutcome.Extra(positionMs = positionMs)
+            return HitOutcome.Extra(positionMs = adjusted)
         }
-        val offset = positionMs - note.timeMs
+        val rawOffset = positionMs - note.timeMs
+        // The stroke updates the estimate before it is graded, so a run whose round trip is
+        // 60 ms off does not spend its first bar in the OK window.
+        latency.observe(rawOffsetMs = rawOffset, windowMs = windows.forNote(note.index).okMs)
+        val offset = rawOffset - latency.biasMs
         val window = windows.forNote(note.index).window(offset)
         val judgement = NoteJudgement(offsetMs = offset, window = window)
         judgementsInternal[note.index] = judgement
@@ -341,7 +365,11 @@ class PracticeAttempt(
         combo += 1
         maxCombo = maxOf(maxCombo, combo)
         advanceCursor()
-        return HitOutcome.Judged(noteIndex = note.index, judgement = judgement)
+        return HitOutcome.Judged(
+            noteIndex = note.index,
+            judgement = judgement,
+            rawOffsetMs = rawOffset,
+        )
     }
 
     /**
@@ -353,6 +381,9 @@ class PracticeAttempt(
      */
     fun expireMissedNotes(positionMs: Float): List<Int> {
         val missed = ArrayList<Int>()
+        // Same clock the hits are matched on, slack included: a note must not expire while the
+        // run is still measuring how late its own strokes arrive (decision 167).
+        val adjusted = latency.adjust(positionMs) - latency.slackMs
         var index = cursor
         while (index < notes.size) {
             val note = notes[index]
@@ -363,7 +394,7 @@ class PracticeAttempt(
             // Each note expires by its own window (decision 151), and stopping at the first
             // one still open is still correct: a window never reaches past the next note
             // (`OK_INTERVAL_SHARE`), so the notes expire in the order they are played.
-            if (positionMs <= note.timeMs + windows.forNote(index).okMs +
+            if (adjusted <= note.timeMs + windows.forNote(index).okMs +
                 PracticeScoring.EXPIRE_GRACE_MS
             ) {
                 break
@@ -375,7 +406,7 @@ class PracticeAttempt(
                 judgedCount += 1
                 combo = 0
                 lastJudged = judgementsInternal[index]
-                lastJudgedAtMs = positionMs
+                lastJudgedAtMs = adjusted
                 missed.add(index)
             }
             index += 1
@@ -421,6 +452,7 @@ class PracticeAttempt(
                 offsetsInternal.average().toFloat()
             },
             offsets = offsetsInternal.toList(),
+            latencyBiasMs = latency.biasMs,
             // The scale of the result screen has to hold every offset of the attempt, so it
             // is drawn with the widest windows the attempt had (decision 151).
             windows = windows.widest,
@@ -437,7 +469,7 @@ class PracticeAttempt(
      * The nearest note inside the OK window that has not been judged yet. Scanning
      * forward from the cursor keeps a double stroke from stealing the same note twice.
      */
-    private fun nearestOpenNote(positionMs: Float): PracticeNote? {
+    private fun nearestOpenNote(positionMs: Float, slackMs: Float = 0f): PracticeNote? {
         var best: PracticeNote? = null
         var bestDistance = Float.MAX_VALUE
         var index = cursor
@@ -446,9 +478,9 @@ class PracticeAttempt(
             val distance = abs(positionMs - note.timeMs)
             // The widest window bounds the scan; whether a note is in reach is then decided
             // by its own window (decision 151).
-            if (note.timeMs - positionMs > windows.widest.okMs) break
+            if (note.timeMs - positionMs > windows.widest.okMs + slackMs) break
             if (judgementsInternal[index] == null &&
-                distance <= windows.forNote(index).okMs &&
+                distance <= windows.forNote(index).okMs + slackMs &&
                 distance < bestDistance
             ) {
                 best = note

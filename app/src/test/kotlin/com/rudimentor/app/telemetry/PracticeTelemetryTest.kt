@@ -105,7 +105,7 @@ class PracticeTelemetryTest {
         )
         val summary = telemetry.summary()
         val lines = summary.lines()
-        assertEquals(8, lines.size)
+        assertEquals(11, lines.size)
         assertTrue(lines.none { it.isBlank() })
         assertTrue(summary.contains("48000 Hz"))
         assertTrue(summary.contains("xruns 0/2"))
@@ -116,6 +116,10 @@ class PracticeTelemetryTest {
         assertTrue(summary.contains("output latency not reported"))
         // No stroke was fed in, so the drift line has to say that instead of a zero.
         assertTrue(summary.contains("drift no strokes"))
+        // The self-tuning of the run states itself even when it never engaged (decision 167).
+        assertTrue(summary.contains("raw no strokes"))
+        assertTrue(summary.contains("self-tune not engaged"))
+        assertTrue(summary.contains("refused 0 none"))
     }
 
     @Test
