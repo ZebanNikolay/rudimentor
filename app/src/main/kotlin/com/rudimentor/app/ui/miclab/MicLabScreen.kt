@@ -23,10 +23,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
@@ -55,6 +53,7 @@ import androidx.core.content.ContextCompat
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.ui.component.AppToolbar
+import com.rudimentor.app.ui.component.ToolbarScreen
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.ui.util.OnBackgrounded
@@ -152,14 +151,9 @@ fun MicLabScreen(
         onBack()
     }
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 18.dp, vertical = 10.dp),
-        ) {
+    ToolbarScreen(
+        toolbarGap = 14,
+        toolbar = {
             AppToolbar(
                 title = "MIC LAB",
                 onBack = {
@@ -174,69 +168,68 @@ fun MicLabScreen(
                     )
                 },
             )
+        },
+    ) {
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            if (!micGranted) {
-                PermissionGate(
-                    onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
-                )
-                return@Column
-            }
-
-            TrackHeader(
-                title = "Metronome",
-                subtitle = "${status.bpm} BPM",
+        if (!micGranted) {
+            PermissionGate(
+                onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
             )
-            TickTrack(
-                ticks = ticks,
-                tickCount = status.tickCount,
-                periodMs = 60_000f / status.bpm.toFloat().coerceAtLeast(1f),
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            TrackHeader(
-                title = "Your hits",
-                subtitle = if (status.hitCount == 0) "waiting…"
-                else "mean %+.1f ms  •  σ %.1f ms  •  n=%d".format(
-                    status.meanOffsetMs, status.stdDevMs, status.hitCount,
-                ),
-            )
-            HitTrack(hits = hits)
-
-            Spacer(modifier = Modifier.height(10.dp))
-            OffsetLegend()
-
-            Spacer(modifier = Modifier.height(18.dp))
-            ControlsCard(
-                status = status,
-                onBpm = micLab::setBpm,
-                onSensitivity = micLab::setSensitivity,
-                onLatency = micLab::setInputLatencyMs,
-                onClickAudible = micLab::setClickAudible,
-                onReset = {
-                    hits.clear()
-                    ticks.clear()
-                    micLab.resetStats()
-                },
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-            HudCard(status = status)
-
-            Spacer(modifier = Modifier.height(18.dp))
-            LastHitsList(hits = hits)
-
-            Spacer(modifier = Modifier.height(20.dp))
-            HorizontalDivider(color = RudiColors.Line)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "${buildInfo.displayLabel} · mic lab preview",
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.Muted,
-            )
+            return@ToolbarScreen
         }
+
+        TrackHeader(
+            title = "Metronome",
+            subtitle = "${status.bpm} BPM",
+        )
+        TickTrack(
+            ticks = ticks,
+            tickCount = status.tickCount,
+            periodMs = 60_000f / status.bpm.toFloat().coerceAtLeast(1f),
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        TrackHeader(
+            title = "Your hits",
+            subtitle = if (status.hitCount == 0) "waiting…"
+            else "mean %+.1f ms  •  σ %.1f ms  •  n=%d".format(
+                status.meanOffsetMs, status.stdDevMs, status.hitCount,
+            ),
+        )
+        HitTrack(hits = hits)
+
+        Spacer(modifier = Modifier.height(10.dp))
+        OffsetLegend()
+
+        Spacer(modifier = Modifier.height(18.dp))
+        ControlsCard(
+            status = status,
+            onBpm = micLab::setBpm,
+            onSensitivity = micLab::setSensitivity,
+            onLatency = micLab::setInputLatencyMs,
+            onClickAudible = micLab::setClickAudible,
+            onReset = {
+                hits.clear()
+                ticks.clear()
+                micLab.resetStats()
+            },
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+        HudCard(status = status)
+
+        Spacer(modifier = Modifier.height(18.dp))
+        LastHitsList(hits = hits)
+
+        Spacer(modifier = Modifier.height(20.dp))
+        HorizontalDivider(color = RudiColors.Line)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "${buildInfo.displayLabel} · mic lab preview",
+            style = RudiTextStyles.RowNumber,
+            color = RudiColors.Muted,
+        )
     }
 }
 

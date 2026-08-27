@@ -18,9 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -47,6 +45,7 @@ import com.rudimentor.app.telemetry.CalibrationHeader
 import com.rudimentor.app.telemetry.CalibrationTelemetry
 import com.rudimentor.app.telemetry.PracticeLogStore
 import com.rudimentor.app.ui.component.AppToolbar
+import com.rudimentor.app.ui.component.ToolbarScreen
 import com.rudimentor.app.ui.component.MicLevelMeter
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
@@ -370,211 +369,205 @@ fun CalibrationScreen(
 
     BackHandler { leave() }
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 18.dp, vertical = 10.dp),
-        ) {
+    ToolbarScreen(
+        toolbar = {
             AppToolbar(
                 title = stringResource(R.string.calibration_title),
                 onBack = { leave() },
             )
-            Spacer(modifier = Modifier.height(16.dp))
+        },
+    ) {
 
-            if (!micGranted) {
-                PermissionGate(
-                    onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
-                )
-                return@Column
-            }
-
-            Text(
-                text = stringResource(R.string.calibration_intro),
-                style = MaterialTheme.typography.bodyMedium,
-                color = RudiColors.Muted,
+        if (!micGranted) {
+            PermissionGate(
+                onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            return@ToolbarScreen
+        }
 
-            SettingsPanel(title = stringResource(R.string.calibration_step1_title)) {
-                StepIntro(text = stringResource(R.string.calibration_step1_intro))
+        Text(
+            text = stringResource(R.string.calibration_intro),
+            style = MaterialTheme.typography.bodyMedium,
+            color = RudiColors.Muted,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        SettingsPanel(title = stringResource(R.string.calibration_step1_title)) {
+            StepIntro(text = stringResource(R.string.calibration_step1_intro))
+            SettingsGap()
+            MicLevelMeter(
+                envelope = status.envelope,
+                peak = peak,
+                thresholdLevel = threshold,
+                contentDescription = stringResource(R.string.calibration_meter_cd),
+            )
+            SettingsGap()
+            SettingsSliderRow(
+                label = stringResource(R.string.calibration_gate_label),
+                valueLabel = stringResource(
+                    R.string.calibration_gate_value,
+                    MicThreshold.decibels(threshold).roundToInt(),
+                ),
+                value = MicThreshold.toFraction(threshold),
+                valueRange = 0f..1f,
+                onValueChange = { threshold = MicThreshold.fromFraction(it) },
+            )
+            SettingsGap()
+            GateHint(mode = mode, strokes = probeStrokes, result = probeResult)
+            SettingsGap()
+            RudiButton(
+                text = stringResource(
+                    if (mode == CalibrationMode.ProbeNoise ||
+                        mode == CalibrationMode.ProbeStrokes
+                    ) {
+                        R.string.calibration_gate_cancel
+                    } else {
+                        R.string.calibration_gate_measure
+                    },
+                ),
+                onClick = {
+                    if (mode == CalibrationMode.Idle) startProbe() else cancelProbe()
+                },
+                style = RudiButtonStyle.Secondary,
+                enabled = mode != CalibrationMode.Latency,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        Spacer(modifier = Modifier.height(22.dp))
+
+        SettingsPanel(title = stringResource(R.string.calibration_step2_title)) {
+            StepIntro(text = stringResource(R.string.calibration_step2_intro))
+            SettingsGap()
+            SettingsValueRow(
+                label = stringResource(R.string.calibration_strokes_label),
+                value = stringResource(
+                    R.string.calibration_strokes_value,
+                    reading.samples.size,
+                    LatencyCalibration.MAX_SAMPLES,
+                ),
+            )
+            SettingsGap()
+            SettingsValueRow(
+                label = stringResource(R.string.calibration_roundtrip_label),
+                value = reading.medianMs?.let {
+                    stringResource(R.string.practice_latency_value, it.roundToInt())
+                } ?: stringResource(R.string.calibration_pending),
+            )
+            SettingsGap()
+            SettingsValueRow(
+                label = stringResource(R.string.calibration_spread_label),
+                value = if (reading.ready) {
+                    stringResource(
+                        R.string.calibration_spread_value,
+                        reading.spreadMs.roundToInt(),
+                    )
+                } else {
+                    stringResource(R.string.calibration_pending)
+                },
+            )
+            SettingsGap()
+            if (stalled) {
+                SettingsNote(text = stringResource(R.string.calibration_stalled))
                 SettingsGap()
-                MicLevelMeter(
-                    envelope = status.envelope,
-                    peak = peak,
-                    thresholdLevel = threshold,
-                    contentDescription = stringResource(R.string.calibration_meter_cd),
-                )
-                SettingsGap()
-                SettingsSliderRow(
-                    label = stringResource(R.string.calibration_gate_label),
-                    valueLabel = stringResource(
-                        R.string.calibration_gate_value,
-                        MicThreshold.decibels(threshold).roundToInt(),
-                    ),
-                    value = MicThreshold.toFraction(threshold),
-                    valueRange = 0f..1f,
-                    onValueChange = { threshold = MicThreshold.fromFraction(it) },
-                )
-                SettingsGap()
-                GateHint(mode = mode, strokes = probeStrokes, result = probeResult)
-                SettingsGap()
+            }
+            CalibrationHint(
+                reading = reading,
+                quietStrokes = quietStrokes,
+                strayStrokes = strayStrokes,
+            )
+            SettingsGap()
+            SettingsNote(text = stringResource(R.string.calibration_step2_profile, profileName))
+            SettingsGap()
+            SettingsNote(text = stringResource(R.string.calibration_step2_gate))
+            SettingsGap()
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 RudiButton(
                     text = stringResource(
-                        if (mode == CalibrationMode.ProbeNoise ||
-                            mode == CalibrationMode.ProbeStrokes
-                        ) {
-                            R.string.calibration_gate_cancel
+                        if (mode == CalibrationMode.Latency) {
+                            R.string.calibration_stop
                         } else {
-                            R.string.calibration_gate_measure
+                            R.string.calibration_start
                         },
                     ),
                     onClick = {
-                        if (mode == CalibrationMode.Idle) startProbe() else cancelProbe()
+                        if (mode == CalibrationMode.Latency) {
+                            stopRound(CalibrationTelemetry.REASON_STOPPED)
+                        } else {
+                            startRound()
+                        }
+                    },
+                    // A finished round has to be reset before it can measure again,
+                    // otherwise Start would come up on a counter that is already full.
+                    enabled = when (mode) {
+                        CalibrationMode.Latency -> true
+                        CalibrationMode.Idle -> !reading.complete
+                        else -> false
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+                RudiButton(
+                    text = stringResource(R.string.calibration_reset),
+                    onClick = {
+                        telemetry.reset(elapsedMs(), reading.samples.size)
+                        quietStrokes = 0
+                        strayStrokes = 0
+                        calibration.reset()
+                        micLab.resetStats()
+                        reading = calibration.reading()
                     },
                     style = RudiButtonStyle.Secondary,
-                    enabled = mode != CalibrationMode.Latency,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                 )
             }
-
-            Spacer(modifier = Modifier.height(22.dp))
-
-            SettingsPanel(title = stringResource(R.string.calibration_step2_title)) {
-                StepIntro(text = stringResource(R.string.calibration_step2_intro))
-                SettingsGap()
-                SettingsValueRow(
-                    label = stringResource(R.string.calibration_strokes_label),
-                    value = stringResource(
-                        R.string.calibration_strokes_value,
-                        reading.samples.size,
-                        LatencyCalibration.MAX_SAMPLES,
-                    ),
-                )
-                SettingsGap()
-                SettingsValueRow(
-                    label = stringResource(R.string.calibration_roundtrip_label),
-                    value = reading.medianMs?.let {
-                        stringResource(R.string.practice_latency_value, it.roundToInt())
-                    } ?: stringResource(R.string.calibration_pending),
-                )
-                SettingsGap()
-                SettingsValueRow(
-                    label = stringResource(R.string.calibration_spread_label),
-                    value = if (reading.ready) {
-                        stringResource(
-                            R.string.calibration_spread_value,
-                            reading.spreadMs.roundToInt(),
-                        )
-                    } else {
-                        stringResource(R.string.calibration_pending)
-                    },
-                )
-                SettingsGap()
-                if (stalled) {
-                    SettingsNote(text = stringResource(R.string.calibration_stalled))
-                    SettingsGap()
-                }
-                CalibrationHint(
-                    reading = reading,
-                    quietStrokes = quietStrokes,
-                    strayStrokes = strayStrokes,
-                )
-                SettingsGap()
-                SettingsNote(text = stringResource(R.string.calibration_step2_profile, profileName))
-                SettingsGap()
-                SettingsNote(text = stringResource(R.string.calibration_step2_gate))
-                SettingsGap()
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    RudiButton(
-                        text = stringResource(
-                            if (mode == CalibrationMode.Latency) {
-                                R.string.calibration_stop
-                            } else {
-                                R.string.calibration_start
-                            },
-                        ),
-                        onClick = {
-                            if (mode == CalibrationMode.Latency) {
-                                stopRound(CalibrationTelemetry.REASON_STOPPED)
-                            } else {
-                                startRound()
-                            }
-                        },
-                        // A finished round has to be reset before it can measure again,
-                        // otherwise Start would come up on a counter that is already full.
-                        enabled = when (mode) {
-                            CalibrationMode.Latency -> true
-                            CalibrationMode.Idle -> !reading.complete
-                            else -> false
-                        },
-                        modifier = Modifier.weight(1f),
-                    )
-                    RudiButton(
-                        text = stringResource(R.string.calibration_reset),
-                        onClick = {
-                            telemetry.reset(elapsedMs(), reading.samples.size)
-                            quietStrokes = 0
-                            strayStrokes = 0
-                            calibration.reset()
-                            micLab.resetStats()
-                            reading = calibration.reading()
-                        },
-                        style = RudiButtonStyle.Secondary,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-
-            if (audioFailed) {
-                Spacer(modifier = Modifier.height(12.dp))
-                SettingsNote(text = stringResource(R.string.calibration_audio_failed))
-            }
-
-            // The gate alone is worth applying: a learner who only fixed the noise should
-            // not have to measure the latency too in order to keep it.
-            val canApply = mode == CalibrationMode.Idle &&
-                (reading.ready || threshold != MicThreshold.clamp(micThresholdLevel))
-            Spacer(modifier = Modifier.height(22.dp))
-            RudiButton(
-                text = stringResource(R.string.calibration_apply),
-                onClick = {
-                    val median = reading.medianMs
-                    DevLog.log(
-                        "calibration",
-                        "applied gate $threshold, latency ${median?.roundToInt() ?: -1} ms " +
-                            "from ${reading.samples.size} strokes " +
-                            "spread ±${reading.spreadMs.roundToInt()} ms",
-                    )
-                    stopRound(CalibrationTelemetry.REASON_STOPPED)
-                    cancelProbe()
-                    telemetry.thresholdApplied(
-                        atMs = elapsedMs(),
-                        level = threshold,
-                        source = if (probeResult == null) SOURCE_SLIDER else SOURCE_PROBE,
-                    )
-                    if (median != null) {
-                        telemetry.applied(
-                            atMs = elapsedMs(),
-                            medianMs = median,
-                            spreadMs = reading.spreadMs,
-                            samples = reading.samples.size,
-                        )
-                    }
-                    saveLog()
-                    onApply(median, threshold)
-                },
-                enabled = canApply,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (!canApply) {
-                Spacer(modifier = Modifier.height(8.dp))
-                SettingsNote(text = stringResource(R.string.calibration_apply_nothing))
-            }
-            Spacer(modifier = Modifier.height(24.dp))
         }
+
+        if (audioFailed) {
+            Spacer(modifier = Modifier.height(12.dp))
+            SettingsNote(text = stringResource(R.string.calibration_audio_failed))
+        }
+
+        // The gate alone is worth applying: a learner who only fixed the noise should
+        // not have to measure the latency too in order to keep it.
+        val canApply = mode == CalibrationMode.Idle &&
+            (reading.ready || threshold != MicThreshold.clamp(micThresholdLevel))
+        Spacer(modifier = Modifier.height(22.dp))
+        RudiButton(
+            text = stringResource(R.string.calibration_apply),
+            onClick = {
+                val median = reading.medianMs
+                DevLog.log(
+                    "calibration",
+                    "applied gate $threshold, latency ${median?.roundToInt() ?: -1} ms " +
+                        "from ${reading.samples.size} strokes " +
+                        "spread ±${reading.spreadMs.roundToInt()} ms",
+                )
+                stopRound(CalibrationTelemetry.REASON_STOPPED)
+                cancelProbe()
+                telemetry.thresholdApplied(
+                    atMs = elapsedMs(),
+                    level = threshold,
+                    source = if (probeResult == null) SOURCE_SLIDER else SOURCE_PROBE,
+                )
+                if (median != null) {
+                    telemetry.applied(
+                        atMs = elapsedMs(),
+                        medianMs = median,
+                        spreadMs = reading.spreadMs,
+                        samples = reading.samples.size,
+                    )
+                }
+                saveLog()
+                onApply(median, threshold)
+            },
+            enabled = canApply,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (!canApply) {
+            Spacer(modifier = Modifier.height(8.dp))
+            SettingsNote(text = stringResource(R.string.calibration_apply_nothing))
+        }
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
