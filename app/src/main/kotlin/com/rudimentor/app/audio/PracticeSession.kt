@@ -247,22 +247,15 @@ class PracticeSession(
         if (anchorOutputLatencyMs == null && outputLatencyMs > 0f) {
             anchorOutputLatencyMs = outputLatencyMs
         }
-        // The skew of this run is already gone from every hit frame -- the native drain
-        // re-anchors by it. A calibrated round trip was measured in a run with its own skew,
-        // so it is short by the difference of the two: a calibration taken while the output
-        // stream was slow to spin up (high skew) under-measures the round trip, and the
-        // dev.39 log showed exactly that -- 123 ms measured against strokes landing 145 ms
-        // late, no matter how often it was recalibrated (decision 164).
+        // The skew of this run is kept for the log only. Correcting the trim by the
+        // difference between it and the skew of the calibration run was tried in dev.40 and
+        // the field data refused it: two runs 552 ms apart in skew were late by 145 ms and
+        // 135 ms, so the residual does not follow the skew at all and subtracting the
+        // difference would have thrown a run half a second off (decision 165).
         streamSkewMs = snapshot.streamSkewMs
-        val calibrationSkew = calibrationSkewMs
-        val skewCorrectionMs = if (latencyCalibrated && calibrationSkew != null) {
-            calibrationSkew - streamSkewMs
-        } else {
-            0f
-        }
         val target = if (latencyCalibrated) {
             (
-                baseLatencyMs + skewCorrectionMs +
+                baseLatencyMs +
                     (outputLatencyMs - (anchorOutputLatencyMs ?: outputLatencyMs))
                 ).coerceIn(LATENCY_TRIM_MIN_MS, LATENCY_TRIM_MAX_MS)
         } else {

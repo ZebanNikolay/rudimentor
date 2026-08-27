@@ -333,17 +333,21 @@ fun RudiMentorApp(
                     ?: settings.selectedProfile.name,
                 buildInfo = buildInfo,
                 onApply = { measuredMs, measuredSkewMs, micThreshold ->
-                    // Straight into the draft: the numbers are stored only if the settings
-                    // screen is then saved (decision 154).
-                    settingsDraft = settingsDraft
-                        ?.withMicThreshold(micThreshold)
-                        ?.let { draft ->
+                    // Apply stores. A measurement that only reached the draft needed a
+                    // second Save on the settings screen to survive, and a dev.40 attempt
+                    // played with the previous 123 ms after a fresh 190 ms measurement was
+                    // applied and lost. One press, one meaning (decision 165).
+                    val applied = (settingsDraft ?: SettingsDraft.from(settings))
+                        .withMicThreshold(micThreshold)
+                        .let { draft ->
                             if (measuredMs == null) {
                                 draft
                             } else {
                                 draft.withCalibration(measuredMs, measuredSkewMs)
                             }
                         }
+                    settingsDraft = applied
+                    onApplyDraft(applied)
                     screenName = Screen.Settings.name
                 },
                 onBack = { screenName = Screen.Settings.name },

@@ -274,6 +274,14 @@ fun PracticeScreen(
                 }
                 val now = poll.positionMs
                 positionMs = now
+                // Judging runs on its own clock, a whole compensation behind the picture.
+                // A hit is reported at `arrival - appliedLatency`, so with 184 ms of
+                // compensation a stroke that landed dead on the note only reaches the
+                // attempt 184 ms after the note's window has passed on the render clock:
+                // the dev.40 field log shows a +0 ms stroke charged as an extra while its
+                // note dropped as a miss. Notes therefore expire by this clock, never by
+                // the render one (decision 165).
+                val judgeNowMs = now - poll.appliedLatencyMs
                 val log = telemetry.value
                 poll.hits.forEach { hit ->
                     if (hit.positionMs < firstJudgedMs) return@forEach
@@ -303,11 +311,11 @@ fun PracticeScreen(
                         gate = micThresholdLevel,
                     )
                 }
-                attempt.expireMissedNotes(now).forEach { index ->
-                    log?.miss(atMs = now, noteIndex = index)
+                attempt.expireMissedNotes(judgeNowMs).forEach { index ->
+                    log?.miss(atMs = judgeNowMs, noteIndex = index)
                 }
                 frame += 1
-                if (now > endMs) {
+                if (judgeNowMs > endMs) {
                     val result = attempt.result()
                     closeTelemetry(
                         context = context,
