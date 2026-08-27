@@ -574,10 +574,15 @@ fun CalibrationScreen(
             enabled = canApply,
             modifier = Modifier.fillMaxWidth(),
         )
-        if (!canApply) {
-            Spacer(modifier = Modifier.height(8.dp))
-            SettingsNote(text = stringResource(R.string.calibration_apply_nothing))
-        }
+        Spacer(modifier = Modifier.height(8.dp))
+        // The button stores. It used to say Apply and only filled the settings draft, so the
+        // screen after it still asked for a Save and a measurement could be lost between the
+        // two (decision 165).
+        SettingsNote(
+            text = stringResource(
+                if (canApply) R.string.calibration_apply_note else R.string.calibration_apply_nothing,
+            ),
+        )
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
