@@ -68,6 +68,13 @@ class MicLab(
         val hitCount: Int = 0,
         val meanOffsetMs: Float = 0f,
         val stdDevMs: Float = 0f,
+        /**
+         * Stream-start skew of this run, in milliseconds. Every hit frame is re-anchored by
+         * it, so a round trip measured here is only worth as much as the skew it was
+         * measured under: calibration stores it alongside the number so the attempt that
+         * follows can correct for its own skew (decision 164).
+         */
+        val streamSkewMs: Float = 0f,
     )
 
     private val _events = MutableSharedFlow<MicLabEvent>(
@@ -234,6 +241,7 @@ class MicLab(
             hitCount = recentOffsets.size,
             meanOffsetMs = mean,
             stdDevMs = stdDev,
+            streamSkewMs = snapshot.streamSkewMs,
         )
     }
 

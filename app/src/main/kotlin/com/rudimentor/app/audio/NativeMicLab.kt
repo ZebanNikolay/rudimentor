@@ -48,6 +48,13 @@ class NativeMicLab {
          * no timestamps, so no compensation is possible (decision 147).
          */
         val outputLatencyMs: Float = 0f,
+        /**
+         * How far the input frame counter had already advanced when the output stream
+         * fired its first callback, in milliseconds. Hits are re-anchored by it, and it
+         * differs from run to run over Bluetooth, so a calibrated round trip only holds
+         * in another run once the difference of the two skews is corrected (decision 164).
+         */
+        val streamSkewMs: Float = 0f,
     )
 
     /**
@@ -99,7 +106,7 @@ class NativeMicLab {
         val index: Long,
     )
 
-    private val snapshotBuffer = IntArray(13)
+    private val snapshotBuffer = IntArray(14)
     private val streamInfoBuffer = IntArray(14)
     private val hitBuffer = LongArray(HIT_DRAIN_CAPACITY * 3)
     private val tickBuffer = LongArray(TICK_DRAIN_CAPACITY * 2)
@@ -140,6 +147,7 @@ class NativeMicLab {
             clickAudible = snapshotBuffer[8] != 0,
             running = snapshotBuffer[9] != 0,
             outputLatencyMs = snapshotBuffer[12] / 1_000f,
+            streamSkewMs = snapshotBuffer[13] / 1_000f,
         )
     }
 

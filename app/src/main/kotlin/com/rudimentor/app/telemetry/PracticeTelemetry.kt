@@ -51,6 +51,12 @@ data class TelemetryHeader(
      * default. A late run only means something once this is known (decision 154).
      */
     val latencyCalibrated: Boolean,
+    /**
+     * Stream-start skew that held while [latencyMs] was measured, or null when unknown.
+     * Together with the skew of this run it says how much of the round trip the engine's own
+     * re-anchoring already removed, which is the difference decision 164 corrects for.
+     */
+    val calibrationSkewMs: Float? = null,
     val sensitivity: Float,
     val clickAudible: Boolean,
     val headphones: Boolean,
@@ -94,6 +100,16 @@ class PracticeTelemetry(
     private var maxOutputLatencyMs = Float.NaN
     private var lastOutputLatencyMs = Float.NaN
     private var lastAppliedLatencyMs = Float.NaN
+    private var lastStreamSkewMs = Float.NaN
+
+    /**
+     * Distance from the nearest note of every stroke the attempt saw, judged or extra.
+     *
+     * The scored offsets cover judged strokes only, so an attempt that was late everywhere
+     * scored no notes at all and reported "timing mean 0 ms · 0 offsets" -- the one number
+     * that would have named the problem was missing from the dev.39 log (decision 164).
+     */
+    private val driftOffsets = ArrayList<Float>(64)
 
     private var result: PracticeResult? = null
     private var finalAudio: TelemetryAudio? = null
@@ -123,6 +139,7 @@ class PracticeTelemetry(
         when (outcome) {
             is HitOutcome.Judged -> {
                 judged += 1
+                driftOffsets.add(outcome.judgement.offsetMs)
                 json.text("outcome", "judged")
                     .int("note", outcome.noteIndex)
                     .text("window", outcome.judgement.window.name)
@@ -131,6 +148,7 @@ class PracticeTelemetry(
 
             is HitOutcome.Extra -> {
                 extras += 1
+                if (!extraOffsetMs.isNaN()) driftOffsets.add(extraOffsetMs)
                 json.text("outcome", "extra").num("offsetMs", extraOffsetMs)
             }
 
@@ -149,10 +167,16 @@ class PracticeTelemetry(
      * Written only when it moved: the poll loop runs every few milliseconds and the log
      * is meant to be read by a human.
      */
-    fun latency(atMs: Float, outputLatencyMs: Float, appliedMs: Float) {
+    fun latency(
+        atMs: Float,
+        outputLatencyMs: Float,
+        appliedMs: Float,
+        streamSkewMs: Float = Float.NaN,
+    ) {
         latencySamples += 1
         lastOutputLatencyMs = outputLatencyMs
         lastAppliedLatencyMs = appliedMs
+        lastStreamSkewMs = streamSkewMs
         if (minOutputLatencyMs.isNaN() || outputLatencyMs < minOutputLatencyMs) {
             minOutputLatencyMs = outputLatencyMs
         }
@@ -164,6 +188,7 @@ class PracticeTelemetry(
                 .num("atMs", atMs)
                 .num("outputMs", outputLatencyMs)
                 .num("appliedMs", appliedMs)
+                .num("skewMs", streamSkewMs)
                 .done(),
         )
     }
@@ -283,7 +308,9 @@ class PracticeTelemetry(
             "windows perfect ±${ms(header.perfectMs)} / good ±${ms(header.goodMs)} / " +
                 "ok ±${ms(header.okMs)} · " +
                 "latency ${ms(header.latencyMs)} " +
-                "(${if (header.latencyCalibrated) "measured" else "guessed"}) · " +
+                "(${if (header.latencyCalibrated) "measured" else "guessed"}" +
+                (header.calibrationSkewMs?.let { " at skew ${ms(it)}" } ?: "") +
+                ") · " +
                 "click ${onOff(header.clickAudible)} · " +
                 "headphones ${yesNo(header.headphones)} · " +
                 "sensitivity ${decimal(header.sensitivity, ACCURACY_DIGITS)}",
@@ -331,7 +358,19 @@ class PracticeTelemetry(
                 "output latency ${ms(lastOutputLatencyMs)} " +
                     "(${minOutputLatencyMs.roundToInt()}..${ms(maxOutputLatencyMs)}, " +
                     "drift ${ms(maxOutputLatencyMs - minOutputLatencyMs)}) · " +
-                    "applied ${ms(lastAppliedLatencyMs)} · $latencySamples changes"
+                    "applied ${ms(lastAppliedLatencyMs)} · " +
+                    "skew ${ms(lastStreamSkewMs)} · $latencySamples changes"
+            },
+        )
+        // Every stroke against its nearest note, extras included. A run that is late
+        // everywhere says so here even when it scored nothing at all (decision 164).
+        val drift = medianOf(driftOffsets)
+        lines.add(
+            if (drift == null) {
+                "drift no strokes"
+            } else {
+                "drift median ${signed(drift)} · " +
+                    "spread ${ms(spreadMs(driftOffsets))} · ${driftOffsets.size} strokes"
             },
         )
         if (aborted) lines.add("ABORTED at ${ms(abortedAtMs)}")
@@ -412,6 +451,21 @@ class PracticeTelemetry(
                 sum += delta * delta
             }
             return sqrt(sum / offsets.size).toFloat()
+        }
+
+        /**
+         * Middle of the offsets, or null when there are none. A median and not a mean: a
+         * couple of wild strokes must not move the number a correction is read off.
+         */
+        fun medianOf(offsets: List<Float>): Float? {
+            if (offsets.isEmpty()) return null
+            val sorted = offsets.sorted()
+            val middle = sorted.size / 2
+            return if (sorted.size % 2 == 1) {
+                sorted[middle]
+            } else {
+                (sorted[middle - 1] + sorted[middle]) / 2f
+            }
         }
 
         /** Envelope levels are small: three decimals is what tells 0.012 from 0.02. */

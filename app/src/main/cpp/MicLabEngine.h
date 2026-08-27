@@ -89,6 +89,17 @@ public:
          * 0 means "the device gave us no timestamps", i.e. no compensation.
          */
         float outputLatencyMs;
+        /**
+         * Stream-start skew in milliseconds: how far the input frame counter had
+         * already advanced when the output stream produced its first callback.
+         * `drainHits` subtracts it from every hit frame to put hits on the output
+         * clock, and it is not a constant -- over Bluetooth the output stream can
+         * take a good fraction of a second to spin up, so two runs of the same
+         * headphones get different skews. A round trip calibrated in one run is
+         * therefore only valid in another run once the difference of the two skews
+         * is corrected for (decision 164), which is why it is published here.
+         */
+        float streamSkewMs;
     };
 
     MicLabEngine();

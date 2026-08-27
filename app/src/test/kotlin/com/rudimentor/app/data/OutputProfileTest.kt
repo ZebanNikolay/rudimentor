@@ -174,6 +174,34 @@ class OutputProfileTest {
     }
 
     @Test
+    fun `the skew of a measurement is stored with it and survives a round trip`() {
+        val draft = SettingsDraft.from(AppSettings())
+            .withAddedProfile(bluetooth, now = 7L)
+            .withCalibration(268f, calibrationSkewMs = 145f)
+        assertEquals(145f, draft.selectedProfile.calibrationSkewMs!!, 0.001f)
+        val restored = parseProfiles(draft.outputProfiles.serialize(), 0f, false)
+        assertEquals(draft.outputProfiles, restored)
+    }
+
+    @Test
+    fun `a hand-moved slider stores no skew, so nothing is corrected for it`() {
+        val draft = SettingsDraft.from(AppSettings())
+            .withAddedProfile(bluetooth, now = 7L)
+            .withCalibration(268f, calibrationSkewMs = 145f)
+            .withLatency(200f)
+        assertEquals(null, draft.selectedProfile.calibrationSkewMs)
+    }
+
+    @Test
+    fun `a profile stored before skews were recorded still loads`() {
+        val old = "default~Built-in~d~~20.0~1~0"
+        val restored = parseProfiles(old, 0f, false)
+        assertEquals(1, restored.size)
+        assertEquals(20f, restored.single().latencyMs, 0.001f)
+        assertEquals(null, restored.single().calibrationSkewMs)
+    }
+
+    @Test
     fun `an install with no profiles yet keeps the latency it already had`() {
         val restored = parseProfiles(null, fallbackLatencyMs = 231f, fallbackCalibrated = true)
         assertEquals(231f, restored.single().latencyMs, 0.001f)

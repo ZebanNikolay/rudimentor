@@ -115,14 +115,15 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeSetInputLatencyMillis(
 //  [10] outputFrame (low 32 bits)
 //  [11] outputFrame (high 32 bits)
 //  [12] outputLatencyMs * 1e3
+//  [13] streamSkewMs   * 1e3
 extern "C" JNIEXPORT void JNICALL
 Java_com_rudimentor_app_audio_NativeMicLab_nativeSnapshot(
         JNIEnv *env, jobject, jintArray out) {
-    if (out == nullptr || env->GetArrayLength(out) < 13) {
+    if (out == nullptr || env->GetArrayLength(out) < 14) {
         return;
     }
     const MicLabEngine::Snapshot s = micLab.snapshot();
-    jint values[13];
+    jint values[14];
     values[0] = s.sampleRate;
     values[1] = static_cast<jint>(s.inputFrame & 0xFFFFFFFFLL);
     values[2] = static_cast<jint>((s.inputFrame >> 32) & 0xFFFFFFFFLL);
@@ -136,7 +137,8 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeSnapshot(
     values[10] = static_cast<jint>(s.outputFrame & 0xFFFFFFFFLL);
     values[11] = static_cast<jint>((s.outputFrame >> 32) & 0xFFFFFFFFLL);
     values[12] = static_cast<jint>(s.outputLatencyMs * 1.0e3f);
-    env->SetIntArrayRegion(out, 0, 13, values);
+    values[13] = static_cast<jint>(s.streamSkewMs * 1.0e3f);
+    env->SetIntArrayRegion(out, 0, 14, values);
 }
 
 // Stream info layout for Kotlin: static stream facts plus health counters.

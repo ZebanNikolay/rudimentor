@@ -224,6 +224,7 @@ fun RudiMentorApp(
                             clickAudible = clickAudible,
                             latencyMs = settings.inputLatencyMs,
                             latencyCalibrated = settings.latencyCalibrated,
+                            calibrationSkewMs = settings.selectedProfile.calibrationSkewMs,
                             micThresholdLevel = settings.micThresholdLevel,
                             showOffsetMs = settings.showOffsetMs,
                             buildInfo = buildInfo,
@@ -331,12 +332,18 @@ fun RudiMentorApp(
                 profileName = settingsDraft?.selectedProfile?.name
                     ?: settings.selectedProfile.name,
                 buildInfo = buildInfo,
-                onApply = { measuredMs, micThreshold ->
+                onApply = { measuredMs, measuredSkewMs, micThreshold ->
                     // Straight into the draft: the numbers are stored only if the settings
                     // screen is then saved (decision 154).
                     settingsDraft = settingsDraft
                         ?.withMicThreshold(micThreshold)
-                        ?.let { draft -> if (measuredMs == null) draft else draft.withLatency(measuredMs) }
+                        ?.let { draft ->
+                            if (measuredMs == null) {
+                                draft
+                            } else {
+                                draft.withCalibration(measuredMs, measuredSkewMs)
+                            }
+                        }
                     screenName = Screen.Settings.name
                 },
                 onBack = { screenName = Screen.Settings.name },

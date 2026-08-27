@@ -99,7 +99,13 @@ fun CalibrationScreen(
     /** The output profile this round writes into, shown so it is never a surprise. */
     profileName: String,
     buildInfo: BuildInfo,
-    onApply: (Float?, Float) -> Unit,
+    /**
+     * Measured round trip (null when the round produced none), the stream-start skew it was
+     * measured under, and the microphone gate. The skew travels with the number because
+     * hits are re-anchored by the skew of their own run, so a round trip is only valid in
+     * another run once the difference of the two skews is corrected (decision 164).
+     */
+    onApply: (Float?, Float?, Float) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -125,6 +131,9 @@ fun CalibrationScreen(
     // Loudest onset of the last few seconds, so the meter shows how far above the gate the
     // learner's own strokes actually land.
     var peak by remember { mutableFloatStateOf(0f) }
+    // Stream-start skew of the run the measurement is taken in, saved with the number
+    // (decision 164).
+    var measuredSkewMs by remember { mutableStateOf<Float?>(null) }
 
     // One log per visit to the screen: every probe, start, stroke, stop and reset lands in
     // it, and it is written to disk when the learner applies a value or walks away.
@@ -208,6 +217,8 @@ fun CalibrationScreen(
                 }
 
                 CalibrationMode.Latency -> {
+                    val skew = status.streamSkewMs
+                    if (skew > 0f) measuredSkewMs = skew
                     // A quiet onset is logged and ignored: letting it into the median is
                     // exactly what produced the 114 ms of dev.37 (decision 158).
                     val outcome = if (event.loud) {
@@ -558,7 +569,7 @@ fun CalibrationScreen(
                     )
                 }
                 saveLog()
-                onApply(median, threshold)
+                onApply(median, measuredSkewMs, threshold)
             },
             enabled = canApply,
             modifier = Modifier.fillMaxWidth(),

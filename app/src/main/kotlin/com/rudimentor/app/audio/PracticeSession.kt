@@ -65,6 +65,14 @@ class PracticeSession(
          * settings plus whatever the latency model added to it (decision 154).
          */
         val appliedLatencyMs: Float = 0f,
+        /**
+         * Stream-start skew of this run, in milliseconds: how far the input counter had
+         * advanced when the output stream first ran. The native drain subtracts it from
+         * every hit, so a run whose skew differs from the run the trim was calibrated in
+         * needs the difference corrected -- [appliedLatencyMs] carries that correction, and
+         * this field is what makes it visible in the attempt log (decision 164).
+         */
+        val streamSkewMs: Float = 0f,
     )
 
     var bpm: Int = MicLab.DEFAULT_BPM
@@ -111,6 +119,18 @@ class PracticeSession(
      * drift of a calibrated trim is measured from. Null until the stream reports one.
      */
     private var anchorOutputLatencyMs: Float? = null
+
+    /**
+     * Stream-start skew that held while [baseLatencyMs] was measured, or null when it is
+     * unknown -- a guessed trim, a hand-set one, or one measured before decision 164. The
+     * skew of the current run is subtracted from every hit by the native drain, so a
+     * calibrated round trip is short by exactly the difference of the two skews; an unknown
+     * skew means no correction, the behaviour those trims already had.
+     */
+    private var calibrationSkewMs: Float? = null
+
+    /** Skew of this run, as the engine last reported it. Diagnostics for the log. */
+    private var streamSkewMs: Float = 0f
     private val hitScratch = ArrayList<NativeMicLab.HitEvent>(32)
     private val tickScratch = ArrayList<NativeMicLab.TickEvent>(32)
     private val hitPositions = ArrayList<Hit>(8)
@@ -125,6 +145,7 @@ class PracticeSession(
         clickAudible: Boolean = false,
         inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
         latencyCalibrated: Boolean = false,
+        calibrationSkewMs: Float? = null,
         sensitivity: Float = MicLab.DEFAULT_SENSITIVITY,
         micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
         tempoPlan: IntArray = IntArray(0),
@@ -136,6 +157,8 @@ class PracticeSession(
         }
         anchorFrame = null
         anchorOutputLatencyMs = null
+        streamSkewMs = 0f
+        this.calibrationSkewMs = calibrationSkewMs
         this.latencyCalibrated = latencyCalibrated
         this.micThresholdLevel = MicThreshold.clamp(micThresholdLevel)
         hitScratch.clear()
@@ -161,9 +184,14 @@ class PracticeSession(
 
     fun setClickAudible(audible: Boolean) = native.setClickAudible(audible)
 
-    fun setInputLatencyMs(millis: Float, calibrated: Boolean = latencyCalibrated) {
+    fun setInputLatencyMs(
+        millis: Float,
+        calibrated: Boolean = latencyCalibrated,
+        calibrationSkewMs: Float? = this.calibrationSkewMs,
+    ) {
         baseLatencyMs = millis.coerceIn(LATENCY_TRIM_MIN_MS, LATENCY_TRIM_MAX_MS)
         latencyCalibrated = calibrated
+        this.calibrationSkewMs = calibrationSkewMs
         appliedLatencyMs = baseLatencyMs
         native.setInputLatencyMillis(baseLatencyMs)
     }
@@ -219,8 +247,24 @@ class PracticeSession(
         if (anchorOutputLatencyMs == null && outputLatencyMs > 0f) {
             anchorOutputLatencyMs = outputLatencyMs
         }
+        // The skew of this run is already gone from every hit frame -- the native drain
+        // re-anchors by it. A calibrated round trip was measured in a run with its own skew,
+        // so it is short by the difference of the two: a calibration taken while the output
+        // stream was slow to spin up (high skew) under-measures the round trip, and the
+        // dev.39 log showed exactly that -- 123 ms measured against strokes landing 145 ms
+        // late, no matter how often it was recalibrated (decision 164).
+        streamSkewMs = snapshot.streamSkewMs
+        val calibrationSkew = calibrationSkewMs
+        val skewCorrectionMs = if (latencyCalibrated && calibrationSkew != null) {
+            calibrationSkew - streamSkewMs
+        } else {
+            0f
+        }
         val target = if (latencyCalibrated) {
-            baseLatencyMs + (outputLatencyMs - (anchorOutputLatencyMs ?: outputLatencyMs))
+            (
+                baseLatencyMs + skewCorrectionMs +
+                    (outputLatencyMs - (anchorOutputLatencyMs ?: outputLatencyMs))
+                ).coerceIn(LATENCY_TRIM_MIN_MS, LATENCY_TRIM_MAX_MS)
         } else {
             baseLatencyMs + outputLatencyMs
         }
@@ -283,6 +327,7 @@ class PracticeSession(
             clockSkewMs = (snapshot.inputFrame - snapshot.outputFrame) / framesPerMs,
             outputLatencyMs = outputLatencyMs,
             appliedLatencyMs = appliedLatencyMs,
+            streamSkewMs = streamSkewMs,
         )
     }
 

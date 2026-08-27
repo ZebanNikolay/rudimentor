@@ -98,6 +98,12 @@ fun PracticeScreen(
      */
     latencyCalibrated: Boolean,
     /**
+     * Stream-start skew that held while [latencyMs] was measured, or null when unknown. Hits
+     * are re-anchored by the skew of their own run, so the difference of the two skews is
+     * what a calibrated round trip is short by (decision 164).
+     */
+    calibrationSkewMs: Float? = null,
+    /**
      * The loudness gate: onsets quieter than this are logged and thrown away instead of
      * scored. Room noise was being judged as playing before it existed (decision 158).
      */
@@ -247,6 +253,7 @@ fun PracticeScreen(
                         atMs = poll.positionMs,
                         outputLatencyMs = poll.outputLatencyMs,
                         appliedMs = poll.appliedLatencyMs,
+                        streamSkewMs = poll.streamSkewMs,
                     )
                 }
                 if (abs(poll.outputLatencyMs - loggedLatencyMs) > LATENCY_LOG_STEP_MS) {
@@ -262,6 +269,7 @@ fun PracticeScreen(
                         atMs = poll.positionMs,
                         outputLatencyMs = poll.outputLatencyMs,
                         appliedMs = poll.appliedLatencyMs,
+                        streamSkewMs = poll.streamSkewMs,
                     )
                 }
                 val now = poll.positionMs
@@ -447,6 +455,7 @@ fun PracticeScreen(
                         clickAudible = clickAudible,
                         inputLatencyMs = latencyMs,
                         latencyCalibrated = latencyCalibrated,
+                        calibrationSkewMs = calibrationSkewMs,
                         micThresholdLevel = micThresholdLevel,
                         tempoPlan = tempoPlan,
                     )
@@ -475,6 +484,7 @@ fun PracticeScreen(
                                 okMs = windows.tightest.okMs,
                                 latencyMs = latencyMs,
                                 latencyCalibrated = latencyCalibrated,
+                                calibrationSkewMs = calibrationSkewMs,
                                 sensitivity = MicLab.DEFAULT_SENSITIVITY,
                                 clickAudible = clickAudible,
                                 headphones = headphonesConnected,

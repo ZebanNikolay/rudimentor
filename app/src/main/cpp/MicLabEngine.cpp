@@ -171,6 +171,10 @@ int MicLabEngine::drainTicks(TickEvent *outTicks, int maxTicks) {
 }
 
 MicLabEngine::Snapshot MicLabEngine::snapshot() const {
+    const int64_t skewFrames = inputFrameZero_.load(std::memory_order_acquire);
+    const float skewMs = (skewFrames > 0 && sampleRate_ > 0)
+            ? static_cast<float>(skewFrames) * 1000.0f / static_cast<float>(sampleRate_)
+            : 0.0f;
     return Snapshot{
             sampleRate_,
             inputFrames_.load(std::memory_order_acquire),
@@ -182,6 +186,7 @@ MicLabEngine::Snapshot MicLabEngine::snapshot() const {
             clickAudible_.load(std::memory_order_acquire),
             running_.load(std::memory_order_acquire),
             outputLatencyMillis_.load(std::memory_order_acquire),
+            skewMs,
     };
 }
 

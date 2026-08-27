@@ -105,7 +105,7 @@ class PracticeTelemetryTest {
         )
         val summary = telemetry.summary()
         val lines = summary.lines()
-        assertEquals(7, lines.size)
+        assertEquals(8, lines.size)
         assertTrue(lines.none { it.isBlank() })
         assertTrue(summary.contains("48000 Hz"))
         assertTrue(summary.contains("xruns 0/2"))
@@ -114,6 +114,8 @@ class PracticeTelemetryTest {
         // An uncalibrated run has to say so, and no latency was polled here.
         assertTrue(summary.contains("(guessed)"))
         assertTrue(summary.contains("output latency not reported"))
+        // No stroke was fed in, so the drift line has to say that instead of a zero.
+        assertTrue(summary.contains("drift no strokes"))
     }
 
     @Test
@@ -134,6 +136,57 @@ class PracticeTelemetryTest {
         assertTrue(summary.contains("24..31 ms"))
         assertTrue(summary.contains("drift 7 ms"))
         assertTrue(summary.contains("3 changes"))
+    }
+
+    @Test
+    fun `a run that scored nothing still reports how late every stroke was`() {
+        val telemetry = PracticeTelemetry(header = header())
+        listOf(140f, 150f, 160f).forEach { offset ->
+            telemetry.hit(
+                atMs = 1_000f + offset,
+                outcome = HitOutcome.Extra(positionMs = 1_000f + offset),
+                envelope = 0.05f,
+                threshold = 0.02f,
+                peak = 0.2f,
+                extraOffsetMs = offset,
+            )
+        }
+        telemetry.finish(
+            atMs = 3_000f,
+            result = PracticeResult.Empty,
+            debouncedTotal = 0,
+            audio = audio(),
+            aborted = false,
+        )
+        val summary = telemetry.summary()
+        assertTrue(summary.contains("drift median +150 ms"))
+        assertTrue(summary.contains("3 strokes"))
+    }
+
+    @Test
+    fun `the skew a measurement was taken under is written next to it`() {
+        val telemetry = PracticeTelemetry(
+            header = header().copy(latencyCalibrated = true, calibrationSkewMs = 145f),
+        )
+        telemetry.latency(atMs = 0f, outputLatencyMs = 24f, appliedMs = 268f, streamSkewMs = 0f)
+        telemetry.finish(
+            atMs = 3_000f,
+            result = result(),
+            debouncedTotal = 0,
+            audio = audio(),
+            aborted = false,
+        )
+        val summary = telemetry.summary()
+        assertTrue(summary.contains("measured at skew 145 ms"))
+        assertTrue(summary.contains("skew 0 ms"))
+    }
+
+    @Test
+    fun `the middle of the offsets ignores a single wild stroke`() {
+        assertEquals(null, PracticeTelemetry.medianOf(emptyList()))
+        assertEquals(5f, PracticeTelemetry.medianOf(listOf(5f))!!, 0.001f)
+        assertEquals(6f, PracticeTelemetry.medianOf(listOf(4f, 8f))!!, 0.001f)
+        assertEquals(5f, PracticeTelemetry.medianOf(listOf(4f, 5f, 900f))!!, 0.001f)
     }
 
     @Test

@@ -104,14 +104,21 @@ data class SettingsDraft(
      * measurement that lived only in [latencyMs] left the row still saying "not measured
      * yet" while the slider above it showed the new value (decision 162).
      */
-    fun withCalibration(latencyMs: Float): SettingsDraft {
+    fun withCalibration(latencyMs: Float, calibrationSkewMs: Float? = null): SettingsDraft {
         val safe = latencyMs.coerceIn(AppSettings.LATENCY_MIN_MS, AppSettings.LATENCY_MAX_MS)
         return copy(
             latencyMs = safe,
             latencyCalibrated = true,
             outputProfiles = outputProfiles.map { profile ->
                 if (profile.id == selectedProfileId) {
-                    profile.copy(latencyMs = safe, latencyCalibrated = true)
+                    profile.copy(
+                        latencyMs = safe,
+                        latencyCalibrated = true,
+                        // The skew the measurement was taken under travels with it: without
+                        // it the attempt cannot tell how much of the round trip its own
+                        // re-anchoring already removed (decision 164).
+                        calibrationSkewMs = calibrationSkewMs,
+                    )
                 } else {
                     profile
                 }

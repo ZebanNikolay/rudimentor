@@ -27,6 +27,20 @@ data class OutputProfile(
     val latencyCalibrated: Boolean,
     /** Millis since epoch of the last time this profile was selected. Drives eviction. */
     val lastUsedAt: Long,
+    /**
+     * Stream-start skew that held while [latencyMs] was measured, in milliseconds, or null
+     * when it is unknown: a guessed number, a number dialled in on the slider, or a
+     * measurement taken before decision 164. Unknown means no skew correction at all, which
+     * is exactly how those numbers behaved before.
+     *
+     * Hit frames are re-anchored by the skew of their own run, and that skew is not a
+     * constant: over Bluetooth the output stream spins up at its own pace, so calibration
+     * and the attempt that follows it see different values. Subtracting the difference is
+     * what makes a round trip measured in one run valid in the next -- without it a
+     * calibration taken in a high-skew run left every stroke of the dev.39 field log about
+     * 145 ms late, and no amount of recalibrating helped.
+     */
+    val calibrationSkewMs: Float? = null,
 ) {
     val removable: Boolean = id != DEFAULT_ID
 
@@ -57,6 +71,7 @@ data class OutputProfile(
             latencyMs = latencyMs,
             latencyCalibrated = latencyCalibrated,
             lastUsedAt = lastUsedAt,
+            calibrationSkewMs = null,
         )
 
         /** A profile for an output that is connected right now. */
@@ -133,6 +148,7 @@ internal fun List<OutputProfile>.serialize(): String = joinToString(separator = 
         p.latencyMs.toString(),
         if (p.latencyCalibrated) "1" else "0",
         p.lastUsedAt.toString(),
+        p.calibrationSkewMs?.toString() ?: "",
     ).joinToString(separator = "~")
 }
 
@@ -154,7 +170,9 @@ internal fun parseProfiles(
 
 private fun parseProfile(raw: String): OutputProfile? {
     val parts = raw.split("~")
-    if (parts.size != 7) return null
+    // Seven fields is the pre-decision-164 layout, still on disk after an update: it has no
+    // calibration skew, which reads as 0 -- the same behaviour those profiles had.
+    if (parts.size != 7 && parts.size != 8) return null
     val id = parts[0].takeIf { it.isNotBlank() } ?: return null
     val latency = parts[4].toFloatOrNull() ?: return null
     val boundKey = parts[3].takeIf { it.isNotBlank() }
@@ -166,5 +184,6 @@ private fun parseProfile(raw: String): OutputProfile? {
         latencyMs = latency,
         latencyCalibrated = parts[5] == "1",
         lastUsedAt = parts[6].toLongOrNull() ?: 0L,
+        calibrationSkewMs = parts.getOrNull(7)?.takeIf { it.isNotBlank() }?.toFloatOrNull(),
     ).sanitized()
 }
