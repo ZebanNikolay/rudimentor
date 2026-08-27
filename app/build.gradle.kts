@@ -17,8 +17,8 @@ val developmentKeyPassword = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY
 val allowLocalDebugSigning = providers.gradleProperty("rudimentor.localDebugSigning")
     .map(String::toBoolean)
     .orElse(false)
-val appVersionName = "0.1.0-dev.41"
-val appVersionCode = 41
+val appVersionName = "0.1.0-dev.42"
+val appVersionCode = 42
 
 base {
     archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")
