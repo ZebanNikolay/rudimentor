@@ -146,7 +146,8 @@
     <string name="settings_calibrate">Calibrate…</string>
     <string name="practice_output_current">Latency in force: \u201c%1$s\u201d.</string>
     <string name="practice_output_unknown">These headphones have no calibration of their own, so the latency of \u201c%1$s\u201d is being used. Calibrate them, or save them as an output in settings.</string>
-    <string name="settings_output_title">Output</string>
+    <string name="settings_output_title">Output and latency</string>
+    <string name="settings_practice_title">Practice</string>
     <string name="settings_output_note">Every pair of headphones has its own delay, so each one keeps its own latency. Pick the one you are practising through; calibration writes into it.</string>
     <string name="settings_output_row_measured">%1$d ms, measured</string>
     <string name="settings_output_row_guessed">%1$d ms, not measured yet</string>

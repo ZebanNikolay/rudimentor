@@ -138,6 +138,17 @@ class OutputProfileTest {
     }
 
     @Test
+    fun `a measurement shows up on the profile row before Save`() {
+        val draft = SettingsDraft.from(AppSettings(inputLatencyMs = 114f))
+            .withAddedProfile(bluetooth, now = 7L)
+            .withCalibration(194f)
+        assertEquals(194f, draft.selectedProfile.latencyMs, 0.001f)
+        assertTrue(draft.selectedProfile.latencyCalibrated)
+        val untouched = draft.outputProfiles.first { it.id == OutputProfile.DEFAULT_ID }
+        assertEquals(114f, untouched.latencyMs, 0.001f)
+    }
+
+    @Test
     fun `renaming keeps the format's separators out of the name`() {
         val draft = SettingsDraft.from(AppSettings())
             .withAddedProfile(bluetooth, now = 7L)

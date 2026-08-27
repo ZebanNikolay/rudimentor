@@ -104,11 +104,12 @@ fun SettingsScreen(
                 draft = draft,
                 currentOutput = currentOutput,
                 onDraftChange = onDraftChange,
+                onCalibrate = onCalibrate,
             )
             Spacer(modifier = Modifier.height(14.dp))
 
             SettingsPanel(
-                title = stringResource(R.string.settings_title),
+                title = stringResource(R.string.settings_practice_title),
                 buildLabel = buildInfo.displayLabel,
             ) {
                 SettingsSwitchRow(
@@ -146,53 +147,6 @@ fun SettingsScreen(
                 )
                 SettingsNote(text = stringResource(R.string.practice_offset_ms_note))
 
-                SettingsGap()
-                SettingsSliderRow(
-                    label = stringResource(R.string.settings_latency_label),
-                    valueLabel = stringResource(
-                        R.string.practice_latency_value,
-                        draft.latencyMs.roundToInt(),
-                    ),
-                    value = draft.latencyMs,
-                    valueRange = 0f..AppSettings.LATENCY_MAX_MS,
-                    onValueChange = { onDraftChange(draft.withLatency(it)) },
-                )
-                SettingsNote(
-                    text = stringResource(
-                        if (draft.latencyCalibrated) {
-                            R.string.settings_latency_measured
-                        } else {
-                            R.string.settings_latency_guessed
-                        },
-                    ),
-                )
-                SettingsNote(
-                    text = stringResource(
-                        R.string.settings_latency_profile,
-                        draft.selectedProfile.name,
-                    ),
-                )
-                SettingsNote(text = stringResource(R.string.settings_latency_note))
-
-                SettingsGap()
-                // The gate is measured against the room, so it is set on the calibration
-                // screen where the meter is; here it only reports itself (decision 158).
-                SettingsValueRow(
-                    label = stringResource(R.string.settings_gate_label),
-                    value = stringResource(
-                        R.string.settings_gate_value,
-                        MicThreshold.decibels(draft.micThresholdLevel).roundToInt(),
-                    ),
-                )
-                SettingsNote(text = stringResource(R.string.settings_gate_note))
-
-                SettingsGap()
-                RudiButton(
-                    text = stringResource(R.string.settings_calibrate),
-                    onClick = onCalibrate,
-                    style = RudiButtonStyle.Secondary,
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
 
             Spacer(modifier = Modifier.height(22.dp))
@@ -231,6 +185,7 @@ private fun OutputProfilePanel(
     draft: SettingsDraft,
     currentOutput: OutputDevice?,
     onDraftChange: (SettingsDraft) -> Unit,
+    onCalibrate: () -> Unit,
 ) {
     var renaming by remember { mutableStateOf<OutputProfile?>(null) }
 
@@ -293,6 +248,51 @@ private fun OutputProfilePanel(
                 ),
             )
         }
+
+        SettingsGap()
+        SettingsSliderRow(
+            label = stringResource(R.string.settings_latency_label),
+            valueLabel = stringResource(
+                R.string.practice_latency_value,
+                draft.latencyMs.roundToInt(),
+            ),
+            value = draft.latencyMs,
+            valueRange = 0f..AppSettings.LATENCY_MAX_MS,
+            onValueChange = { onDraftChange(draft.withLatency(it)) },
+        )
+        SettingsNote(
+            text = stringResource(
+                if (draft.latencyCalibrated) {
+                    R.string.settings_latency_measured
+                } else {
+                    R.string.settings_latency_guessed
+                },
+            ),
+        )
+        SettingsNote(
+            text = stringResource(R.string.settings_latency_profile, selected.name),
+        )
+        SettingsNote(text = stringResource(R.string.settings_latency_note))
+
+        SettingsGap()
+        // The gate is measured against the room, not against the output, so it only reports
+        // itself here; it is set on the calibration screen where the meter is (decision 158).
+        SettingsValueRow(
+            label = stringResource(R.string.settings_gate_label),
+            value = stringResource(
+                R.string.settings_gate_value,
+                MicThreshold.decibels(draft.micThresholdLevel).roundToInt(),
+            ),
+        )
+        SettingsNote(text = stringResource(R.string.settings_gate_note))
+
+        SettingsGap()
+        RudiButton(
+            text = stringResource(R.string.settings_calibrate),
+            onClick = onCalibrate,
+            style = RudiButtonStyle.Secondary,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 
     renaming?.let { profile ->

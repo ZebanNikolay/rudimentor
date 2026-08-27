@@ -96,11 +96,28 @@ data class SettingsDraft(
             next
         }
     }
-    /** The draft with a freshly measured round-trip latency in it. */
-    fun withCalibration(latencyMs: Float): SettingsDraft = copy(
-        latencyMs = latencyMs.coerceIn(AppSettings.LATENCY_MIN_MS, AppSettings.LATENCY_MAX_MS),
-        latencyCalibrated = true,
-    )
+    /**
+     * The draft with a freshly measured round-trip latency in it.
+     *
+     * The number is written into the selected profile at the same time, not only when Save
+     * applies the draft: the profile row on the settings screen reads its own latency, so a
+     * measurement that lived only in [latencyMs] left the row still saying "not measured
+     * yet" while the slider above it showed the new value (decision 162).
+     */
+    fun withCalibration(latencyMs: Float): SettingsDraft {
+        val safe = latencyMs.coerceIn(AppSettings.LATENCY_MIN_MS, AppSettings.LATENCY_MAX_MS)
+        return copy(
+            latencyMs = safe,
+            latencyCalibrated = true,
+            outputProfiles = outputProfiles.map { profile ->
+                if (profile.id == selectedProfileId) {
+                    profile.copy(latencyMs = safe, latencyCalibrated = true)
+                } else {
+                    profile
+                }
+            },
+        )
+    }
 
     /**
      * The draft with a latency the learner dialled in on the slider.
