@@ -48,6 +48,7 @@ import com.rudimentor.app.ui.component.padStarPath
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
@@ -76,6 +77,8 @@ fun PracticeResultScreen(
     onRetry: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
+    /** Opens the sound check, offered when the run says the audio path is the problem. */
+    onSoundCheck: () -> Unit,
 ) {
     var settingsOpen by remember { mutableStateOf(false) }
 
@@ -110,6 +113,7 @@ fun PracticeResultScreen(
             onRetry = onRetry,
             onNextLevel = onNextLevel,
             onToMap = onToMap,
+            onSoundCheck = onSoundCheck,
         )
     }
 }
@@ -124,7 +128,14 @@ private fun ResultBody(
     onRetry: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
+    onSoundCheck: () -> Unit,
 ) {
+    val metrics = remember(result) { PracticeMetrics.of(result) }
+    val advice = remember(result) { PracticeAdvice.of(result, metrics) }
+    // Collapsed by default: the one line of advice is what the screen is for, and the three
+    // numbers behind it are for the run where that line is not believed (decision 168).
+    var expanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -217,13 +228,41 @@ private fun ResultBody(
         }
 
         Spacer(modifier = Modifier.height(14.dp))
-        // The histogram takes whatever is left between the numbers and the actions:
-        // a fixed height left it as a strip in the middle of an empty screen.
-        OffsetHistogram(
-            offsets = result.offsets,
-            windows = result.windows,
-            modifier = Modifier.fillMaxWidth().weight(1f),
-        )
+        if (expanded) {
+            // Opened on purpose: the plot gets the room and the numbers under it explain
+            // where the advice came from.
+            OffsetHistogram(
+                offsets = result.offsets,
+                windows = result.windows,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+            )
+            HistogramScale()
+            Spacer(modifier = Modifier.height(10.dp))
+            AdviceDetails(
+                metrics = metrics,
+                advice = advice,
+                onCollapse = { expanded = false },
+            )
+        } else {
+            // The plot used to own half the screen and say the same thing every run. As a
+            // strip it still shows the shape of the run, and the space it gave up is where
+            // the advice lives (decision 168).
+            OffsetHistogram(
+                offsets = result.offsets,
+                windows = result.windows,
+                modifier = Modifier.fillMaxWidth().height(STRIP_HEIGHT),
+            )
+            HistogramScale()
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                AdviceCard(
+                    advice = advice,
+                    metrics = metrics,
+                    onExpand = { expanded = true },
+                    onSoundCheck = onSoundCheck,
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(14.dp))
         Row(
@@ -364,6 +403,226 @@ private fun OffsetHistogram(
         }
     }
 }
+
+/** Ends of the plotted range, so the strip is readable without a grid. */
+@Composable
+private fun HistogramScale() {
+    val scale = PracticeScoring.SCALE_MS.roundToInt()
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = stringResource(R.string.practice_result_scale_early, scale),
+            style = MaterialTheme.typography.bodySmall,
+            color = RudiColors.Muted,
+        )
+        Text(
+            text = stringResource(R.string.practice_result_scale_late, scale),
+            style = MaterialTheme.typography.bodySmall,
+            color = RudiColors.Muted,
+        )
+    }
+}
+
+/**
+ * The one thing the screen says about the run, or nothing at all.
+ *
+ * Nothing at all is a normal outcome: a run whose numbers are all inside their own error
+ * gets an empty space here rather than a sentence invented to fill it (decision 168).
+ */
+@Composable
+private fun AdviceCard(
+    advice: PracticeAdvice?,
+    metrics: PracticeMetrics,
+    onExpand: () -> Unit,
+    onSoundCheck: () -> Unit,
+) {
+    if (advice == null) return
+    val text = adviceText(advice)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = RudiColors.Text,
+        )
+        // The offset hint carries the honest half with it: what the same strokes are worth
+        // once the constant lateness is removed. It is a smaller number than the player
+        // hopes for, which is exactly why it is shown.
+        if (advice.kind == AdviceKind.Offset) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = stringResource(
+                    R.string.advice_offset_gain,
+                    (metrics.accuracyWithoutOffset * 100f).roundToInt(),
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = RudiColors.Muted,
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (advice.kind == AdviceKind.SoundCheck) {
+                RudiButton(
+                    text = stringResource(R.string.advice_sound_check_action),
+                    onClick = onSoundCheck,
+                )
+            }
+            RudiButton(
+                text = stringResource(R.string.advice_more),
+                onClick = onExpand,
+                style = RudiButtonStyle.Secondary,
+            )
+        }
+    }
+}
+
+/** The sentence for one piece of advice, with its own number in it. */
+@Composable
+private fun adviceText(advice: PracticeAdvice): String = when (advice.kind) {
+    AdviceKind.SoundCheck -> stringResource(R.string.advice_sound_check)
+    AdviceKind.Detector -> stringResource(
+        R.string.advice_detector,
+        (advice.share * 100f).roundToInt(),
+    )
+
+    AdviceKind.ExtraHits -> stringResource(
+        R.string.advice_extras,
+        (advice.share * 100f).roundToInt(),
+    )
+
+    AdviceKind.Offset -> stringResource(
+        if (advice.valueMs >= 0f) R.string.advice_offset_late else R.string.advice_offset_early,
+        abs(advice.valueMs).roundToInt(),
+    )
+
+    AdviceKind.Drift -> stringResource(
+        if (advice.valueMs < 0f) R.string.advice_drift_faster else R.string.advice_drift_slower,
+        abs(advice.valueMs).roundToInt(),
+    )
+
+    AdviceKind.Spread -> stringResource(R.string.advice_spread, advice.valueMs.roundToInt())
+    AdviceKind.AllGood -> stringResource(R.string.advice_all_good)
+}
+
+/**
+ * The three numbers the advice was chosen from, each next to the error of its own
+ * measurement, and one line saying why the winner was believed and the others were not.
+ */
+@Composable
+private fun AdviceDetails(
+    metrics: PracticeMetrics,
+    advice: PracticeAdvice?,
+    onCollapse: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (metrics.judged < PracticeMetrics.MIN_JUDGED) {
+            Text(
+                text = stringResource(
+                    R.string.advice_detail_short,
+                    PracticeMetrics.MIN_JUDGED,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = RudiColors.Muted,
+            )
+        } else {
+            DetailRow(
+                label = stringResource(R.string.advice_detail_offset),
+                value = metrics.offset,
+                proven = metrics.offsetSignificant,
+            )
+            DetailRow(
+                label = stringResource(R.string.advice_detail_spread),
+                value = Measured(metrics.spreadMs, Float.NaN),
+                proven = metrics.spreadSignificant,
+            )
+            DetailRow(
+                label = stringResource(R.string.advice_detail_drift),
+                value = metrics.drift,
+                proven = metrics.driftSignificant,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(
+                        R.string.advice_detail_window,
+                        metrics.perfectMs.roundToInt(),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RudiColors.Muted,
+                )
+                Text(
+                    text = stringResource(R.string.advice_detail_strokes, metrics.judged),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RudiColors.Muted,
+                )
+            }
+            val reason = when (advice?.kind) {
+                AdviceKind.Offset -> metrics.offset.sigmas
+                AdviceKind.Drift -> metrics.drift.sigmas
+                else -> null
+            }
+            if (reason != null) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.advice_detail_proven, reason),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RudiColors.Muted,
+                )
+            } else if (metrics.drift.sigmas > 0f && !metrics.driftSignificant) {
+                // The number the eye wants to believe most is the drift, so when it did not
+                // clear its own bar the screen says so out loud instead of hiding it.
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.advice_detail_unproven, metrics.drift.sigmas),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RudiColors.Muted,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        RudiButton(
+            text = stringResource(R.string.advice_less),
+            onClick = onCollapse,
+            style = RudiButtonStyle.Secondary,
+        )
+    }
+}
+
+/** One measured quantity: name, value, its error, and whether it was believed. */
+@Composable
+private fun DetailRow(label: String, value: Measured, proven: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = RudiTextStyles.Rubric,
+            color = RudiColors.Muted,
+            modifier = Modifier.width(76.dp),
+        )
+        Text(
+            text = stringResource(R.string.advice_detail_value, value.valueMs.roundToInt()),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (proven) RudiColors.Text else RudiColors.Muted,
+            modifier = Modifier.width(72.dp),
+        )
+        if (!value.errorMs.isNaN()) {
+            Text(
+                text = stringResource(
+                    R.string.advice_detail_error,
+                    value.errorMs.roundToInt(),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = RudiColors.Muted,
+            )
+        }
+    }
+}
+
+/** Height of the collapsed plot: enough to read its shape, small enough to leave room. */
+private val STRIP_HEIGHT = 56.dp
 
 private val HistogramRule = Color(0xFF202020)
 private val HistogramCentre = Color(0xFF3A3A3A)

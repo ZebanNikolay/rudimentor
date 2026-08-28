@@ -347,6 +347,18 @@ class PracticeAttempt(
         private set
 
     /**
+     * Onsets the loudness gate threw away before the attempt ever saw them, reported by the
+     * poll loop. Kept here so the result carries one "we did not hear this" number and the
+     * advice can tell a deaf detector from a badly played run (decision 168).
+     */
+    var quiet: Int = 0
+        private set
+
+    fun registerQuiet(count: Int) {
+        if (count > 0) quiet += count
+    }
+
+    /**
      * Registers a stick hit at [positionMs] and reports what became of it, so the
      * caller can log the hits the score itself never sees.
      */
@@ -480,6 +492,8 @@ class PracticeAttempt(
             // The scale of the result screen has to hold every offset of the attempt, so it
             // is drawn with the widest windows the attempt had (decision 151).
             windows = windows.widest,
+            droppedOnsets = quiet + debounced,
+            afterEnd = afterEnd,
         )
     }
 

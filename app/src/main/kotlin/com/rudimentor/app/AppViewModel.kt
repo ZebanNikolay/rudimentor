@@ -123,6 +123,14 @@ class AppViewModel(
     fun applyDraft(draft: SettingsDraft) = update { draft.applyTo(this) }
 
     /**
+     * Remembers that the sound check has been walked once, which is all the map needs to stop
+     * calling for it. Never unset: the node stays open for a change of headphones.
+     */
+    fun markSoundCheckDone() = update {
+        if (soundCheckDone) this else copy(soundCheckDone = true)
+    }
+
+    /**
      * Selects the profile saved for the output that just became active (decision 161).
      *
      * This one writes straight to the settings rather than through a draft: it is the app

@@ -52,6 +52,12 @@ data class AppSettings(
     // fields above, which is what carries an install from before decision 161 across.
     val outputProfiles: List<OutputProfile> = emptyList(),
     val selectedProfileId: String = OutputProfile.DEFAULT_ID,
+    /**
+     * True once the sound check on the level map has been walked through to the end. It only
+     * decides how the node is drawn and whether it is offered on its own; the check itself
+     * can always be replayed (decision 169).
+     */
+    val soundCheckDone: Boolean = false,
 ) {
     val safeActiveRow: Int = activeRow.coerceIn(0, grid.rowCount - 1)
 
@@ -134,9 +140,14 @@ data class AppSettings(
          * Range of the latency compensation, in milliseconds. The ceiling has to hold a
          * full Bluetooth round trip: A2DP headphones measured 230 ms on the device, and
          * the old 80 ms ceiling made the calibrated value unreachable (decision 154).
+         *
+         * It is kept equal to [com.rudimentor.app.audio.LatencyCalibration.MAX_PLAUSIBLE_MS]:
+         * while the measurement accepted up to 600 ms and this clamp stopped at 400 ms, a
+         * slower pair of headphones could be measured honestly and then silently truncated
+         * on the way into storage.
          */
         const val LATENCY_MIN_MS = 0f
-        const val LATENCY_MAX_MS = 400f
+        const val LATENCY_MAX_MS = 600f
     }
 }
 

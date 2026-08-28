@@ -50,6 +50,8 @@ import com.rudimentor.app.ui.practice.PracticeResultScreen
 import com.rudimentor.app.ui.practice.PracticeScreen
 import com.rudimentor.app.ui.settings.CalibrationScreen
 import com.rudimentor.app.ui.settings.SettingsScreen
+import com.rudimentor.app.ui.soundcheck.SoundCheckScreen
+import com.rudimentor.app.ui.soundcheck.SoundCheckStep
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.util.DevLog
@@ -65,6 +67,7 @@ private enum class Screen {
     Metronome,
     Settings,
     Calibration,
+    SoundCheck,
     About,
     Dev,
     MicLab,
@@ -84,6 +87,8 @@ fun RudiMentorApp(
     onApplyDraft: (SettingsDraft) -> Unit,
     onOutputChanged: (OutputDevice) -> Unit,
     onAttemptFinished: (Level, PracticeRank, PracticeResult) -> Unit,
+    /** Marks the sound-check node as walked, so the map stops asking for it. */
+    onSoundCheckDone: () -> Unit,
 ) {
     // The click follows the audio output until the learner overrides it by hand, so
     // the effective value is decided here, once, for every screen that plays it
@@ -120,6 +125,9 @@ fun RudiMentorApp(
     // so that walking into the calibration screen and back does not throw it away
     // (decision 154). Null means nobody is editing anything.
     var settingsDraft by remember { mutableStateOf<SettingsDraft?>(null) }
+    // Which step the sound check opens on. A pair of headphones nobody has measured needs
+    // only its own step; everything else walks the whole thing.
+    var soundCheckStartStep by remember { mutableStateOf(SoundCheckStep.Pad) }
     val practiceRank = PracticeRank.entries.firstOrNull { it.name == practiceRankName }
         ?: PracticeRank.Practice
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
@@ -129,6 +137,19 @@ fun RudiMentorApp(
     val activeTabId = levelsUi.familyId
         ?: course.tabs.lastOrNull { it.available && learningProgress.isTabUnlocked(it) }?.id
         ?: course.tabs.first().id
+
+    // A pair of headphones nobody has measured is the one thing that silently ruins every
+    // attempt afterwards, so the map offers its own step instead of waiting for the player to
+    // notice a bad score. Only from the map, and only once the check has been walked before:
+    // pulling somebody out of an attempt would be worse than the wrong number (decision 169).
+    LaunchedEffect(screen, unknownOutput, headphonesConnected) {
+        if (screen != Screen.Levels) return@LaunchedEffect
+        if (!unknownOutput || !headphonesConnected || !settings.soundCheckDone) {
+            return@LaunchedEffect
+        }
+        soundCheckStartStep = SoundCheckStep.Headphones
+        screenName = Screen.SoundCheck.name
+    }
 
     // The navigation trail is the first thing a field report needs: every screen
     // change is in the log the developer screen can share.
@@ -173,6 +194,12 @@ fun RudiMentorApp(
                     settingsDraft = SettingsDraft.from(settings)
                     screenName = Screen.Settings.name
                 },
+                onOpenSoundCheck = {
+                    // Asked for by hand: walk the whole thing, whatever was measured before.
+                    soundCheckStartStep = SoundCheckStep.Pad
+                    screenName = Screen.SoundCheck.name
+                },
+                soundCheckDone = settings.soundCheckDone,
             )
             Screen.LevelDetail -> {
                 val level = selectedLevelId?.let(course::level)
@@ -301,6 +328,7 @@ fun RudiMentorApp(
                             }
                         },
                         onToMap = { screenName = Screen.Levels.name },
+                        onSoundCheck = { screenName = Screen.SoundCheck.name },
                     )
                 }
             }
@@ -366,6 +394,31 @@ fun RudiMentorApp(
                     onApplyDraft(applied)
                 },
                 onBack = { screenName = Screen.Settings.name },
+            )
+            // The first minute of the app, and the place a broken audio path is sent back to.
+            // It writes the same two numbers the calibration screen writes, so a measurement
+            // taken here is the one every attempt plays with (decision 169).
+            Screen.SoundCheck -> SoundCheckScreen(
+                profileName = settings.selectedProfile.name,
+                micThresholdLevel = settings.micThresholdLevel,
+                startStep = soundCheckStartStep,
+                onApply = { measuredMs, measuredSkewMs, micThreshold ->
+                    val applied = SettingsDraft.from(settings)
+                        .withMicThreshold(micThreshold)
+                        .let { draft ->
+                            if (measuredMs == null) {
+                                draft
+                            } else {
+                                draft.withCalibration(measuredMs, measuredSkewMs)
+                            }
+                        }
+                    onApplyDraft(applied)
+                },
+                onFinished = {
+                    onSoundCheckDone()
+                    screenName = Screen.Levels.name
+                },
+                onBack = { screenName = Screen.Levels.name },
             )
             Screen.About -> AboutScreen(
                 buildInfo = buildInfo,

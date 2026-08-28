@@ -27,6 +27,8 @@
     <string name="levels_family_complete">Family complete</string>
     <string name="levels_required_path_complete">Required path complete</string>
     <string name="levels_open_next">Open next level</string>
+    <string name="levels_sound_check_call">Start here: three short steps so the app hears your pad and your headphones.</string>
+    <string name="levels_sound_check_done">Done. Walk it again if you switch headphones or pads.</string>
 
     <!-- Level detail -->
     <string name="level_detail_title">LEVEL %1$s</string>
@@ -228,6 +230,73 @@
     <string name="practice_result_retry">Try again</string>
     <string name="practice_result_map">To map</string>
     <string name="practice_result_stars_cd">%1$d of 3 stars</string>
+    <string name="practice_result_scale_early">\u2212%1$d ms \u00b7 early</string>
+    <string name="practice_result_scale_late">late \u00b7 +%1$d ms</string>
+
+    <!-- Advice under the score: at most one line, and only when the numbers prove it -->
+    <string name="advice_sound_check">Most of your strokes did not land near a note. That is the sound, not your playing \u2014 run the sound check.</string>
+    <string name="advice_sound_check_action">Sound check</string>
+    <string name="advice_detector">%1$d%% of your strokes were too quiet to count. Play a little harder, or move the phone closer to the pad.</string>
+    <string name="advice_extras">More strokes than notes: %1$d%% extra. A rebounding stick or a noisy room \u2014 both are heard as strokes.</string>
+    <string name="advice_offset_late">You play %1$d ms behind the click, every stroke. Aim to hit with the click, not after it.</string>
+    <string name="advice_offset_early">You play %1$d ms ahead of the click, every stroke. Let the click arrive before the stick.</string>
+    <string name="advice_offset_gain">Your evenness alone is worth %1$d%%: that is what this level scores once the lateness is gone.</string>
+    <string name="advice_drift_faster">You speed up: by the end you are %1$d ms ahead of where you started.</string>
+    <string name="advice_drift_slower">You slow down: by the end you are %1$d ms behind where you started.</string>
+    <string name="advice_spread">Your strokes wander by \u00b1%1$d ms. Drop the tempo until they stop wandering, then bring it back.</string>
+    <string name="advice_all_good">Even, and nothing to fix at this tempo. Take the next one.</string>
+    <string name="advice_more">Why</string>
+    <string name="advice_less">Close</string>
+
+    <!-- Expanded advice: the three numbers, each with the error of its own measurement -->
+    <string name="advice_detail_offset">Offset</string>
+    <string name="advice_detail_spread">Spread</string>
+    <string name="advice_detail_drift">Drift</string>
+    <string name="advice_detail_value">%1$d ms</string>
+    <string name="advice_detail_error">\u00b1%1$d</string>
+    <string name="advice_detail_window">Perfect window \u00b1%1$d ms</string>
+    <string name="advice_detail_proven">%1$.0f\u00d7 its own measurement error \u2014 too consistent to be chance.</string>
+    <string name="advice_detail_unproven">Only %1$.0f\u00d7 its own error: not proven, so nothing is said about it.</string>
+    <string name="advice_detail_short">Fewer than %1$d counted strokes: too few for any of this to mean anything.</string>
+    <string name="advice_detail_strokes">%1$d counted strokes</string>
+
+    <!-- Sound check: the onboarding node of the level map -->
+    <string name="sound_check_title">SOUND CHECK</string>
+    <string name="sound_check_step_of">STEP %1$d OF %2$d \u00b7 %3$s</string>
+    <string name="sound_check_pad_short">PAD AND PHONE</string>
+    <string name="sound_check_headphones_short">HEADPHONES</string>
+    <string name="sound_check_play_short">FIRST CLICK</string>
+    <string name="sound_check_start">Start</string>
+    <string name="sound_check_again">Again</string>
+    <string name="sound_check_stop">Stop</string>
+    <string name="sound_check_next">Next</string>
+    <string name="sound_check_finish">Done</string>
+    <string name="sound_check_progress">%1$d of %2$d</string>
+    <string name="sound_check_meter_cd">Microphone level with the gate mark</string>
+    <string name="sound_check_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
+    <string name="sound_check_permission_title">MICROPHONE</string>
+    <string name="sound_check_permission_body">The app listens to your pad to know when you hit it. Audio is never recorded or sent anywhere.</string>
+    <string name="sound_check_permission_grant">Allow the microphone</string>
+    <string name="sound_check_pad_title">PAD AND PHONE</string>
+    <string name="sound_check_pad_intro">Put the phone next to the pad. Press Start, keep quiet for a moment, then play 8 strokes as you normally would. This teaches the app how loud you are, so the room is not mistaken for your stick.</string>
+    <string name="sound_check_pad_ready">Nothing plays in this step.</string>
+    <string name="sound_check_pad_silence">Keep quiet for a moment: listening to the room.</string>
+    <string name="sound_check_pad_strokes">Now play 8 strokes at your normal loudness (%1$d of %2$d).</string>
+    <string name="sound_check_pad_done">Heard you clearly. The phone can tell your strokes from the room.</string>
+    <string name="sound_check_pad_noisy">The room is almost as loud as your strokes. It will work, but somewhere quieter works better.</string>
+    <string name="sound_check_headphones_title">HEADPHONES</string>
+    <string name="sound_check_headphones_intro">Wear the headphones you practise with. A click plays out loud on purpose. Play one stroke on every click, evenly, for about half a minute \u2014 this teaches the app how your headphones behave, so a stroke you played on the click is not judged as late.</string>
+    <string name="sound_check_headphones_ready">About half a minute of even strokes.</string>
+    <string name="sound_check_headphones_playing">Keep playing one stroke per click (%1$d of %2$d).</string>
+    <string name="sound_check_headphones_done">Headphones checked \u2014 saved for \u201c%1$s\u201d. This does not need repeating unless you switch to another pair.</string>
+    <string name="sound_check_headphones_stalled">Not one stroke was counted. Check that the phone can hear the pad, or redo the previous step.</string>
+    <string name="sound_check_quiet">%1$d strokes were too quiet to count. Play a little harder.</string>
+    <string name="sound_check_play_title">FIRST CLICK</string>
+    <string name="sound_check_play_intro">Eight strokes with the click, nothing scored, nothing saved. Just to feel what a level feels like.</string>
+    <string name="sound_check_play_ready">Press Start when you are ready.</string>
+    <string name="sound_check_play_running">One stroke on every click.</string>
+    <string name="sound_check_play_done">That is all of it. The levels are open.</string>
+
     <!-- About -->
     <string name="about_title">ABOUT</string>
     <string name="about_tagline">A practice-pad drum trainer. Rudiments, a metronome and a microphone that listens to your pad \u2014 nothing else.</string>

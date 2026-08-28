@@ -330,6 +330,7 @@ fun PracticeScreen(
                 }
                 // Everything the gate threw away is still written down: it is the only way
                 // to tell "the room is too loud" from "the detector is deaf" afterwards.
+                attempt.registerQuiet(poll.quietHits.size)
                 poll.quietHits.forEach { hit ->
                     log?.quiet(
                         atMs = hit.positionMs,

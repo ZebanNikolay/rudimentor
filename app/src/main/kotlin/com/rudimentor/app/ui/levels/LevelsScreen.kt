@@ -30,6 +30,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -97,6 +98,10 @@ fun LevelsScreen(
     onBack: () -> Unit,
     onOpenLevel: (String) -> Unit,
     onOpenSettings: () -> Unit,
+    /** Opens the sound check from the plate above the map. */
+    onOpenSoundCheck: () -> Unit,
+    /** Whether the sound check has already been walked once on this device. */
+    soundCheckDone: Boolean,
 ) {
     BackHandler(onBack = onBack)
     var rankDialogVisible by remember { mutableStateOf(false) }
@@ -141,6 +146,11 @@ fun LevelsScreen(
                 activeTabId = activeTab.id,
                 onSelectTab = onSelectTab,
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            // The zeroth node of the course: before the first level there is a check that the
+            // phone can hear the pad at all. It stays on the map after it is walked, because a
+            // new pair of headphones makes it worth walking again (decision 169).
+            SoundCheckPlate(done = soundCheckDone, onClick = onOpenSoundCheck)
             Spacer(modifier = Modifier.height(6.dp))
 
             if (catalog == null) {
@@ -195,6 +205,48 @@ fun LevelsScreen(
                 rankDialogVisible = false
             },
             onDismiss = { rankDialogVisible = false },
+        )
+    }
+}
+
+/**
+ * The sound-check plate: an unmissable call before the first level, a quiet line after.
+ *
+ * It carries no stars and no lock — it is not a level, and failing it is not a thing that can
+ * happen. Once walked it keeps its place as a way back in, since the reason to return is a
+ * change of headphones rather than a change in the player.
+ */
+@Composable
+private fun SoundCheckPlate(done: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (done) RudiColors.SurfaceAlt else RudiColors.Surface)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.sound_check_title),
+                style = RudiTextStyles.RowNumber,
+                color = if (done) RudiColors.Muted else RudiColors.BrickLit,
+                letterSpacing = 1.6.sp,
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = stringResource(
+                    if (done) R.string.levels_sound_check_done else R.string.levels_sound_check_call,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (done) RudiColors.RowNumber else RudiColors.Text,
+            )
+        }
+        LevelPlayButton(
+            onClick = onClick,
+            contentDescription = stringResource(R.string.sound_check_title),
+            active = !done,
         )
     }
 }

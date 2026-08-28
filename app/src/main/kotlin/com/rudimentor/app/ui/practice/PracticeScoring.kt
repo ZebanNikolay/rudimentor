@@ -257,6 +257,18 @@ data class PracticeResult(
     val latencyBiasMs: Float = 0f,
     /** Windows the attempt was judged against, so the plots can colour by them. */
     val windows: HitWindows = HitWindows.Default,
+    /**
+     * Onsets the scoring never saw: too quiet for the gate, or dropped as detector ringing.
+     * They say nothing about the playing and everything about whether the phone can hear the
+     * pad at all, which is what the result screen needs to tell "you played badly" apart
+     * from "we did not hear you" (decision 168).
+     */
+    val droppedOnsets: Int = 0,
+    /**
+     * Strokes that arrived after the last note's window closed. Diagnostics only: they cost
+     * the run nothing, and the app's own click is the usual source of them.
+     */
+    val afterEnd: Int = 0,
 ) {
     val hits: Int get() = perfect + good + ok
     val passed: Boolean get() = accuracy >= PracticeScoring.PASS_ACCURACY

@@ -119,6 +119,7 @@ class MainActivity : ComponentActivity() {
                             crown = result.crown,
                         )
                     },
+                    onSoundCheckDone = viewModel::markSoundCheckDone,
                 )
             }
         }
