@@ -95,6 +95,7 @@ class PracticeTelemetry(
     private var judged = 0
     private var extras = 0
     private var debounced = 0
+    private var afterEnd = 0
     private var quiet = 0
     private var missed = 0
 
@@ -188,6 +189,11 @@ class PracticeTelemetry(
             is HitOutcome.Debounced -> {
                 debounced += 1
                 json.text("outcome", "debounced").num("gapMs", outcome.gapMs)
+            }
+
+            is HitOutcome.AfterEnd -> {
+                afterEnd += 1
+                json.text("outcome", "afterEnd").num("atMs", outcome.positionMs)
             }
         }
         add(json.done())
@@ -391,7 +397,7 @@ class PracticeTelemetry(
         if (outcome == null) {
             lines.add(
                 "result none · judged $judged · extra $extras · debounced $debounced · " +
-                    "quiet $quiet",
+                    "afterEnd $afterEnd · quiet $quiet",
             )
         } else {
             lines.add(
@@ -399,7 +405,8 @@ class PracticeTelemetry(
                     (if (outcome.crown) " + crown" else "") +
                     " · perfect ${outcome.perfect} good ${outcome.good} ok ${outcome.ok} " +
                     "miss ${outcome.misses} · extra ${outcome.extras} · " +
-                    "debounced $debounced · quiet $quiet · combo ${outcome.maxCombo}",
+                    "debounced $debounced · afterEnd $afterEnd · quiet $quiet · " +
+                    "combo ${outcome.maxCombo}",
             )
             lines.add(
                 "timing mean ${signed(outcome.meanOffsetMs)} · " +

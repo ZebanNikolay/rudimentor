@@ -112,14 +112,20 @@ class LatencyCalibration(
 
         /**
          * Tempo of the calibration click. At 60 bpm a beat is a full second, so a round
-         * trip of up to half a second is still unambiguously "late", never "early for the
-         * next beat".
+         * trip anywhere inside [MAX_PLAUSIBLE_MS] is still unambiguously "late", never
+         * "early for the next beat".
          */
         const val CLICK_BPM = 60
 
-        /** Range a real round trip can fall in. Outside it the stroke is noise. */
+        /**
+         * Range a real round trip can fall in. Outside it the stroke is noise.
+         *
+         * The ceiling is not academic: these headphones measured 300…307 ms over seven
+         * runs, so a slower Bluetooth pair would have been thrown away as noise at the
+         * old 400 ms limit and calibration would simply never complete.
+         */
         const val MIN_PLAUSIBLE_MS = -60f
-        const val MAX_PLAUSIBLE_MS = 400f
+        const val MAX_PLAUSIBLE_MS = 600f
 
         /**
          * Median of the samples, or null below [MIN_SAMPLES]. The median and not the mean:

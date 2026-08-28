@@ -248,6 +248,14 @@ sealed interface HitOutcome {
      * ringing, so it neither scored nor counted against the attempt.
      */
     data class Debounced(val gapMs: Float) : HitOutcome
+
+    /**
+     * The hit arrived after the window of the last note had closed, so there was nothing
+     * left to judge it against. Dropped instead of being charged as an extra: the app's own
+     * metronome keeps clicking for one more beat after the last note and the microphone
+     * hears it, which cost a flawless run its crown and 1.5 % of its score.
+     */
+    data class AfterEnd(val positionMs: Float) : HitOutcome
 }
 
 /**
@@ -304,6 +312,18 @@ class PracticeAttempt(
     private var lastHitMs = Float.NEGATIVE_INFINITY
 
     /**
+     * When the last note stops accepting hits. Past this point the attempt has nothing to
+     * judge, so strokes are dropped rather than charged as extras.
+     */
+    private val lastNoteEndMs: Float = notes.lastOrNull()
+        ?.let { it.timeMs + windows.forNote(it.index).okMs }
+        ?: Float.POSITIVE_INFINITY
+
+    /** Strokes that arrived after the last note's window closed, for diagnostics only. */
+    var afterEnd: Int = 0
+        private set
+
+    /**
      * Accuracy over what has happened so far, cheap enough to read every frame. Same
      * formula as the final number, just over the notes judged up to now: an extra hit
      * grows the denominator instead of subtracting a penalty (decision 132).
@@ -343,6 +363,10 @@ class PracticeAttempt(
         // while it is still being captured the search gets that much extra slack, or the
         // opening strokes would be charged as extras for a latency nobody has measured yet.
         val adjusted = latency.adjust(positionMs)
+        if (adjusted > lastNoteEndMs) {
+            afterEnd += 1
+            return HitOutcome.AfterEnd(positionMs = adjusted)
+        }
         val note = nearestOpenNote(adjusted, slackMs = latency.slackMs)
         if (note == null) {
             extrasInternal.add(adjusted)

@@ -141,9 +141,12 @@ fun PracticeScreen(
     // carries the windows of its own density, so a dense block does not tighten the sparse
     // beats of the same attempt (decision 151).
     val windows = remember(notes) { attemptWindowsFor(notes) }
-    // A live latency tracker: this run measures its own round trip while judging
-    // (decision 167), instead of trusting a number measured on another engine start.
-    val attempt = remember(notes) { PracticeAttempt(notes, windows, LatencyTracker()) }
+    // Self-tuning during the run is off (decision 167 cancelled): the only thing compensated
+    // is the audio path, measured objectively on the calibration screen. The player's own
+    // bias is what the trainer exists to show, so subtracting it here hid the very thing the
+    // learner needs to see - and it is not even constant enough to subtract: it moved 20 ms
+    // between sessions while the path repeated to 0.3 ms.
+    val attempt = remember(notes) { PracticeAttempt(notes, windows, LatencyTracker.disabled()) }
     val minIntervalMs = remember(notes) { minNoteIntervalMs(notes) ?: 0f }
     // One collector per attempt, created when the engine starts and written once the
     // run is over: a screen that is only opened and left behind logs nothing.

@@ -527,6 +527,9 @@ fun CalibrationScreen(
                 RudiButton(
                     text = stringResource(R.string.calibration_reset),
                     onClick = {
+                        // Reset while a round is running left the engine clicking and the
+                        // round open in telemetry: stop it first, then clear.
+                        stopRound(CalibrationTelemetry.REASON_STOPPED)
                         telemetry.reset(elapsedMs(), reading.samples.size)
                         quietStrokes = 0
                         strayStrokes = 0

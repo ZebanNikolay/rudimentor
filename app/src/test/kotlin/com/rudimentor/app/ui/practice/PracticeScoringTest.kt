@@ -114,6 +114,23 @@ class PracticeScoringTest {
     }
 
     @Test
+    fun `a stroke after the last note's window is dropped and keeps the perfect score`() {
+        val windows = HitWindows.forMinInterval(500f)
+        val notes = notesEvery(count = 8, spacingMs = 500f)
+        val attempt = PracticeAttempt(notes, windows)
+        notes.forEach { note -> attempt.registerHit(note.timeMs) }
+        // The app's own click one beat after the last note, heard by the microphone.
+        val outcome = attempt.registerHit(notes.last().timeMs + 500f)
+
+        assertTrue(outcome is HitOutcome.AfterEnd)
+        assertEquals(1, attempt.afterEnd)
+        val result = attempt.result()
+        assertEquals(0, result.extras)
+        assertEquals(1f, result.accuracy, 0.001f)
+        assertTrue(result.crown)
+    }
+
+    @Test
     fun `notes played inside GOOD land in the middle of the scale`() {
         val windows = HitWindows.forMinInterval(500f)
         val notes = notesEvery(count = 10, spacingMs = 500f)
@@ -173,14 +190,18 @@ class PracticeScoringTest {
     @Test
     fun `hits that belong to no note grow the denominator`() {
         val notes = notesEvery(count = 100, spacingMs = 500f)
-        val attempt = PracticeAttempt(notes, HitWindows.forMinInterval(500f))
-        notes.forEach { note -> attempt.registerHit(note.timeMs) }
+        val windows = HitWindows.forMinInterval(500f)
+        val attempt = PracticeAttempt(notes, windows)
+        notes.take(50).forEach { note -> attempt.registerHit(note.timeMs) }
         assertEquals(1f, attempt.liveAccuracy, 0.001f)
 
-        // Two strokes in the gaps, far from any open note.
-        attempt.registerHit(notes.last().timeMs + 250f)
-        attempt.registerHit(notes.last().timeMs + 400f)
+        // Two strokes in the same gap, past the window of the note before and short of the
+        // window of the note after, so they belong to neither. Mid-run on purpose: after the
+        // last note there is nothing left to judge and a stroke is dropped instead.
+        attempt.registerHit(notes[49].timeMs + windows.okMs + 10f)
+        attempt.registerHit(notes[49].timeMs + windows.okMs + 45f)
         assertEquals(0, attempt.combo)
+        notes.drop(50).forEach { note -> attempt.registerHit(note.timeMs) }
 
         val result = attempt.result()
         assertEquals(2, result.extras)
