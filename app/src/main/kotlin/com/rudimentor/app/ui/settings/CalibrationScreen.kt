@@ -410,11 +410,15 @@ fun CalibrationScreen(
             title = stringResource(R.string.calibration_step1_title),
             titleAction = {
                 HelpButton(
-                    title = stringResource(R.string.calibration_step1_help_title),
-                    body = stringResource(R.string.calibration_step1_intro),
+                    title = stringResource(R.string.check_gate_help_title),
+                    body = stringResource(R.string.check_gate_help_body),
                 )
             },
         ) {
+            // One rule on both screens: the line that says what to do now is visible, and
+            // the reason behind it sits under the question mark (decision 177).
+            SettingsNote(text = stringResource(R.string.check_gate_action))
+            SettingsGap()
             MicLevelMeter(
                 envelope = status.envelope,
                 peak = peak,
@@ -460,11 +464,15 @@ fun CalibrationScreen(
             title = stringResource(R.string.calibration_step2_title),
             titleAction = {
                 HelpButton(
-                    title = stringResource(R.string.calibration_step2_help_title),
-                    body = stringResource(R.string.calibration_step2_intro),
+                    title = stringResource(R.string.check_latency_help_title),
+                    body = stringResource(R.string.check_latency_help_body),
                 )
             },
         ) {
+            SettingsNote(text = stringResource(R.string.check_latency_action))
+            SettingsGap()
+            SettingsNote(text = stringResource(R.string.check_latency_manual))
+            SettingsGap()
             SettingsValueRow(
                 label = stringResource(R.string.calibration_strokes_label),
                 value = stringResource(
@@ -494,7 +502,7 @@ fun CalibrationScreen(
             )
             SettingsGap()
             if (stalled) {
-                SettingsNote(text = stringResource(R.string.calibration_stalled))
+                SettingsNote(text = stringResource(R.string.check_latency_stalled))
                 SettingsGap()
             }
             CalibrationHint(
@@ -536,12 +544,6 @@ fun CalibrationScreen(
                         // Reset while a round is running left the engine clicking and the
                         // round open in telemetry: stop it first, then clear.
                         stopRound(CalibrationTelemetry.REASON_STOPPED)
-                        // Reset used to leave the round clicking and counting from zero,
-                        // so the screen showed a fresh count against a click nobody asked
-                        // for any more (code-notes, fix 3).
-                        if (mode == CalibrationMode.Latency) {
-                            stopRound(CalibrationTelemetry.REASON_STOPPED)
-                        }
                         telemetry.reset(elapsedMs(), reading.samples.size)
                         quietStrokes = 0
                         strayStrokes = 0
@@ -611,18 +613,18 @@ private fun GateHint(
     Column(modifier = Modifier.fillMaxWidth()) {
         when {
             mode == CalibrationMode.ProbeNoise ->
-                SettingsNote(text = stringResource(R.string.calibration_gate_silence))
+                SettingsNote(text = stringResource(R.string.check_gate_silence))
 
             mode == CalibrationMode.ProbeStrokes -> SettingsNote(
                 text = stringResource(
-                    R.string.calibration_gate_strokes,
+                    R.string.check_gate_strokes,
                     strokes,
                     ThresholdProbe.STROKES_NEEDED,
                 ),
             )
 
             result != null && !result.separated ->
-                SettingsNote(text = stringResource(R.string.calibration_gate_too_noisy))
+                SettingsNote(text = stringResource(R.string.check_gate_noisy))
 
             result != null -> SettingsNote(
                 text = stringResource(
@@ -666,7 +668,7 @@ private fun CalibrationHint(
         if (quietStrokes > 0) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = stringResource(R.string.calibration_quiet_dropped, quietStrokes),
+                text = stringResource(R.string.check_latency_quiet, quietStrokes),
                 style = MaterialTheme.typography.bodySmall,
                 color = RudiColors.Brick,
             )

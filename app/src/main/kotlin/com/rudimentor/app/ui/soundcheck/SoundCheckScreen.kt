@@ -45,6 +45,7 @@ import com.rudimentor.app.telemetry.CalibrationTelemetry
 import com.rudimentor.app.telemetry.FLOW_SOUND_CHECK
 import com.rudimentor.app.telemetry.PracticeLogStore
 import com.rudimentor.app.ui.component.AppToolbar
+import com.rudimentor.app.ui.component.HelpButton
 import com.rudimentor.app.ui.component.MicLevelMeter
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
@@ -402,8 +403,14 @@ fun SoundCheckScreen(
         when (step) {
             SoundCheckStep.Pad -> SettingsPanel(
                 title = stringResource(R.string.sound_check_pad_title),
+                titleAction = {
+                    HelpButton(
+                        title = stringResource(R.string.check_gate_help_title),
+                        body = stringResource(R.string.check_gate_help_body),
+                    )
+                },
             ) {
-                SettingsNote(text = stringResource(R.string.sound_check_pad_intro))
+                SettingsNote(text = stringResource(R.string.check_gate_action))
                 SettingsGap()
                 MicLevelMeter(
                     envelope = status.envelope,
@@ -415,15 +422,15 @@ fun SoundCheckScreen(
                 Text(
                     text = when {
                         audioFailed -> stringResource(R.string.sound_check_audio_failed)
-                        stage == Stage.ProbeNoise -> stringResource(R.string.sound_check_pad_silence)
+                        stage == Stage.ProbeNoise -> stringResource(R.string.check_gate_silence)
                         stage == Stage.ProbeStrokes -> stringResource(
-                            R.string.sound_check_pad_strokes,
+                            R.string.check_gate_strokes,
                             probeStrokes,
                             ThresholdProbe.STROKES_NEEDED,
                         )
 
                         padDone && !probeSeparated ->
-                            stringResource(R.string.sound_check_pad_noisy)
+                            stringResource(R.string.check_gate_noisy)
 
                         padDone -> stringResource(R.string.sound_check_pad_done)
                         else -> stringResource(R.string.sound_check_pad_ready)
@@ -450,12 +457,18 @@ fun SoundCheckScreen(
 
             SoundCheckStep.Headphones -> SettingsPanel(
                 title = stringResource(R.string.sound_check_headphones_title),
+                titleAction = {
+                    HelpButton(
+                        title = stringResource(R.string.check_latency_help_title),
+                        body = stringResource(R.string.check_latency_help_body),
+                    )
+                },
             ) {
-                SettingsNote(text = stringResource(R.string.sound_check_headphones_intro))
+                SettingsNote(text = stringResource(R.string.check_latency_action))
                 SettingsGap()
                 // The manual way still works and is what a learner without a free hand
                 // will do, so it is offered here rather than hidden (decision 176).
-                SettingsNote(text = stringResource(R.string.sound_check_headphones_manual))
+                SettingsNote(text = stringResource(R.string.check_latency_manual))
                 SettingsGap()
                 Progress(
                     done = reading.samples.size,
@@ -465,9 +478,9 @@ fun SoundCheckScreen(
                 Text(
                     text = when {
                         audioFailed -> stringResource(R.string.sound_check_audio_failed)
-                        stalled -> stringResource(R.string.sound_check_headphones_stalled)
+                        stalled -> stringResource(R.string.check_latency_stalled)
                         stage == Stage.Latency -> stringResource(
-                            R.string.sound_check_headphones_playing,
+                            R.string.check_latency_listening,
                             reading.samples.size,
                             LatencyCalibration.MAX_SAMPLES,
                         )
@@ -485,7 +498,7 @@ fun SoundCheckScreen(
                 if (quietStrokes > 0 && !headphonesDone) {
                     SettingsGap()
                     Text(
-                        text = stringResource(R.string.sound_check_quiet, quietStrokes),
+                        text = stringResource(R.string.check_latency_quiet, quietStrokes),
                         style = MaterialTheme.typography.bodySmall,
                         color = RudiColors.Muted,
                     )

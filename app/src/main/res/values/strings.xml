@@ -183,24 +183,17 @@
     <string name="calibration_complete">Enough strokes \u2014 apply the value, or reset.</string>
 
     <string name="calibration_step1_title">STEP 1 · STROKE LOUDNESS</string>
-    <string name="calibration_step1_help_title">Stroke loudness</string>
-    <string name="calibration_step1_intro">Nothing plays here. Press Measure, keep quiet while the app listens to the room, then play 8 strokes as you normally would.\n\nThe mark on the bar is the gate: anything quieter is ignored, here and in a level. Step 2 counts only strokes above it, so measure this first.</string>
+    
     <string name="calibration_gate_label">Gate</string>
     <string name="calibration_gate_value">%1$d dB</string>
     <string name="calibration_gate_measure">Measure loudness</string>
     <string name="calibration_gate_cancel">Stop measuring</string>
     <string name="calibration_gate_hint">Not measured yet in this visit.</string>
-    <string name="calibration_gate_silence">Keep quiet for a moment: listening to the room.</string>
-    <string name="calibration_gate_strokes">Now play %2$d strokes at your normal loudness (%1$d of %2$d).</string>
     <string name="calibration_gate_measured">Room %1$d dB, your strokes %2$d dB. The gate sits between them.</string>
-    <string name="calibration_gate_too_noisy">The room is almost as loud as your strokes. Move somewhere quieter, or set the gate by hand.</string>
     <string name="calibration_meter_cd">Microphone level with the gate mark</string>
 
     <string name="calibration_step2_title">STEP 2 · LATENCY</string>
-    <string name="calibration_step2_help_title">Latency</string>
-    <string name="calibration_step2_intro">Take one earcup off and hold it against the phone\u2019s microphone, then press Start and keep still. The app plays a click and hears its own click come back, so it measures the headphones without you playing at all. That takes about fifteen seconds and repeats to a fraction of a millisecond.\n\nNo free hand? Play one stroke on every click instead. That works, but it is less precise: your own timing goes into the number, so it comes out lower than the headphones really are.</string>
-    <string name="calibration_stalled">Not one stroke was counted. Play harder, or lower the gate in step\u00a01.</string>
-    <string name="calibration_quiet_dropped">%1$d strokes were too quiet to count. Play harder, or lower the gate in step\u00a01.</string>
+    
     <string name="calibration_stray_dropped">%1$d strokes landed too far from a click to be a round trip.</string>
     <string name="calibration_step2_profile">Saved for \u201c%1$s\u201d.</string>
 
@@ -254,6 +247,23 @@
     <string name="advice_detail_short">Fewer than %1$d counted strokes: too few for any of this to mean anything.</string>
     <string name="advice_detail_strokes">%1$d counted strokes</string>
 
+    <!-- Shared by the sound check node and the calibration screen: one act, one wording.
+         The two screens teach the same two measurements, so the instruction, the fallback
+         and the troubleshooting live here once (decision 177). -->
+    <string name="check_gate_help_title">Stroke loudness</string>
+    <string name="check_latency_help_title">Headphones</string>
+    <string name="check_gate_action">Put the phone next to the pad. Keep quiet for a moment, then play 8 strokes as you normally would.</string>
+    <string name="check_gate_help_body">Nothing plays in this step. The app listens to the room first, then to your strokes, and puts a gate between the two.\n\nThe mark on the bar is that gate: anything quieter is ignored, here and in a level. The headphones step counts only what is above it, so this one comes first.</string>
+    <string name="check_gate_silence">Keep quiet for a moment: listening to the room.</string>
+    <string name="check_gate_strokes">Now play 8 strokes at your normal loudness (%1$d of %2$d).</string>
+    <string name="check_gate_noisy">The room is almost as loud as your strokes. It will work, but somewhere quieter works better.</string>
+    <string name="check_latency_action">Take one earcup off, hold it against the phone\u2019s microphone and keep still. You play nothing here.</string>
+    <string name="check_latency_manual">No free hand? Play one stroke on every click instead \u2014 less precise, and it takes about half a minute.</string>
+    <string name="check_latency_help_body">The app plays a click and hears its own click come back, so it measures the headphones without you playing at all. Held against the microphone it repeats to a fraction of a millisecond and stops on its own after about fifteen seconds.\n\nPlaying along by hand works too, but your own timing goes into the number: it comes out lower than the headphones really are, and it needs about half a minute of even strokes.\n\nThe number is kept per output, so this does not need repeating unless you switch to another pair.</string>
+    <string name="check_latency_listening">Keep still \u2014 %1$d of %2$d heard.</string>
+    <string name="check_latency_stalled">Nothing was heard. Hold the earcup closer to the microphone, turn the headphone volume up, or lower the gate in the loudness step.</string>
+    <string name="check_latency_quiet">%1$d onsets were too quiet to count. Hold the earcup closer, or lower the gate.</string>
+
     <!-- Sound check: the onboarding node of the level map -->
     <string name="sound_check_title">SOUND CHECK</string>
     <string name="help_open">What %1$s does</string>
@@ -274,20 +284,11 @@
     <string name="sound_check_permission_body">The app listens to your pad to know when you hit it. Audio is never recorded or sent anywhere.</string>
     <string name="sound_check_permission_grant">Allow the microphone</string>
     <string name="sound_check_pad_title">PAD AND PHONE</string>
-    <string name="sound_check_pad_intro">Put the phone next to the pad. Press Start, keep quiet for a moment, then play 8 strokes as you normally would. This teaches the app how loud you are, so the room is not mistaken for your stick.</string>
     <string name="sound_check_pad_ready">Nothing plays in this step.</string>
-    <string name="sound_check_pad_silence">Keep quiet for a moment: listening to the room.</string>
-    <string name="sound_check_pad_strokes">Now play 8 strokes at your normal loudness (%1$d of %2$d).</string>
     <string name="sound_check_pad_done">Heard you clearly. The phone can tell your strokes from the room.</string>
-    <string name="sound_check_pad_noisy">The room is almost as loud as your strokes. It will work, but somewhere quieter works better.</string>
     <string name="sound_check_headphones_title">HEADPHONES</string>
-    <string name="sound_check_headphones_intro">Take one earcup off and hold it against the phone\u2019s microphone, then press Start and keep still \u2014 the app plays a click and listens to its own click coming back. About fifteen seconds, and you play nothing.</string>
     <string name="sound_check_headphones_ready">Hold the earcup against the microphone, then press Start.</string>
-    <string name="sound_check_headphones_playing">Keep still \u2014 %1$d of %2$d heard.</string>
     <string name="sound_check_headphones_done">Headphones checked \u2014 saved for \u201c%1$s\u201d. This does not need repeating unless you switch to another pair.</string>
-    <string name="sound_check_headphones_manual">No free hand? Play one stroke on every click instead \u2014 less precise, and it takes about half a minute.</string>
-    <string name="sound_check_headphones_stalled">Nothing was heard. Hold the earcup closer to the microphone, or turn the headphone volume up.</string>
-    <string name="sound_check_quiet">%1$d strokes were too quiet to count. Play a little harder.</string>
     <string name="sound_check_play_title">FIRST CLICK</string>
     <string name="sound_check_play_intro">Eight strokes with the click, nothing scored, nothing saved. Just to feel what a level feels like.</string>
     <string name="sound_check_play_ready">Press Start when you are ready.</string>
