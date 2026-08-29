@@ -198,7 +198,7 @@
 
     <string name="calibration_step2_title">STEP 2 · LATENCY</string>
     <string name="calibration_step2_help_title">Latency</string>
-    <string name="calibration_step2_intro">Wear the headphones you practise with and play one stroke on every click, evenly, for about half a minute. The click plays out loud on purpose \u2014 it is what is being measured.\n\nThe first few strokes are ignored while you settle in, and quiet ones are counted at half the gate of step 1, so a softer stroke still counts. Anything dropped is reported under the counter.</string>
+    <string name="calibration_step2_intro">Take one earcup off and hold it against the phone\u2019s microphone, then press Start and keep still. The app plays a click and hears its own click come back, so it measures the headphones without you playing at all. That takes about fifteen seconds and repeats to a fraction of a millisecond.\n\nNo free hand? Play one stroke on every click instead. That works, but it is less precise: your own timing goes into the number, so it comes out lower than the headphones really are.</string>
     <string name="calibration_stalled">Not one stroke was counted. Play harder, or lower the gate in step\u00a01.</string>
     <string name="calibration_quiet_dropped">%1$d strokes were too quiet to count. Play harder, or lower the gate in step\u00a01.</string>
     <string name="calibration_stray_dropped">%1$d strokes landed too far from a click to be a round trip.</string>
@@ -281,11 +281,12 @@
     <string name="sound_check_pad_done">Heard you clearly. The phone can tell your strokes from the room.</string>
     <string name="sound_check_pad_noisy">The room is almost as loud as your strokes. It will work, but somewhere quieter works better.</string>
     <string name="sound_check_headphones_title">HEADPHONES</string>
-    <string name="sound_check_headphones_intro">Wear the headphones you practise with. A click plays out loud on purpose. Play one stroke on every click, evenly, for about half a minute \u2014 this teaches the app how your headphones behave, so a stroke you played on the click is not judged as late.</string>
-    <string name="sound_check_headphones_ready">About half a minute of even strokes.</string>
-    <string name="sound_check_headphones_playing">Keep playing one stroke per click (%1$d of %2$d).</string>
+    <string name="sound_check_headphones_intro">Take one earcup off and hold it against the phone\u2019s microphone, then press Start and keep still \u2014 the app plays a click and listens to its own click coming back. About fifteen seconds, and you play nothing.</string>
+    <string name="sound_check_headphones_ready">Hold the earcup against the microphone, then press Start.</string>
+    <string name="sound_check_headphones_playing">Keep still \u2014 %1$d of %2$d heard.</string>
     <string name="sound_check_headphones_done">Headphones checked \u2014 saved for \u201c%1$s\u201d. This does not need repeating unless you switch to another pair.</string>
-    <string name="sound_check_headphones_stalled">Not one stroke was counted. Check that the phone can hear the pad, or redo the previous step.</string>
+    <string name="sound_check_headphones_manual">No free hand? Play one stroke on every click instead \u2014 less precise, and it takes about half a minute.</string>
+    <string name="sound_check_headphones_stalled">Nothing was heard. Hold the earcup closer to the microphone, or turn the headphone volume up.</string>
     <string name="sound_check_quiet">%1$d strokes were too quiet to count. Play a little harder.</string>
     <string name="sound_check_play_title">FIRST CLICK</string>
     <string name="sound_check_play_intro">Eight strokes with the click, nothing scored, nothing saved. Just to feel what a level feels like.</string>

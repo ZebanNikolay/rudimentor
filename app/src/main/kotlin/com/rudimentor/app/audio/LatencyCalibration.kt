@@ -57,6 +57,24 @@ class LatencyCalibration(
         val complete: Boolean,
     ) {
         val ready: Boolean = medianMs != null
+
+        /**
+         * True once the median cannot meaningfully move any more: enough strokes, and they
+         * all land within [SETTLED_SPREAD_MS] of each other.
+         *
+         * This is what makes the objective measurement short. With the earcup held against
+         * the microphone the app hears its own click and the samples repeat to a fraction of
+         * a millisecond, so waiting for all [MAX_SAMPLES] of them buys nothing and costs the
+         * learner half a minute of standing still. Strokes played by hand scatter by ~20 ms
+         * and never settle, so that round still runs its full length, where the extra
+         * samples do narrow the median.
+         */
+        val settled: Boolean = medianMs != null &&
+            samples.size >= MIN_SAMPLES &&
+            spreadMs <= SETTLED_SPREAD_MS
+
+        /** Nothing more to measure: either it settled, or the round ran out of strokes. */
+        val finished: Boolean = complete || settled
     }
 
     private val samples = ArrayList<Float>(MAX_SAMPLES)
@@ -107,8 +125,15 @@ class LatencyCalibration(
         /** Accepted strokes needed before a median is offered. */
         const val MIN_SAMPLES = 8
 
-        /** Strokes one round measures. The round is over once it has them. */
+        /** Strokes one round measures at most. The round is over once it has them. */
         const val MAX_SAMPLES = 32
+
+        /**
+         * Scatter under which the round stops early, as [Reading.settled] describes. The
+         * objective measurement scatters by a fraction of a millisecond and clears this at
+         * once; strokes played by hand scatter by tens of milliseconds and never do.
+         */
+        const val SETTLED_SPREAD_MS = 5f
 
         /**
          * Tempo of the calibration click. At 60 bpm a beat is a full second, so a round

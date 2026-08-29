@@ -299,8 +299,8 @@ fun SoundCheckScreen(
 
     // The click round ends itself once it holds its strokes, so nobody plays into a counter
     // that has stopped counting.
-    LaunchedEffect(reading.complete, stage) {
-        if (!reading.complete || stage != Stage.Latency) return@LaunchedEffect
+    LaunchedEffect(reading.finished, stage) {
+        if (!reading.finished || stage != Stage.Latency) return@LaunchedEffect
         val median = reading.medianMs
         DevLog.log("soundcheck", "round complete, median ${median?.roundToInt() ?: -1} ms")
         telemetry.roundStopped(elapsedMs(), CalibrationTelemetry.REASON_COMPLETE)
@@ -452,6 +452,10 @@ fun SoundCheckScreen(
                 title = stringResource(R.string.sound_check_headphones_title),
             ) {
                 SettingsNote(text = stringResource(R.string.sound_check_headphones_intro))
+                SettingsGap()
+                // The manual way still works and is what a learner without a free hand
+                // will do, so it is offered here rather than hidden (decision 176).
+                SettingsNote(text = stringResource(R.string.sound_check_headphones_manual))
                 SettingsGap()
                 Progress(
                     done = reading.samples.size,

@@ -346,8 +346,8 @@ fun CalibrationScreen(
 
     // The round is over when it has its strokes: the click stops on its own, so the
     // learner is never left playing into a counter that has stopped counting.
-    LaunchedEffect(reading.complete, mode) {
-        if (reading.complete && mode == CalibrationMode.Latency) {
+    LaunchedEffect(reading.finished, mode) {
+        if (reading.finished && mode == CalibrationMode.Latency) {
             DevLog.log(
                 "calibration",
                 "round complete at ${reading.samples.size} strokes, " +
@@ -525,7 +525,7 @@ fun CalibrationScreen(
                     // otherwise Start would come up on a counter that is already full.
                     enabled = when (mode) {
                         CalibrationMode.Latency -> true
-                        CalibrationMode.Idle -> !reading.complete
+                        CalibrationMode.Idle -> !reading.finished
                         else -> false
                     },
                     modifier = Modifier.weight(1f),
@@ -536,6 +536,12 @@ fun CalibrationScreen(
                         // Reset while a round is running left the engine clicking and the
                         // round open in telemetry: stop it first, then clear.
                         stopRound(CalibrationTelemetry.REASON_STOPPED)
+                        // Reset used to leave the round clicking and counting from zero,
+                        // so the screen showed a fresh count against a click nobody asked
+                        // for any more (code-notes, fix 3).
+                        if (mode == CalibrationMode.Latency) {
+                            stopRound(CalibrationTelemetry.REASON_STOPPED)
+                        }
                         telemetry.reset(elapsedMs(), reading.samples.size)
                         quietStrokes = 0
                         strayStrokes = 0
@@ -639,7 +645,7 @@ private fun CalibrationHint(
     strayStrokes: Int,
 ) {
     val text = when {
-        reading.complete -> stringResource(R.string.calibration_complete)
+        reading.finished -> stringResource(R.string.calibration_complete)
         !reading.ready -> stringResource(
             R.string.calibration_need_more,
             LatencyCalibration.MIN_SAMPLES - reading.samples.size,
