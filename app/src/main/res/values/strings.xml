@@ -27,8 +27,9 @@
     <string name="levels_family_complete">Family complete</string>
     <string name="levels_required_path_complete">Required path complete</string>
     <string name="levels_open_next">Open next level</string>
-    <string name="levels_sound_check_call">Three short steps so the app hears your pad and your headphones. It stays on the map if you skip it.</string>
-    <string name="levels_sound_check_node">Sound check. Checks that the app hears your pad. Can be replayed at any time.</string>
+    <string name="levels_sound_check_call">About a minute, two measurements: how loud your strokes are, and how late the click reaches your headphones. It stays on the map if you skip it.</string>
+    <string name="levels_sound_check_call_silent">Half a minute so the app can hear your strokes on the pad. Connect headphones and run it again to get the click as well. It stays on the map if you skip it.</string>
+    <string name="levels_sound_check_node">Sound check. Teaches the app your pad and your headphones. Can be replayed at any time.</string>
     <string name="levels_sound_check_hide">Not now</string>
     <string name="levels_sound_check_open">Sound check</string>
 
@@ -119,7 +120,6 @@
     <string name="practice_settings_done">Done</string>
     <string name="practice_click_label">Metronome click</string>
     <string name="practice_click_warning">The microphone will hear the speaker and count the click as a hit.</string>
-    <string name="practice_latency_label">Input latency</string>
     <string name="practice_latency_value">%1$d ms</string>
     <string name="practice_offset_ms_label">Show timing in ms</string>
     <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>

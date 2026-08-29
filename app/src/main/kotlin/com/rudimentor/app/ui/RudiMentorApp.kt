@@ -205,6 +205,7 @@ fun RudiMentorApp(
                     screenName = Screen.SoundCheck.name
                 },
                 soundCheckDone = settings.soundCheckDone,
+                clickSounds = clickAudible,
                 soundCheckPlateHidden = settings.soundCheckPlateHidden,
                 onHideSoundCheckPlate = onHideSoundCheckPlate,
             )

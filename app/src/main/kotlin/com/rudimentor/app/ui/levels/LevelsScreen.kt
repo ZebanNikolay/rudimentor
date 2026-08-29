@@ -104,6 +104,11 @@ fun LevelsScreen(
     onOpenSoundCheck: () -> Unit,
     /** Whether the sound check has already been walked once on this device. */
     soundCheckDone: Boolean,
+    /**
+     * Whether the click sounds on the selected output. The plate promises only what this
+     * visit would actually measure: without a click there is no headphones step (decision 178).
+     */
+    clickSounds: Boolean,
     /** Whether the learner has closed the plate that calls for the sound check. */
     soundCheckPlateHidden: Boolean,
     /** Closes that plate for good. The node on the map keeps the check reachable. */
@@ -158,6 +163,7 @@ fun LevelsScreen(
             // map itself, so closing it never takes the check away (decision 171).
             if (!soundCheckDone && !soundCheckPlateHidden) {
                 SoundCheckPlate(
+                    clickSounds = clickSounds,
                     onClick = onOpenSoundCheck,
                     onDismiss = onHideSoundCheckPlate,
                 )
@@ -230,7 +236,7 @@ fun LevelsScreen(
  * the check has been walked (decision 171).
  */
 @Composable
-private fun SoundCheckPlate(onClick: () -> Unit, onDismiss: () -> Unit) {
+private fun SoundCheckPlate(clickSounds: Boolean, onClick: () -> Unit, onDismiss: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -246,7 +252,13 @@ private fun SoundCheckPlate(onClick: () -> Unit, onDismiss: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(3.dp))
         Text(
-            text = stringResource(R.string.levels_sound_check_call),
+            text = stringResource(
+                if (clickSounds) {
+                    R.string.levels_sound_check_call
+                } else {
+                    R.string.levels_sound_check_call_silent
+                },
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = RudiColors.Text,
         )

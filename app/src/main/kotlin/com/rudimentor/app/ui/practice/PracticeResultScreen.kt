@@ -97,6 +97,10 @@ fun PracticeResultScreen(
                     unknownOutput = unknownOutput,
                     buildInfo = buildInfo,
                     onApply = onApplyDraft,
+                    onSoundCheck = {
+                        settingsOpen = false
+                        onSoundCheck()
+                    },
                     onDone = { settingsOpen = false },
                 )
             }

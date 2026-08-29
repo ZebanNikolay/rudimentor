@@ -33,7 +33,10 @@ import kotlin.math.roundToInt
  * automatic.
  *
  * The latency is reported, not edited: the only honest value is a measured one, and it is
- * measured on the calibration screen in Settings (decision 154).
+ * measured by the sound check (decision 154). So the row says the same two things the
+ * settings screen says -- measured, or not measured yet -- and carries the way to fix it,
+ * which the drawer used to leave as a dead end right after the run that exposed it
+ * (decision 179).
  *
  * The click is the output's own switch: over the speaker the microphone hears it and
  * scores it as a stroke, so a new profile for the built-in output starts silent and one
@@ -47,6 +50,8 @@ fun PracticeSettingsPanel(
     unknownOutput: Boolean,
     buildInfo: BuildInfo,
     onApply: (SettingsDraft) -> Unit,
+    /** Leaves for the sound check: the only place the latency can honestly be changed. */
+    onSoundCheck: () -> Unit,
     onDone: () -> Unit,
 ) {
     var draft by remember { mutableStateOf(SettingsDraft.from(settings)) }
@@ -80,12 +85,25 @@ fun PracticeSettingsPanel(
             SettingsWarning(text = stringResource(R.string.practice_click_warning))
         }
         SettingsGap()
+        // Same label and same two verdicts as the settings screen: the drawer said
+        // "Input latency" and always claimed the number was measured for this output.
         SettingsValueRow(
-            label = stringResource(R.string.practice_latency_label),
+            label = stringResource(R.string.settings_latency_label),
             value = stringResource(R.string.practice_latency_value, draft.latencyMs.roundToInt()),
         )
-        SettingsNote(
-            text = stringResource(R.string.practice_output_current, draft.selectedProfile.name),
+        if (draft.latencyCalibrated) {
+            SettingsNote(
+                text = stringResource(R.string.practice_output_current, draft.selectedProfile.name),
+            )
+        } else {
+            SettingsWarning(text = stringResource(R.string.settings_latency_guessed))
+        }
+        SettingsGap()
+        RudiButton(
+            text = stringResource(R.string.settings_calibrate),
+            onClick = onSoundCheck,
+            style = RudiButtonStyle.Secondary,
+            modifier = Modifier.fillMaxWidth(),
         )
         SettingsGap()
         // The verdict word is the default; the millisecond offset is for tuning the ear
