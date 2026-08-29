@@ -53,7 +53,6 @@ class DataStoreSettingsRepository(
             activeRow = (preferences[Keys.ActiveRow] ?: 0).coerceIn(0, grid.rowCount - 1),
             showHandLetters = preferences[Keys.ShowHandLetters] ?: true,
             clickAudible = preferences[Keys.ClickAudible] ?: false,
-            clickFollowsHeadphones = preferences[Keys.ClickFollowsHeadphones] ?: true,
             inputLatencyMs = preferences[Keys.InputLatencyMs] ?: MicLab.DEFAULT_LATENCY_MS,
             latencyCalibrated = preferences[Keys.LatencyCalibrated] ?: false,
             micThresholdLevel = preferences[Keys.MicThresholdLevel]
@@ -63,6 +62,10 @@ class DataStoreSettingsRepository(
                 raw = preferences[Keys.OutputProfiles],
                 fallbackLatencyMs = preferences[Keys.InputLatencyMs] ?: MicLab.DEFAULT_LATENCY_MS,
                 fallbackCalibrated = preferences[Keys.LatencyCalibrated] ?: false,
+                // Installs from before decision 172 carry one global gate; every profile
+                // inherits it, so nobody's measured threshold is thrown away on update.
+                fallbackGateLevel = preferences[Keys.MicThresholdLevel]
+                    ?: MicThreshold.DEFAULT_LEVEL,
             ),
             selectedProfileId = preferences[Keys.SelectedProfile] ?: OutputProfile.DEFAULT_ID,
             soundCheckDone = preferences[Keys.SoundCheckDone] ?: false,
@@ -77,7 +80,6 @@ class DataStoreSettingsRepository(
         this[Keys.ActiveRow] = safe.activeRow
         this[Keys.ShowHandLetters] = safe.showHandLetters
         this[Keys.ClickAudible] = safe.clickAudible
-        this[Keys.ClickFollowsHeadphones] = safe.clickFollowsHeadphones
         this[Keys.InputLatencyMs] = safe.inputLatencyMs
         this[Keys.LatencyCalibrated] = safe.latencyCalibrated
         this[Keys.MicThresholdLevel] = safe.micThresholdLevel
@@ -94,8 +96,6 @@ class DataStoreSettingsRepository(
         val ActiveRow = intPreferencesKey("active_row")
         val ShowHandLetters = booleanPreferencesKey("show_hand_letters")
         val ClickAudible = booleanPreferencesKey("practice_click_audible")
-        val ClickFollowsHeadphones =
-            booleanPreferencesKey("practice_click_follows_headphones")
         val InputLatencyMs = floatPreferencesKey("practice_input_latency_ms")
         val LatencyCalibrated = booleanPreferencesKey("practice_latency_calibrated")
         val MicThresholdLevel = floatPreferencesKey("practice_mic_threshold_level")

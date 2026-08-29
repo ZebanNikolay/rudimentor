@@ -14,7 +14,6 @@ import kotlin.math.abs
  */
 data class SettingsDraft(
     val clickAudible: Boolean,
-    val clickFollowsHeadphones: Boolean,
     val showOffsetMs: Boolean,
     val latencyMs: Float,
     val latencyCalibrated: Boolean,
@@ -44,6 +43,8 @@ data class SettingsDraft(
             selectedProfileId = target.id,
             latencyMs = target.latencyMs,
             latencyCalibrated = target.latencyCalibrated,
+            clickAudible = target.clickAudible,
+            micThresholdLevel = target.micThresholdLevel,
         )
     }
 
@@ -68,6 +69,8 @@ data class SettingsDraft(
             selectedProfileId = added.id,
             latencyMs = added.latencyMs,
             latencyCalibrated = false,
+            clickAudible = added.clickAudible,
+            micThresholdLevel = added.micThresholdLevel,
         )
     }
 
@@ -159,31 +162,26 @@ data class SettingsDraft(
     )
 
     /**
-     * A hand on the click switch takes it off automatic, exactly as it does during an
-     * attempt (decision 114).
+     * The click switch of the selected output. It is that output's own choice: silent over
+     * the speaker, where the microphone would count it as a stroke, and free to be on in
+     * headphones (decision 172).
      */
-    fun withClickAudible(audible: Boolean): SettingsDraft = copy(
-        clickAudible = audible,
-        clickFollowsHeadphones = false,
-    )
-
-    /**
-     * What the click switch shows: the stored choice, or the output state while the draft
-     * is still on automatic (decision 114).
-     */
-    fun effectiveClickAudible(headphonesConnected: Boolean): Boolean =
-        if (clickFollowsHeadphones) headphonesConnected else clickAudible
+    fun withClickAudible(audible: Boolean): SettingsDraft = copy(clickAudible = audible)
 
     fun applyTo(settings: AppSettings): AppSettings = settings.copy(
         clickAudible = clickAudible,
-        clickFollowsHeadphones = clickFollowsHeadphones,
         showOffsetMs = showOffsetMs,
         inputLatencyMs = latencyMs,
         latencyCalibrated = latencyCalibrated,
         micThresholdLevel = micThresholdLevel,
         outputProfiles = outputProfiles.map { profile ->
             if (profile.id == selectedProfileId) {
-                profile.copy(latencyMs = latencyMs, latencyCalibrated = latencyCalibrated)
+                profile.copy(
+                    latencyMs = latencyMs,
+                    latencyCalibrated = latencyCalibrated,
+                    clickAudible = clickAudible,
+                    micThresholdLevel = micThresholdLevel,
+                )
             } else {
                 profile
             }
@@ -206,15 +204,17 @@ data class SettingsDraft(
          */
         const val BIAS_APPLY_MIN_MS = 4f
 
-        fun from(settings: AppSettings): SettingsDraft = SettingsDraft(
-            clickAudible = settings.clickAudible,
-            clickFollowsHeadphones = settings.clickFollowsHeadphones,
-            showOffsetMs = settings.showOffsetMs,
-            latencyMs = settings.inputLatencyMs,
-            latencyCalibrated = settings.latencyCalibrated,
-            micThresholdLevel = settings.micThresholdLevel,
-            outputProfiles = settings.sanitized().outputProfiles,
-            selectedProfileId = settings.sanitized().selectedProfileId,
-        )
+        fun from(settings: AppSettings): SettingsDraft {
+            val safe = settings.sanitized()
+            return SettingsDraft(
+                clickAudible = safe.clickAudible,
+                showOffsetMs = safe.showOffsetMs,
+                latencyMs = safe.inputLatencyMs,
+                latencyCalibrated = safe.latencyCalibrated,
+                micThresholdLevel = safe.micThresholdLevel,
+                outputProfiles = safe.outputProfiles,
+                selectedProfileId = safe.selectedProfileId,
+            )
+        }
     }
 }

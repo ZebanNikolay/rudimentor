@@ -11,12 +11,14 @@ import androidx.compose.ui.res.stringResource
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.OutputKind
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.SettingsGap
 import com.rudimentor.app.ui.component.SettingsNote
 import com.rudimentor.app.ui.component.SettingsPanel
+import com.rudimentor.app.ui.component.SettingsWarning
 import com.rudimentor.app.ui.component.SettingsSwitchRow
 import com.rudimentor.app.ui.component.SettingsValueRow
 import kotlin.math.roundToInt
@@ -33,15 +35,14 @@ import kotlin.math.roundToInt
  * The latency is reported, not edited: the only honest value is a measured one, and it is
  * measured on the calibration screen in Settings (decision 154).
  *
- * The click follows the headphones on its own: with the speaker open the microphone
- * hears the click and scores it as a stroke (decision 88), so it stays silent there.
- * Touching the switch takes the click off automatic, and the panel then offers the
- * way back (decision 114).
+ * The click is the output's own switch: over the speaker the microphone hears it and
+ * scores it as a stroke, so a new profile for the built-in output starts silent and one
+ * for headphones starts audible (decision 172). Only that first case is captioned, and
+ * it is the one warning on the panel -- hints elsewhere are quiet (decision 173).
  */
 @Composable
 fun PracticeSettingsPanel(
     settings: AppSettings,
-    headphonesConnected: Boolean,
     /** True when the sound goes through an output with no profile of its own. */
     unknownOutput: Boolean,
     buildInfo: BuildInfo,
@@ -59,48 +60,33 @@ fun PracticeSettingsPanel(
         title = stringResource(R.string.practice_settings_title),
         buildLabel = buildInfo.displayLabel,
     ) {
-        // Which headphones the latency belongs to. An output nobody calibrated keeps the
-        // previous number, so the panel says so rather than letting it pass for measured
-        // (decision 161).
-        SettingsNote(
-            text = if (unknownOutput) {
-                stringResource(
+        // Which output these numbers belong to. One that was never calibrated keeps the
+        // previous latency, and that is the one thing worth a warning here (decision 161).
+        if (unknownOutput) {
+            SettingsWarning(
+                text = stringResource(
                     R.string.practice_output_unknown,
                     draft.selectedProfile.name,
-                )
-            } else {
-                stringResource(R.string.practice_output_current, draft.selectedProfile.name)
-            },
-        )
-        SettingsGap()
+                ),
+            )
+            SettingsGap()
+        }
         SettingsSwitchRow(
             label = stringResource(R.string.practice_click_label),
-            checked = draft.effectiveClickAudible(headphonesConnected),
+            checked = draft.clickAudible,
             onCheckedChange = { update(draft.withClickAudible(it)) },
         )
-        if (draft.clickFollowsHeadphones) {
-            SettingsNote(text = stringResource(R.string.practice_click_auto_note))
-        } else {
-            val note = if (draft.clickAudible) {
-                R.string.practice_click_warning
-            } else {
-                R.string.practice_click_manual_note
-            }
-            SettingsNote(text = stringResource(note))
-            SettingsGap()
-            RudiButton(
-                text = stringResource(R.string.practice_click_auto_restore),
-                onClick = { update(draft.copy(clickFollowsHeadphones = true)) },
-                style = RudiButtonStyle.Secondary,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        if (draft.clickAudible && draft.selectedProfile.kind == OutputKind.Default) {
+            SettingsWarning(text = stringResource(R.string.practice_click_warning))
         }
         SettingsGap()
         SettingsValueRow(
             label = stringResource(R.string.practice_latency_label),
             value = stringResource(R.string.practice_latency_value, draft.latencyMs.roundToInt()),
         )
-        SettingsNote(text = stringResource(R.string.practice_latency_settings_note))
+        SettingsNote(
+            text = stringResource(R.string.practice_output_current, draft.selectedProfile.name),
+        )
         SettingsGap()
         // The verdict word is the default; the millisecond offset is for tuning the ear
         // and the latency, so it is opt-in (decision 130).
@@ -109,7 +95,6 @@ fun PracticeSettingsPanel(
             checked = draft.showOffsetMs,
             onCheckedChange = { update(draft.copy(showOffsetMs = it)) },
         )
-        SettingsNote(text = stringResource(R.string.practice_offset_ms_note))
         SettingsGap()
         RudiButton(
             text = stringResource(R.string.practice_settings_done),

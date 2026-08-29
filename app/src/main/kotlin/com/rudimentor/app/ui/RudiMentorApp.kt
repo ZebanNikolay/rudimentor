@@ -92,15 +92,14 @@ fun RudiMentorApp(
     /** Closes the plate above the level map that calls for the sound check. */
     onHideSoundCheckPlate: () -> Unit,
 ) {
-    // The click follows the audio output until the learner overrides it by hand, so
-    // the effective value is decided here, once, for every screen that plays it
-    // (decision 114).
     val context = LocalContext.current
     val headphonesFlow = remember(context) { AudioOutputMonitor.connectedFlow(context) }
     val headphonesConnected by headphonesFlow.collectAsStateWithLifecycle(
         initialValue = AudioOutputMonitor.isConnected(context),
     )
-    val clickAudible = settings.clickAudibleWith(headphonesConnected)
+    // The click belongs to the output in force, and the settings mirror that profile, so
+    // the value is simply read here (decision 172).
+    val clickAudible = settings.clickAudible
 
     // Which output the sound is going through, so the latency saved for those headphones is
     // the one in force. An output nobody saved leaves the current latency alone and warns
@@ -257,9 +256,9 @@ fun RudiMentorApp(
                             latencyCalibrated = settings.latencyCalibrated,
                             calibrationSkewMs = settings.selectedProfile.calibrationSkewMs,
                             micThresholdLevel = settings.micThresholdLevel,
+                            headphonesConnected = headphonesConnected,
                             showOffsetMs = settings.showOffsetMs,
                             buildInfo = buildInfo,
-                            headphonesConnected = headphonesConnected,
                             unknownOutput = unknownOutput,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
@@ -319,7 +318,6 @@ fun RudiMentorApp(
                         buildInfo = buildInfo,
                         settings = settings,
                         unknownOutput = unknownOutput,
-                        headphonesConnected = headphonesConnected,
                         onApplyDraft = onApplyDraft,
                         onRetry = {
                             practiceRunId += 1
@@ -353,7 +351,6 @@ fun RudiMentorApp(
                 } else {
                     SettingsScreen(
                         draft = draft,
-                        headphonesConnected = headphonesConnected,
                         currentOutput = currentOutput,
                         buildInfo = buildInfo,
                         // Instant apply: a switch flipped here is a switch changed, with no
@@ -376,9 +373,9 @@ fun RudiMentorApp(
                     ?: settings.latencyCalibrated,
                 micThresholdLevel = settingsDraft?.micThresholdLevel
                     ?: settings.micThresholdLevel,
-                headphonesConnected = headphonesConnected,
                 profileName = settingsDraft?.selectedProfile?.name
                     ?: settings.selectedProfile.name,
+                headphonesConnected = headphonesConnected,
                 buildInfo = buildInfo,
                 onApply = { measuredMs, measuredSkewMs, micThreshold ->
                     // The screen stores as it measures, and stays open: a finished round is

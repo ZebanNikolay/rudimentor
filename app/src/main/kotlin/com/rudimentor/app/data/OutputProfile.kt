@@ -1,5 +1,7 @@
 package com.rudimentor.app.data
 
+import com.rudimentor.app.audio.MicThreshold
+
 /**
  * One saved output the learner practises through, with the latency measured for it.
  *
@@ -41,12 +43,31 @@ data class OutputProfile(
      * 145 ms late, and no amount of recalibrating helped.
      */
     val calibrationSkewMs: Float? = null,
+    /**
+     * Whether the click is played out loud while practising through this output.
+     *
+     * It belongs to the output and not to the app: on the built-in speaker the microphone
+     * hears the click and scores it as a stroke, on headphones it is private. A new profile
+     * starts on [clickAudibleDefault] for its kind and is a plain switch from then on -- the
+     * old global switch survived a change of output and left the click on over the speaker
+     * (decision 172).
+     */
+    val clickAudible: Boolean = kind != OutputKind.Default,
+    /**
+     * Loudness an onset has to reach before it counts as a stroke, as an envelope level.
+     *
+     * Measured by the sound check together with the latency, so it travels with the output:
+     * a wired or USB headset moves the recording to *its* microphone, and a gate measured on
+     * the phone's own microphone does not hold there (decision 172).
+     */
+    val micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
 ) {
     val removable: Boolean = id != DEFAULT_ID
 
     fun sanitized(): OutputProfile = copy(
         name = cleanName(name).ifBlank { kind.fallbackName },
         latencyMs = latencyMs.coerceIn(AppSettings.LATENCY_MIN_MS, AppSettings.LATENCY_MAX_MS),
+        micThresholdLevel = MicThreshold.clamp(micThresholdLevel),
     )
 
     companion object {
@@ -59,10 +80,17 @@ data class OutputProfile(
          */
         const val MAX_PROFILES = 3
 
+        /**
+         * Where the click switch of a fresh profile starts: silent on the built-in output,
+         * where the microphone would hear it, audible on anything the learner wears.
+         */
+        fun clickAudibleDefault(kind: OutputKind): Boolean = kind != OutputKind.Default
+
         fun default(
             latencyMs: Float,
             latencyCalibrated: Boolean,
             lastUsedAt: Long = 0L,
+            micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
         ): OutputProfile = OutputProfile(
             id = DEFAULT_ID,
             name = OutputKind.Default.fallbackName,
@@ -72,6 +100,8 @@ data class OutputProfile(
             latencyCalibrated = latencyCalibrated,
             lastUsedAt = lastUsedAt,
             calibrationSkewMs = null,
+            clickAudible = clickAudibleDefault(OutputKind.Default),
+            micThresholdLevel = micThresholdLevel,
         )
 
         /** A profile for an output that is connected right now. */
@@ -80,6 +110,7 @@ data class OutputProfile(
             latencyMs: Float,
             latencyCalibrated: Boolean,
             now: Long,
+            micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
         ): OutputProfile = OutputProfile(
             id = "out-$now",
             name = cleanName(device.name).ifBlank { device.kind.fallbackName },
@@ -88,6 +119,8 @@ data class OutputProfile(
             latencyMs = latencyMs,
             latencyCalibrated = latencyCalibrated,
             lastUsedAt = now,
+            clickAudible = clickAudibleDefault(device.kind),
+            micThresholdLevel = micThresholdLevel,
         ).sanitized()
 
         /** Longest name a profile may carry, so the row on the settings screen fits. */
@@ -149,6 +182,8 @@ internal fun List<OutputProfile>.serialize(): String = joinToString(separator = 
         if (p.latencyCalibrated) "1" else "0",
         p.lastUsedAt.toString(),
         p.calibrationSkewMs?.toString() ?: "",
+        if (p.clickAudible) "1" else "0",
+        p.micThresholdLevel.toString(),
     ).joinToString(separator = "~")
 }
 
@@ -156,34 +191,44 @@ internal fun parseProfiles(
     raw: String?,
     fallbackLatencyMs: Float,
     fallbackCalibrated: Boolean,
+    fallbackGateLevel: Float,
 ): List<OutputProfile> {
     // No profiles stored yet means an install from before decision 161: the latency it
     // already has becomes the built-in profile, so nobody loses a calibration on update.
     if (raw.isNullOrBlank()) {
-        return listOf(OutputProfile.default(fallbackLatencyMs, fallbackCalibrated))
+        return listOf(
+            OutputProfile.default(fallbackLatencyMs, fallbackCalibrated, 0L, fallbackGateLevel),
+        )
     }
-    val parsed = raw.split(";").mapNotNull(::parseProfile)
+    val parsed = raw.split(";").mapNotNull { parseProfile(it, fallbackGateLevel) }
     return parsed.ifEmpty {
-        listOf(OutputProfile.default(fallbackLatencyMs, fallbackCalibrated))
+        listOf(
+            OutputProfile.default(fallbackLatencyMs, fallbackCalibrated, 0L, fallbackGateLevel),
+        )
     }
 }
 
-private fun parseProfile(raw: String): OutputProfile? {
+private fun parseProfile(raw: String, fallbackGateLevel: Float): OutputProfile? {
     val parts = raw.split("~")
-    // Seven fields is the pre-decision-164 layout, still on disk after an update: it has no
-    // calibration skew, which reads as 0 -- the same behaviour those profiles had.
-    if (parts.size != 7 && parts.size != 8) return null
+    // Seven fields is the pre-decision-164 layout and eight the pre-decision-172 one, both
+    // still on disk after an update: they carry no click state and no gate of their own, so
+    // those fall back to the kind default and to the global gate that was in force.
+    if (parts.size < 7 || parts.size > 10) return null
     val id = parts[0].takeIf { it.isNotBlank() } ?: return null
     val latency = parts[4].toFloatOrNull() ?: return null
     val boundKey = parts[3].takeIf { it.isNotBlank() }
+    val kind = OutputKind.fromCode(parts[2])
     return OutputProfile(
         id = id,
         name = parts[1],
-        kind = OutputKind.fromCode(parts[2]),
+        kind = kind,
         boundKey = boundKey,
         latencyMs = latency,
         latencyCalibrated = parts[5] == "1",
         lastUsedAt = parts[6].toLongOrNull() ?: 0L,
         calibrationSkewMs = parts.getOrNull(7)?.takeIf { it.isNotBlank() }?.toFloatOrNull(),
+        clickAudible = parts.getOrNull(8)?.let { it == "1" }
+            ?: OutputProfile.clickAudibleDefault(kind),
+        micThresholdLevel = parts.getOrNull(9)?.toFloatOrNull() ?: fallbackGateLevel,
     ).sanitized()
 }

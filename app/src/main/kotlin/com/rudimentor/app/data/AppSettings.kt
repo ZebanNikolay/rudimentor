@@ -21,8 +21,11 @@ data class AppSettings(
     val bpm: Int = Bpm.DEFAULT,
     val activeRow: Int = 0,
     val showHandLetters: Boolean = true,
+    /**
+     * Mirror of the selected output profile's click switch, kept here so the practice screen
+     * can read one field. The profile is the source of truth (decision 172).
+     */
     val clickAudible: Boolean = false,
-    val clickFollowsHeadphones: Boolean = true,
     val inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
     /**
      * True once the latency above was measured by the calibration screen instead of
@@ -68,15 +71,30 @@ data class AppSettings(
     val safeActiveRow: Int = activeRow.coerceIn(0, grid.rowCount - 1)
 
     /**
-     * The click state the practice engine should actually use.
+     * Set the click switch of the output in use, which is where it lives (decision 172).
      *
-     * While [clickFollowsHeadphones] is on the click simply follows the output:
-     * private on headphones, silent on the speaker, where the microphone would hear
-     * it and score it as a stroke (decision 88). Touching the switch by hand turns
-     * the following off and [clickAudible] wins from then on (decision 114).
+     * The old switch was global and only followed the hardware until a hand touched it: a
+     * learner who once turned the click on in headphones then had it playing out of the
+     * speaker into the microphone, with no way back except an extra button.
      */
-    fun clickAudibleWith(headphonesConnected: Boolean): Boolean =
-        if (clickFollowsHeadphones) headphonesConnected else clickAudible
+    fun withClickAudible(audible: Boolean): AppSettings = copy(
+        clickAudible = audible,
+        outputProfiles = outputProfiles.map { profile ->
+            if (profile.id == selectedProfileId) profile.copy(clickAudible = audible) else profile
+        },
+    ).sanitized()
+
+    /** Set the microphone gate of the output in use; it is measured per output as well. */
+    fun withMicThreshold(level: Float): AppSettings = copy(
+        micThresholdLevel = level,
+        outputProfiles = outputProfiles.map { profile ->
+            if (profile.id == selectedProfileId) {
+                profile.copy(micThresholdLevel = MicThreshold.clamp(level))
+            } else {
+                profile
+            }
+        },
+    ).sanitized()
 
     /**
      * Return a copy with every value forced into the domain-allowed range.
@@ -92,7 +110,8 @@ data class AppSettings(
             // written straight into the field cannot drift away from the list.
             inputLatencyMs = selected.latencyMs.coerceIn(LATENCY_MIN_MS, LATENCY_MAX_MS),
             latencyCalibrated = selected.latencyCalibrated,
-            micThresholdLevel = MicThreshold.clamp(micThresholdLevel),
+            clickAudible = selected.clickAudible,
+            micThresholdLevel = MicThreshold.clamp(selected.micThresholdLevel),
             outputProfiles = profiles,
             selectedProfileId = selected.id,
         )

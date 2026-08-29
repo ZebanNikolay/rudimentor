@@ -169,7 +169,7 @@ class OutputProfileTest {
             OutputProfile.default(20f, true),
             profile("bt", 250f, bluetooth.key, used = 12L),
         )
-        val restored = parseProfiles(profiles.serialize(), 0f, false)
+        val restored = parseProfiles(profiles.serialize(), 0f, false, MicThreshold.DEFAULT_LEVEL)
         assertEquals(profiles, restored)
     }
 
@@ -179,7 +179,7 @@ class OutputProfileTest {
             .withAddedProfile(bluetooth, now = 7L)
             .withCalibration(268f, calibrationSkewMs = 145f)
         assertEquals(145f, draft.selectedProfile.calibrationSkewMs!!, 0.001f)
-        val restored = parseProfiles(draft.outputProfiles.serialize(), 0f, false)
+        val restored = parseProfiles(draft.outputProfiles.serialize(), 0f, false, MicThreshold.DEFAULT_LEVEL)
         assertEquals(draft.outputProfiles, restored)
     }
 
@@ -195,15 +195,24 @@ class OutputProfileTest {
     @Test
     fun `a profile stored before skews were recorded still loads`() {
         val old = "default~Built-in~d~~20.0~1~0"
-        val restored = parseProfiles(old, 0f, false)
+        // The gate was global back then, so the profile inherits the one in force.
+        val restored = parseProfiles(old, 0f, false, fallbackGateLevel = 0.07f)
         assertEquals(1, restored.size)
         assertEquals(20f, restored.single().latencyMs, 0.001f)
         assertEquals(null, restored.single().calibrationSkewMs)
+        assertEquals(0.07f, restored.single().micThresholdLevel, 0.001f)
+        // And the click of the built-in output starts silent, as it always did.
+        assertFalse(restored.single().clickAudible)
     }
 
     @Test
     fun `an install with no profiles yet keeps the latency it already had`() {
-        val restored = parseProfiles(null, fallbackLatencyMs = 231f, fallbackCalibrated = true)
+        val restored = parseProfiles(
+            raw = null,
+            fallbackLatencyMs = 231f,
+            fallbackCalibrated = true,
+            fallbackGateLevel = MicThreshold.DEFAULT_LEVEL,
+        )
         assertEquals(231f, restored.single().latencyMs, 0.001f)
         assertTrue(restored.single().latencyCalibrated)
     }
@@ -211,7 +220,7 @@ class OutputProfileTest {
     @Test
     fun `a corrupt entry is dropped, the rest survive`() {
         val raw = OutputProfile.default(20f, true).let { listOf(it).serialize() } + ";garbage"
-        val restored = parseProfiles(raw, 0f, false)
+        val restored = parseProfiles(raw, 0f, false, MicThreshold.DEFAULT_LEVEL)
         assertEquals(1, restored.size)
     }
 

@@ -81,18 +81,8 @@ class AppViewModel(
 
     fun setShowHandLetters(show: Boolean) = update { copy(showHandLetters = show) }
 
-    /**
-     * A hand on the switch always wins: from here on the click stays where the
-     * learner put it and stops following the headphones (decision 114).
-     */
-    fun setClickAudible(audible: Boolean) = update {
-        copy(clickAudible = audible, clickFollowsHeadphones = false)
-    }
-
-    /** Hands the click back to the headphone detector. */
-    fun setClickFollowsHeadphones(follow: Boolean) = update {
-        copy(clickFollowsHeadphones = follow)
-    }
+    /** The click switch of the output in use (decision 172). */
+    fun setClickAudible(audible: Boolean) = update { withClickAudible(audible) }
 
     /**
      * The millisecond numbers on the verdict floater. Lives next to the click and the

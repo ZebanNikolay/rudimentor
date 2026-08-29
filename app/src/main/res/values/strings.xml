@@ -117,15 +117,11 @@
     <string name="practice_settings_tab_cd">Practice settings</string>
     <string name="practice_settings_done">Done</string>
     <string name="practice_click_label">Metronome click</string>
-    <string name="practice_click_warning">Use headphones: the microphone hears the speaker and counts the click as a hit.</string>
-    <string name="practice_click_auto_note">Follows the output: on with headphones, off on the speaker.</string>
-    <string name="practice_click_manual_note">Set by hand. The headphones no longer switch it.</string>
-    <string name="practice_click_auto_restore">Follow headphones again</string>
+    <string name="practice_click_warning">The microphone will hear the speaker and count the click as a hit.</string>
     <string name="practice_latency_label">Input latency</string>
     <string name="practice_latency_value">%1$d ms</string>
     <string name="practice_offset_ms_label">Show timing in ms</string>
     <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>
-    <string name="practice_latency_settings_note">Measured in Settings. Calibrate it there.</string>
 
     <string name="practice_level_clear">LEVEL CLEAR</string>
     <string name="practice_finishing_cycle">finishing the cycle</string>
@@ -143,14 +139,14 @@
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
     <string name="settings_latency_label">Latency compensation</string>
-    <string name="settings_latency_measured">Measured on this device and output.</string>
-    <string name="settings_latency_guessed">Not measured yet: a guess for the speaker path.</string>
-    <string name="settings_calibrate">Calibrate…</string>
-    <string name="practice_output_current">Latency in force: \u201c%1$s\u201d.</string>
-    <string name="practice_output_unknown">These headphones have no calibration of their own, so the latency of \u201c%1$s\u201d is being used. Calibrate them, or save them as an output in settings.</string>
-    <string name="settings_output_title">Output and latency</string>
+    <string name="settings_latency_measured">Measured by the sound check.</string>
+    <string name="settings_latency_guessed">Not measured yet — run the sound check, or drag it by hand.</string>
+    <string name="settings_calibrate">Sound check…</string>
+    <string name="practice_output_current">Measured for \u201c%1$s\u201d.</string>
+    <string name="practice_output_unknown">This output was never measured, so the numbers of \u201c%1$s\u201d are being used.</string>
+    <string name="settings_output_card_title">Output: \u201c%1$s\u201d</string>
+    <string name="settings_output_measured_for">MEASURED FOR THIS OUTPUT</string>
     <string name="settings_practice_title">Practice</string>
-    <string name="settings_output_note">Every pair of headphones has its own delay, so each one keeps its own latency. Pick the one you are practising through; calibration writes into it.</string>
     <string name="settings_output_row_measured">%1$d ms, measured</string>
     <string name="settings_output_row_guessed">%1$d ms, not measured yet</string>
     <string name="settings_output_kind_default">default</string>
@@ -160,15 +156,11 @@
     <string name="settings_output_rename">Rename</string>
     <string name="settings_output_rename_title">Name these headphones</string>
     <string name="settings_output_delete">Delete</string>
-    <string name="settings_output_default_note">The default output always stays. Its latency can be changed, but it cannot be deleted.</string>
     <string name="settings_output_add">Save \u201c%1$s\u201d as an output</string>
     <string name="settings_output_add_none">Connect headphones to save them as an output</string>
     <string name="settings_output_full">%1$d outputs are all there is room for. Delete one to save another.</string>
-    <string name="settings_latency_profile">This latency belongs to \u201c%1$s\u201d.</string>
-    <string name="settings_latency_note">Drag to set it by hand, or calibrate to measure it.</string>
     <string name="settings_gate_label">Microphone gate</string>
     <string name="settings_gate_value">%1$d dB</string>
-    <string name="settings_gate_note">Quieter sounds than this are ignored. Set it on the calibration screen.</string>
 
     <!-- Calibration screen -->
     <string name="calibration_title">CALIBRATION</string>

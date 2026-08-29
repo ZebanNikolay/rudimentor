@@ -49,7 +49,10 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.SettingsGap
 import com.rudimentor.app.ui.component.SettingsNote
+import com.rudimentor.app.ui.component.SettingsCard
+import com.rudimentor.app.ui.component.SettingsCardDivider
 import com.rudimentor.app.ui.component.SettingsPanel
+import com.rudimentor.app.ui.component.SettingsWarning
 import com.rudimentor.app.ui.component.SettingsSliderRow
 import com.rudimentor.app.ui.component.SettingsSwitchRow
 import com.rudimentor.app.ui.component.SettingsValueRow
@@ -80,7 +83,6 @@ import kotlin.math.roundToInt
 @Composable
 fun SettingsScreen(
     draft: SettingsDraft,
-    headphonesConnected: Boolean,
     currentOutput: OutputDevice?,
     buildInfo: BuildInfo,
     onDraftChange: (SettingsDraft) -> Unit,
@@ -97,45 +99,14 @@ fun SettingsScreen(
             )
         },
     ) {
-
-        OutputProfilePanel(
-            draft = draft,
-            currentOutput = currentOutput,
-            onDraftChange = onDraftChange,
-            onCalibrate = onCalibrate,
-        )
-        Spacer(modifier = Modifier.height(14.dp))
-
+        // Two groups, told apart by the card: above it the settings that are a matter of
+        // taste and hold everywhere, inside it everything the sound check measured for one
+        // output. The screen used to be two look-alike lists, so there was no telling which
+        // value would follow a change of headphones (decision 173).
         SettingsPanel(
             title = stringResource(R.string.settings_practice_title),
             buildLabel = buildInfo.displayLabel,
         ) {
-            SettingsSwitchRow(
-                label = stringResource(R.string.practice_click_label),
-                checked = draft.effectiveClickAudible(headphonesConnected),
-                onCheckedChange = { onDraftChange(draft.withClickAudible(it)) },
-            )
-            if (draft.clickFollowsHeadphones) {
-                SettingsNote(text = stringResource(R.string.practice_click_auto_note))
-            } else {
-                val note = if (draft.clickAudible) {
-                    R.string.practice_click_warning
-                } else {
-                    R.string.practice_click_manual_note
-                }
-                SettingsNote(text = stringResource(note))
-                SettingsGap()
-                RudiButton(
-                    text = stringResource(R.string.practice_click_auto_restore),
-                    onClick = {
-                        onDraftChange(draft.copy(clickFollowsHeadphones = true))
-                    },
-                    style = RudiButtonStyle.Secondary,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            SettingsGap()
             // The verdict word is the default; the millisecond offset is for tuning
             // the ear and the latency, so it is opt-in (decision 130).
             SettingsSwitchRow(
@@ -144,33 +115,41 @@ fun SettingsScreen(
                 onCheckedChange = { onDraftChange(draft.copy(showOffsetMs = it)) },
             )
             SettingsNote(text = stringResource(R.string.practice_offset_ms_note))
-
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutputProfileCard(
+            draft = draft,
+            currentOutput = currentOutput,
+            onDraftChange = onDraftChange,
+            onCalibrate = onCalibrate,
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
-
 /**
- * The saved outputs: one latency per pair of headphones (decision 161).
+ * Everything that belongs to one output: which output it is, and what was measured for it.
  *
  * The list is short on purpose -- the built-in profile plus two -- and the choice is made by
  * hand here, because Android cannot tell the app which of several attached outputs it is
- * really routing to. Calibration writes into whichever profile is selected here.
+ * really routing to. Calibration writes into whichever profile is selected here, and so do
+ * the click switch and the microphone gate: a wired headset records through its own
+ * microphone, so a gate measured on the phone does not hold there (decision 172).
  */
 @Composable
-private fun OutputProfilePanel(
+private fun OutputProfileCard(
     draft: SettingsDraft,
     currentOutput: OutputDevice?,
     onDraftChange: (SettingsDraft) -> Unit,
     onCalibrate: () -> Unit,
 ) {
     var renaming by remember { mutableStateOf<OutputProfile?>(null) }
+    val selected = draft.selectedProfile
 
-    SettingsPanel(title = stringResource(R.string.settings_output_title)) {
-        SettingsNote(text = stringResource(R.string.settings_output_note))
-        SettingsGap()
+    SettingsCard(title = stringResource(R.string.settings_output_card_title, selected.name)) {
         draft.outputProfiles.forEach { profile ->
             OutputProfileRow(
                 profile = profile,
@@ -179,7 +158,6 @@ private fun OutputProfilePanel(
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
-        val selected = draft.selectedProfile
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             RudiButton(
                 text = stringResource(R.string.settings_output_rename),
@@ -195,10 +173,6 @@ private fun OutputProfilePanel(
                 enabled = selected.removable,
                 modifier = Modifier.weight(1f),
             )
-        }
-        if (!selected.removable) {
-            SettingsGap()
-            SettingsNote(text = stringResource(R.string.settings_output_default_note))
         }
         SettingsGap()
         val alreadySaved = currentOutput != null &&
@@ -228,6 +202,19 @@ private fun OutputProfilePanel(
             )
         }
 
+        SettingsCardDivider(text = stringResource(R.string.settings_output_measured_for))
+
+        // Over the built-in output the microphone hears the click and scores it as a stroke,
+        // which is the one thing on this screen worth a loud caption (decision 173).
+        SettingsSwitchRow(
+            label = stringResource(R.string.practice_click_label),
+            checked = draft.clickAudible,
+            onCheckedChange = { onDraftChange(draft.withClickAudible(it)) },
+        )
+        if (draft.clickAudible && selected.kind == OutputKind.Default) {
+            SettingsWarning(text = stringResource(R.string.practice_click_warning))
+        }
+
         SettingsGap()
         // The dragged number lives here until the finger lifts, then it is stored once.
         var draggedLatencyMs by remember(draft.latencyMs) {
@@ -244,6 +231,14 @@ private fun OutputProfilePanel(
             onValueChange = { draggedLatencyMs = it },
             onValueChangeFinished = { onDraftChange(draft.withLatency(draggedLatencyMs)) },
         )
+        SettingsValueRow(
+            label = stringResource(R.string.settings_gate_label),
+            value = stringResource(
+                R.string.settings_gate_value,
+                MicThreshold.decibels(draft.micThresholdLevel).roundToInt(),
+            ),
+        )
+        SettingsGap()
         SettingsNote(
             text = stringResource(
                 if (draft.latencyCalibrated) {
@@ -253,23 +248,6 @@ private fun OutputProfilePanel(
                 },
             ),
         )
-        SettingsNote(
-            text = stringResource(R.string.settings_latency_profile, selected.name),
-        )
-        SettingsNote(text = stringResource(R.string.settings_latency_note))
-
-        SettingsGap()
-        // The gate is measured against the room, not against the output, so it only reports
-        // itself here; it is set on the calibration screen where the meter is (decision 158).
-        SettingsValueRow(
-            label = stringResource(R.string.settings_gate_label),
-            value = stringResource(
-                R.string.settings_gate_value,
-                MicThreshold.decibels(draft.micThresholdLevel).roundToInt(),
-            ),
-        )
-        SettingsNote(text = stringResource(R.string.settings_gate_note))
-
         SettingsGap()
         RudiButton(
             text = stringResource(R.string.settings_calibrate),

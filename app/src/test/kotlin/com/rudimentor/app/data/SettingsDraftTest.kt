@@ -31,20 +31,44 @@ class SettingsDraftTest {
     }
 
     @Test
-    fun `a hand on the click switch takes it off automatic`() {
+    fun `the click switch is saved on the output in force`() {
         val draft = SettingsDraft.from(AppSettings()).withClickAudible(true)
-        assertFalse(draft.clickFollowsHeadphones)
         assertTrue(draft.clickAudible)
-        // Off automatic the stored choice wins over the output state.
-        assertTrue(draft.effectiveClickAudible(headphonesConnected = false))
+
+        val saved = draft.applyTo(AppSettings())
+        assertTrue(saved.clickAudible)
+        assertTrue(saved.selectedProfile.clickAudible)
     }
 
     @Test
-    fun `on automatic the click switch mirrors the output`() {
-        val draft = SettingsDraft.from(AppSettings())
-        assertTrue(draft.clickFollowsHeadphones)
-        assertTrue(draft.effectiveClickAudible(headphonesConnected = true))
-        assertFalse(draft.effectiveClickAudible(headphonesConnected = false))
+    fun `the built-in output starts with the click silent`() {
+        // Over the speaker the microphone would hear the click and score it as a stroke.
+        assertFalse(AppSettings().sanitized().clickAudible)
+    }
+
+    @Test
+    fun `switching output brings its own click and gate`() {
+        val phones = OutputProfile(
+            id = "p1",
+            name = "Sony",
+            kind = OutputKind.Bluetooth,
+            boundKey = "bt:sony",
+            lastUsedAt = 5L,
+            latencyMs = 300f,
+            latencyCalibrated = true,
+            clickAudible = true,
+            micThresholdLevel = 0.08f,
+        )
+        val settings = AppSettings(outputProfiles = listOf(OutputProfile.default(0f, false), phones))
+        val draft = SettingsDraft.from(settings).withSelectedProfile("p1")
+
+        assertTrue(draft.clickAudible)
+        assertEquals(0.08f, draft.micThresholdLevel)
+        assertEquals(300f, draft.latencyMs)
+
+        // And back to the built-in one, which kept its own silence and its own gate.
+        val back = draft.withSelectedProfile(OutputProfile.DEFAULT_ID)
+        assertFalse(back.clickAudible)
     }
 
     @Test

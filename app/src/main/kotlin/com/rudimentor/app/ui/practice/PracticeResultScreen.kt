@@ -71,7 +71,6 @@ fun PracticeResultScreen(
     result: PracticeResult,
     buildInfo: BuildInfo,
     settings: AppSettings,
-    headphonesConnected: Boolean,
     unknownOutput: Boolean,
     onApplyDraft: (SettingsDraft) -> Unit,
     onRetry: () -> Unit,
@@ -95,7 +94,6 @@ fun PracticeResultScreen(
             key(settingsOpen) {
                 PracticeSettingsPanel(
                     settings = settings,
-                    headphonesConnected = headphonesConnected,
                     unknownOutput = unknownOutput,
                     buildInfo = buildInfo,
                     onApply = onApplyDraft,
