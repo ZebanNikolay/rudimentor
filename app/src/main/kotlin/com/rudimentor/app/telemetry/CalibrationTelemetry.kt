@@ -22,7 +22,19 @@ data class CalibrationHeader(
     /** The loudness gate stored before this visit, as an envelope level (decision 158). */
     val previousThresholdLevel: Float,
     val audio: TelemetryAudio?,
+    /**
+     * Which screen ran the round: the sound check walks the same measurement as the
+     * calibration screen, and a log that does not say which one it was cannot be read
+     * (decision 175).
+     */
+    val flow: String = FLOW_CALIBRATION,
 )
+
+/** The calibration screen of the settings. */
+const val FLOW_CALIBRATION = "calibration"
+
+/** The sound check node of the level map. */
+const val FLOW_SOUND_CHECK = "sound check"
 
 /**
  * Collects one calibration round into the same two texts an attempt produces: a JSONL body
@@ -249,7 +261,7 @@ class CalibrationTelemetry(
                 header.startedAt,
         )
         lines.add(
-            "calibration · ${header.clickBpm} bpm click · " +
+            "${header.flow} · ${header.clickBpm} bpm click · " +
                 "target ${header.targetStrokes} strokes · " +
                 "warm-up ${header.warmUpStrokes} · " +
                 "headphones ${yesNo(header.headphones)} · " +
@@ -299,7 +311,7 @@ class CalibrationTelemetry(
     /** First line of the log list entry. */
     fun title(): String {
         val value = if (appliedMs.isNaN()) "not applied" else ms(appliedMs)
-        return "calibration · $value · $accepted strokes"
+        return "${header.flow} · $value · $accepted strokes"
     }
 
     private fun add(line: String) {

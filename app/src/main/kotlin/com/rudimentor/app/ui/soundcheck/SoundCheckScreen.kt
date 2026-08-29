@@ -1,6 +1,7 @@
 package com.rudimentor.app.ui.soundcheck
 
 import android.Manifest
+import android.os.Build
 import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -33,11 +34,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.LatencyCalibration
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.audio.MicThreshold
 import com.rudimentor.app.audio.ThresholdProbe
+import com.rudimentor.app.telemetry.CalibrationHeader
+import com.rudimentor.app.telemetry.CalibrationTelemetry
+import com.rudimentor.app.telemetry.FLOW_SOUND_CHECK
+import com.rudimentor.app.telemetry.PracticeLogStore
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.MicLevelMeter
 import com.rudimentor.app.ui.component.RudiButton
@@ -50,6 +56,9 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.util.DevLog
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -83,6 +92,11 @@ fun SoundCheckScreen(
     /** Output the measurement will be written for, shown so it is never a surprise. */
     profileName: String,
     micThresholdLevel: Float,
+    /** Compensation stored before this visit, logged so two visits can be compared. */
+    latencyMs: Float,
+    latencyCalibrated: Boolean,
+    headphonesConnected: Boolean,
+    buildInfo: BuildInfo,
     /** Start on this step: a freshly connected pair of headphones needs only its own step. */
     startStep: SoundCheckStep = SoundCheckStep.Pad,
     /** Round trip and the skew it was measured under (both null when nothing was measured), gate. */
@@ -115,6 +129,41 @@ fun SoundCheckScreen(
     var padDone by remember { mutableStateOf(startStep != SoundCheckStep.Pad) }
     var headphonesDone by remember { mutableStateOf(false) }
 
+    // One log per visit, written the same way a calibration round is: the sound check used to
+    // leave two DevLog lines behind, so a walk-through that felt wrong could not be read back
+    // afterwards. It lands in the same list as the attempts, and Share sends it the same way
+    // (decision 175).
+    val telemetry = remember {
+        CalibrationTelemetry(
+            header = CalibrationHeader(
+                startedAt = logStamp(),
+                device = "${Build.MANUFACTURER} ${Build.MODEL}",
+                androidVersion = Build.VERSION.RELEASE ?: "?",
+                build = buildInfo.displayLabel,
+                clickBpm = LatencyCalibration.CLICK_BPM,
+                warmUpStrokes = LatencyCalibration.WARM_UP_SAMPLES,
+                targetStrokes = LatencyCalibration.MAX_SAMPLES,
+                headphones = headphonesConnected,
+                sensitivity = MicLab.DEFAULT_SENSITIVITY,
+                previousLatencyMs = latencyMs,
+                previousCalibrated = latencyCalibrated,
+                previousThresholdLevel = MicThreshold.clamp(micThresholdLevel),
+                audio = null,
+                flow = FLOW_SOUND_CHECK,
+            ),
+        )
+    }
+    val startedAtNanos = remember { System.nanoTime() }
+    var saved by remember { mutableStateOf(false) }
+
+    fun elapsedMs(): Float = (System.nanoTime() - startedAtNanos) / 1_000_000f
+
+    fun saveLog() {
+        if (saved) return
+        saved = true
+        PracticeLogStore.saveCalibration(context, telemetry)
+    }
+
     var micGranted by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
@@ -138,6 +187,11 @@ fun SoundCheckScreen(
         val started = micLab.start(scope)
         audioFailed = !started
         if (!started) DevLog.error("soundcheck", "audio engine refused to start")
+        if (clickAudible) {
+            telemetry.roundStarted(elapsedMs(), started)
+        } else {
+            telemetry.probeStarted(elapsedMs())
+        }
         return started
     }
 
@@ -153,22 +207,50 @@ fun SoundCheckScreen(
             if (event.envelope > peak) peak = event.envelope
             when (stage) {
                 Stage.ProbeStrokes -> {
-                    probe.addStroke(event.envelope)
+                    val counted = probe.addStroke(event.envelope)
                     probeStrokes = probe.strokeCount
+                    telemetry.probeStroke(
+                        atMs = elapsedMs(),
+                        envelope = event.envelope,
+                        counted = counted,
+                        count = probeStrokes,
+                    )
                 }
 
                 Stage.Latency -> {
                     val skew = status.streamSkewMs
                     if (skew > 0f) skewMs = skew
-                    if (event.loud) {
+                    val outcome = if (event.loud) {
                         calibration.add(event.offsetMs)
-                        reading = calibration.reading()
                     } else {
                         quietStrokes += 1
+                        LatencyCalibration.Outcome.Rejected
                     }
+                    reading = calibration.reading()
+                    telemetry.stroke(
+                        atMs = elapsedMs(),
+                        roundTripMs = event.offsetMs,
+                        outcome = outcome,
+                        medianMs = reading.medianMs,
+                        spreadMs = reading.spreadMs,
+                        samples = reading.samples.size,
+                        envelope = event.envelope,
+                        threshold = event.threshold,
+                        loud = event.loud,
+                    )
                 }
 
-                Stage.Play -> if (event.loud) playStrokes += 1
+                Stage.Play -> if (event.loud) {
+                    playStrokes += 1
+                    // The third step scores nothing, but a stroke that is not heard here is
+                    // the same failure a level would show, so it goes in the log too.
+                    telemetry.probeStroke(
+                        atMs = elapsedMs(),
+                        envelope = event.envelope,
+                        counted = true,
+                        count = playStrokes,
+                    )
+                }
 
                 else -> Unit
             }
@@ -206,9 +288,11 @@ fun SoundCheckScreen(
             "gate ${result.thresholdLevel} from room ${result.noiseLevel} " +
                 "stroke ${result.strokeLevel} separated ${result.separated}",
         )
+        telemetry.probeFinished(elapsedMs(), result)
         stopEngine()
         // The gate is worth keeping even if the player walks away here: it is the part of
         // the check that makes every later attempt scoreable.
+        telemetry.thresholdApplied(elapsedMs(), gate, "sound check probe")
         onApply(null, null, gate)
         padDone = true
     }
@@ -219,7 +303,16 @@ fun SoundCheckScreen(
         if (!reading.complete || stage != Stage.Latency) return@LaunchedEffect
         val median = reading.medianMs
         DevLog.log("soundcheck", "round complete, median ${median?.roundToInt() ?: -1} ms")
+        telemetry.roundStopped(elapsedMs(), CalibrationTelemetry.REASON_COMPLETE)
         stopEngine()
+        if (median != null) {
+            telemetry.applied(
+                atMs = elapsedMs(),
+                medianMs = median,
+                spreadMs = reading.spreadMs,
+                samples = reading.samples.size,
+            )
+        }
         onApply(median, skewMs, gate)
         headphonesDone = true
     }
@@ -231,6 +324,11 @@ fun SoundCheckScreen(
         if (stage != Stage.Latency) return@LaunchedEffect
         if (reading.samples.isEmpty() && reading.skipped == 0) {
             stalled = true
+            DevLog.error(
+                "soundcheck",
+                "round counted nothing, gate $gate, quiet $quietStrokes",
+            )
+            telemetry.roundStopped(elapsedMs(), CalibrationTelemetry.REASON_STOPPED)
             stopEngine()
         }
     }
@@ -241,14 +339,29 @@ fun SoundCheckScreen(
         stopEngine()
     }
 
-    OnBackgrounded { stopEngine() }
+    OnBackgrounded {
+        if (stage == Stage.Latency) {
+            telemetry.roundStopped(elapsedMs(), CalibrationTelemetry.REASON_BACKGROUNDED)
+        }
+        stopEngine()
+    }
 
     DisposableEffect(micLab) {
         onDispose { micLab.stop() }
     }
 
     fun leave() {
+        if (stage == Stage.Latency) {
+            telemetry.roundStopped(elapsedMs(), CalibrationTelemetry.REASON_LEFT)
+        }
         stopEngine()
+        telemetry.abandoned(
+            atMs = elapsedMs(),
+            medianMs = reading.medianMs,
+            spreadMs = reading.spreadMs,
+            samples = reading.samples.size,
+        )
+        saveLog()
         onBack()
     }
 
@@ -433,6 +546,7 @@ fun SoundCheckScreen(
                         text = stringResource(R.string.sound_check_finish),
                         onClick = {
                             stopEngine()
+                            saveLog()
                             onFinished()
                         },
                     )
@@ -505,6 +619,9 @@ private fun Progress(done: Int, total: Int) {
         )
     }
 }
+
+private fun logStamp(): String =
+    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
 
 /** Strokes the free-play step asks for: enough to feel the click, short enough to not be a level. */
 private const val PLAY_STROKES = 8

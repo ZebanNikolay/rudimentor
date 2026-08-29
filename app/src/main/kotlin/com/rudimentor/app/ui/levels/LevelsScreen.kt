@@ -777,7 +777,11 @@ private fun LevelMap(
                     val x = mapWidth / 2 +
                         MAP_COLUMN_WIDTH * level.column.direction -
                         NODE_SIZE / 2
-                    val y = mapHeight - MAP_VERTICAL_PADDING - MAP_ROW_HEIGHT * level.row - NODE_SIZE
+                    // Levels keep their rows; the sound check row is added below them, so the
+                    // bottom of the level grid is one row above the bottom padding. Missing
+                    // this term dropped every level onto the sound check row (decision 174).
+                    val y = mapHeight - MAP_VERTICAL_PADDING - SOUND_CHECK_ROW_HEIGHT -
+                        MAP_ROW_HEIGHT * level.row - NODE_SIZE
                     LevelMapNode(
                         level = level,
                         state = states.getValue(level.id),

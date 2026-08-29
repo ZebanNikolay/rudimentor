@@ -162,9 +162,13 @@ fun RudiMentorApp(
     // hand the orientation back and forth between themselves.
     LandscapeStage(
         landscape = screen == Screen.Practice || screen == Screen.PracticeResult,
-        // The calibration round is half a minute of playing without touching the phone,
-        // and the screen timing out took the audio streams with it (decision 158).
-        keepScreenOn = screen == Screen.Practice || screen == Screen.Calibration,
+        // Any round that is half a minute of playing without touching the phone: the screen
+        // timing out takes the audio streams with it (decision 158). The sound check runs the
+        // same round and was missing from this list, so the display lock killed step 2 for
+        // anybody with a short lock timeout (decision 175).
+        keepScreenOn = screen == Screen.Practice ||
+            screen == Screen.Calibration ||
+            screen == Screen.SoundCheck,
     )
 
     AnimatedContent(targetState = screen, label = "screen") { currentScreen ->
@@ -402,6 +406,10 @@ fun RudiMentorApp(
             Screen.SoundCheck -> SoundCheckScreen(
                 profileName = settings.selectedProfile.name,
                 micThresholdLevel = settings.micThresholdLevel,
+                latencyMs = settings.inputLatencyMs,
+                latencyCalibrated = settings.latencyCalibrated,
+                headphonesConnected = headphonesConnected,
+                buildInfo = buildInfo,
                 startStep = soundCheckStartStep,
                 onApply = { measuredMs, measuredSkewMs, micThreshold ->
                     val applied = SettingsDraft.from(settings)
