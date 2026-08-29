@@ -89,6 +89,8 @@ fun RudiMentorApp(
     onAttemptFinished: (Level, PracticeRank, PracticeResult) -> Unit,
     /** Marks the sound-check node as walked, so the map stops asking for it. */
     onSoundCheckDone: () -> Unit,
+    /** Closes the plate above the level map that calls for the sound check. */
+    onHideSoundCheckPlate: () -> Unit,
 ) {
     // The click follows the audio output until the learner overrides it by hand, so
     // the effective value is decided here, once, for every screen that plays it
@@ -200,6 +202,8 @@ fun RudiMentorApp(
                     screenName = Screen.SoundCheck.name
                 },
                 soundCheckDone = settings.soundCheckDone,
+                soundCheckPlateHidden = settings.soundCheckPlateHidden,
+                onHideSoundCheckPlate = onHideSoundCheckPlate,
             )
             Screen.LevelDetail -> {
                 val level = selectedLevelId?.let(course::level)

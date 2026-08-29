@@ -58,6 +58,12 @@ data class AppSettings(
      * can always be replayed (decision 169).
      */
     val soundCheckDone: Boolean = false,
+    /**
+     * True once the learner has closed the plate that calls for the sound check. The check
+     * itself stays on the map as its own node, so hiding the call never hides the way in
+     * (decision 171).
+     */
+    val soundCheckPlateHidden: Boolean = false,
 ) {
     val safeActiveRow: Int = activeRow.coerceIn(0, grid.rowCount - 1)
 

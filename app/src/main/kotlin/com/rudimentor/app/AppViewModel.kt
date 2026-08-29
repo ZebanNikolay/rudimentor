@@ -126,6 +126,11 @@ class AppViewModel(
      * Remembers that the sound check has been walked once, which is all the map needs to stop
      * calling for it. Never unset: the node stays open for a change of headphones.
      */
+    /** Closes the plate that calls for the sound check; the node on the map stays. */
+    fun hideSoundCheckPlate() = update {
+        if (soundCheckPlateHidden) this else copy(soundCheckPlateHidden = true)
+    }
+
     fun markSoundCheckDone() = update {
         if (soundCheckDone) this else copy(soundCheckDone = true)
     }

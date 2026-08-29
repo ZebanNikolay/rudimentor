@@ -120,6 +120,7 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     onSoundCheckDone = viewModel::markSoundCheckDone,
+                    onHideSoundCheckPlate = viewModel::hideSoundCheckPlate,
                 )
             }
         }

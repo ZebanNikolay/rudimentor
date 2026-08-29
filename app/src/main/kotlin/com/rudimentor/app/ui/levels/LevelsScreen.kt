@@ -98,10 +98,14 @@ fun LevelsScreen(
     onBack: () -> Unit,
     onOpenLevel: (String) -> Unit,
     onOpenSettings: () -> Unit,
-    /** Opens the sound check from the plate above the map. */
+    /** Opens the sound check, from the node on the map or from the plate above it. */
     onOpenSoundCheck: () -> Unit,
     /** Whether the sound check has already been walked once on this device. */
     soundCheckDone: Boolean,
+    /** Whether the learner has closed the plate that calls for the sound check. */
+    soundCheckPlateHidden: Boolean,
+    /** Closes that plate for good. The node on the map keeps the check reachable. */
+    onHideSoundCheckPlate: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
     var rankDialogVisible by remember { mutableStateOf(false) }
@@ -147,11 +151,16 @@ fun LevelsScreen(
                 onSelectTab = onSelectTab,
             )
             Spacer(modifier = Modifier.height(6.dp))
-            // The zeroth node of the course: before the first level there is a check that the
-            // phone can hear the pad at all. It stays on the map after it is walked, because a
-            // new pair of headphones makes it worth walking again (decision 169).
-            SoundCheckPlate(done = soundCheckDone, onClick = onOpenSoundCheck)
-            Spacer(modifier = Modifier.height(6.dp))
+            // Before the first level there is a check that the phone can hear the pad at all.
+            // The plate is the one-time call for it and can be closed; the way in lives on the
+            // map itself, so closing it never takes the check away (decision 171).
+            if (!soundCheckDone && !soundCheckPlateHidden) {
+                SoundCheckPlate(
+                    onClick = onOpenSoundCheck,
+                    onDismiss = onHideSoundCheckPlate,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+            }
 
             if (catalog == null) {
                 // Nothing to look at yet: the map of this family is still being written.
@@ -174,6 +183,8 @@ fun LevelsScreen(
                         rank = rank,
                         locked = !unlocked,
                         onOpenLevel = onOpenLevel,
+                        soundCheckDone = soundCheckDone,
+                        onOpenSoundCheck = onOpenSoundCheck,
                         modifier = Modifier.fillMaxSize(),
                     )
                     if (!unlocked) {
@@ -210,19 +221,19 @@ fun LevelsScreen(
 }
 
 /**
- * The sound-check plate: an unmissable call before the first level, a quiet line after.
+ * The one-time call for the sound check, above the map.
  *
- * It carries no stars and no lock — it is not a level, and failing it is not a thing that can
- * happen. Once walked it keeps its place as a way back in, since the reason to return is a
- * change of headphones rather than a change in the player.
+ * It is a nudge, not the way in: the node on the map is that, and it is always there. So the
+ * plate can be closed with its cross and never comes back, and it disappears by itself once
+ * the check has been walked (decision 171).
  */
 @Composable
-private fun SoundCheckPlate(done: Boolean, onClick: () -> Unit) {
+private fun SoundCheckPlate(onClick: () -> Unit, onDismiss: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(if (done) RudiColors.SurfaceAlt else RudiColors.Surface)
+            .background(RudiColors.Surface)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -231,23 +242,34 @@ private fun SoundCheckPlate(done: Boolean, onClick: () -> Unit) {
             Text(
                 text = stringResource(R.string.sound_check_title),
                 style = RudiTextStyles.RowNumber,
-                color = if (done) RudiColors.Muted else RudiColors.BrickLit,
+                color = RudiColors.BrickLit,
                 letterSpacing = 1.6.sp,
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
-                text = stringResource(
-                    if (done) R.string.levels_sound_check_done else R.string.levels_sound_check_call,
-                ),
+                text = stringResource(R.string.levels_sound_check_call),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (done) RudiColors.RowNumber else RudiColors.Text,
+                color = RudiColors.Text,
             )
         }
         LevelPlayButton(
             onClick = onClick,
             contentDescription = stringResource(R.string.sound_check_title),
-            active = !done,
+            active = true,
         )
+        Spacer(modifier = Modifier.width(8.dp))
+        SquareIconButton(
+            onClick = onDismiss,
+            contentDescription = stringResource(R.string.levels_sound_check_hide),
+            size = 28.dp,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_close),
+                contentDescription = null,
+                tint = RudiColors.Muted,
+                modifier = Modifier.size(14.dp),
+            )
+        }
     }
 }
 
@@ -533,6 +555,8 @@ private fun LevelMap(
     progress: LearningProgress,
     rank: PracticeRank,
     onOpenLevel: (String) -> Unit,
+    soundCheckDone: Boolean,
+    onOpenSoundCheck: () -> Unit,
     modifier: Modifier = Modifier,
     locked: Boolean = false,
 ) {
@@ -544,6 +568,16 @@ private fun LevelMap(
     // every pad reads as locked — the map is there to be read, not to be played.
     val currentLevel = if (locked) null else progress.currentLevel(catalog, rank)
     val currentRow = currentLevel?.row ?: 0
+    // The sound check sits beside the first level of the map, in whichever side column is
+    // free on that row, so it never lands on top of an optional branch.
+    val soundCheckAnchor = remember(catalog) {
+        val firstRow = catalog.levels.filter { it.row == 0 }
+        firstRow.firstOrNull { it.column == LevelColumn.Center } ?: firstRow.firstOrNull()
+    }
+    val soundCheckSide = remember(catalog) {
+        val leftTaken = catalog.levels.any { it.row == 0 && it.column == LevelColumn.Left }
+        if (leftTaken) 1f else -1f
+    }
 
     BoxWithConstraints(
         modifier = modifier.background(
@@ -558,8 +592,8 @@ private fun LevelMap(
     ) {
         // The map needs room for its widest branch; when that fits on screen it simply fills
         // the width, so there is nothing to pan sideways and no horizontal scroll is attached.
-        val neededWidth = MAP_CENTER_WIDTH +
-            if (catalog.hasSideLevels) MAP_COLUMN_WIDTH * 2 else 0.dp
+        // The sound-check node always sits in a side column, so that room is always needed.
+        val neededWidth = MAP_CENTER_WIDTH + MAP_COLUMN_WIDTH * 2
         val panning = neededWidth > maxWidth
         val mapWidth = if (panning) neededWidth else maxWidth
 
@@ -672,8 +706,49 @@ private fun LevelMap(
                                 drawCircle(color = dotColor, radius = dotRadius, center = end)
                             }
                         }
+
+                        // The sound check hangs off the first level on a dashed line, the same
+                        // way an optional branch does: it is not on the path to any rank, and
+                        // it can be walked again at any time (decision 171).
+                        if (soundCheckAnchor != null) {
+                            val anchor = centerOf(soundCheckAnchor)
+                            val node = Offset(
+                                x = size.width / 2f + soundCheckSide * columnPx,
+                                y = anchor.y,
+                            )
+                            val dirX = if (node.x < anchor.x) -1f else 1f
+                            val start = Offset(anchor.x + dirX * halfNode, anchor.y)
+                            val end = Offset(node.x - dirX * halfNode, node.y)
+                            drawLine(
+                                color = if (soundCheckDone) RudiColors.Brick else RudiColors.Line,
+                                start = start,
+                                end = end,
+                                strokeWidth = 1.5.dp.toPx(),
+                                cap = StrokeCap.Round,
+                                pathEffect = PathEffect.dashPathEffect(
+                                    floatArrayOf(2.dp.toPx(), 3.dp.toPx()),
+                                ),
+                            )
+                            val dotColor = if (soundCheckDone) {
+                                RudiColors.BrickLit
+                            } else {
+                                RudiColors.PadLed
+                            }
+                            drawCircle(color = dotColor, radius = 2.dp.toPx(), center = start)
+                            drawCircle(color = dotColor, radius = 2.dp.toPx(), center = end)
+                        }
                     },
             ) {
+                if (soundCheckAnchor != null) {
+                    val x = mapWidth / 2 + MAP_COLUMN_WIDTH * soundCheckSide - NODE_SIZE / 2
+                    val y = mapHeight - MAP_VERTICAL_PADDING -
+                        MAP_ROW_HEIGHT * soundCheckAnchor.row - NODE_SIZE
+                    SoundCheckMapNode(
+                        done = soundCheckDone,
+                        onClick = onOpenSoundCheck,
+                        modifier = Modifier.absoluteOffset(x = x, y = y),
+                    )
+                }
                 catalog.levels.forEach { level ->
                     val x = mapWidth / 2 +
                         MAP_COLUMN_WIDTH * level.column.direction -
@@ -690,6 +765,68 @@ private fun LevelMap(
                 }
             }
         }
+    }
+}
+
+/**
+ * The sound check as a node of the map: a pad beside the first level, never locked.
+ *
+ * It carries no stars, no crown and no lock, because there is nothing to score and nothing to
+ * fail — it only tells whether the phone hears the pad and how late it hears it. Its shape is
+ * a square: like a required level it is the thing to do before the first attempt, and unlike
+ * one it stays playable forever (decision 171).
+ */
+@Composable
+private fun SoundCheckMapNode(
+    done: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val pulseTransition = rememberInfiniteTransition(label = "soundCheckPulse")
+    val pulse by pulseTransition.animateFloat(
+        initialValue = 0.12f,
+        targetValue = 0.32f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "soundCheckGlow",
+    )
+    val label = stringResource(R.string.levels_sound_check_node)
+
+    Box(
+        modifier = modifier
+            .size(NODE_SIZE)
+            .then(
+                if (done) {
+                    Modifier
+                } else {
+                    // Un-walked it breathes like the current level, so the eye finds it first.
+                    Modifier.drawBehind {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                0f to RudiColors.BrickLit.copy(alpha = pulse),
+                                1f to Color.Transparent,
+                                radius = size.minDimension * 0.8f,
+                            ),
+                            radius = size.minDimension * 0.8f,
+                        )
+                    }
+                },
+            )
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Pad(
+            size = NODE_SIZE,
+            shape = PadShape.Square,
+            tone = if (done) PadTone.Normal else PadTone.Accent,
+            lit = done,
+            iconRes = R.drawable.ic_sound_check,
+            showLetter = false,
+            pressed = false,
+        )
     }
 }
 

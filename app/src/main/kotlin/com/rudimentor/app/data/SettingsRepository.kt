@@ -66,6 +66,7 @@ class DataStoreSettingsRepository(
             ),
             selectedProfileId = preferences[Keys.SelectedProfile] ?: OutputProfile.DEFAULT_ID,
             soundCheckDone = preferences[Keys.SoundCheckDone] ?: false,
+            soundCheckPlateHidden = preferences[Keys.SoundCheckPlateHidden] ?: false,
         ).sanitized()
     }
 
@@ -84,6 +85,7 @@ class DataStoreSettingsRepository(
         this[Keys.OutputProfiles] = safe.outputProfiles.serialize()
         this[Keys.SelectedProfile] = safe.selectedProfileId
         this[Keys.SoundCheckDone] = safe.soundCheckDone
+        this[Keys.SoundCheckPlateHidden] = safe.soundCheckPlateHidden
     }
 
     private object Keys {
@@ -101,5 +103,6 @@ class DataStoreSettingsRepository(
         val OutputProfiles = stringPreferencesKey("practice_output_profiles")
         val SelectedProfile = stringPreferencesKey("practice_output_profile_selected")
         val SoundCheckDone = booleanPreferencesKey("sound_check_done")
+        val SoundCheckPlateHidden = booleanPreferencesKey("sound_check_plate_hidden")
     }
 }

@@ -28,7 +28,8 @@
     <string name="levels_required_path_complete">Required path complete</string>
     <string name="levels_open_next">Open next level</string>
     <string name="levels_sound_check_call">Start here: three short steps so the app hears your pad and your headphones.</string>
-    <string name="levels_sound_check_done">Done. Walk it again if you switch headphones or pads.</string>
+    <string name="levels_sound_check_node">Sound check. Checks that the app hears your pad. Can be replayed at any time.</string>
+    <string name="levels_sound_check_hide">Hide this call. The sound check stays on the map.</string>
 
     <!-- Level detail -->
     <string name="level_detail_title">LEVEL %1$s</string>
