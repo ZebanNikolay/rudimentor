@@ -250,6 +250,10 @@
     <!-- Shared by the sound check node and the calibration screen: one act, one wording.
          The two screens teach the same two measurements, so the instruction, the fallback
          and the troubleshooting live here once (decision 177). -->
+    <string name="check_silent_short">NO HEADPHONES</string>
+    <string name="check_silent_title">WITHOUT HEADPHONES</string>
+    <string name="check_silent_body">Nothing else to check: the click can only play into headphones. Through the speaker the microphone would hear it and count it as a stroke, so it stays silent.\n\nLevels work anyway \u2014 the notes roll to the line and you play what you see.</string>
+    <string name="check_silent_invite">Connect the headphones you practise with and open this check again. It sets them up in about fifteen seconds, and the click plays in them from then on.</string>
     <string name="check_gate_help_title">Stroke loudness</string>
     <string name="check_latency_help_title">Headphones</string>
     <string name="check_gate_action">Put the phone next to the pad. Keep quiet for a moment, then play 8 strokes as you normally would.</string>

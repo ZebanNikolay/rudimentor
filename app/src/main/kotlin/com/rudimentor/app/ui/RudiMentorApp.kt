@@ -380,6 +380,7 @@ fun RudiMentorApp(
                 profileName = settingsDraft?.selectedProfile?.name
                     ?: settings.selectedProfile.name,
                 headphonesConnected = headphonesConnected,
+                clickSounds = clickAudible,
                 buildInfo = buildInfo,
                 onApply = { measuredMs, measuredSkewMs, micThreshold ->
                     // The screen stores as it measures, and stays open: a finished round is
@@ -409,6 +410,7 @@ fun RudiMentorApp(
                 latencyMs = settings.inputLatencyMs,
                 latencyCalibrated = settings.latencyCalibrated,
                 headphonesConnected = headphonesConnected,
+                clickSounds = clickAudible,
                 buildInfo = buildInfo,
                 startStep = soundCheckStartStep,
                 onApply = { measuredMs, measuredSkewMs, micThreshold ->

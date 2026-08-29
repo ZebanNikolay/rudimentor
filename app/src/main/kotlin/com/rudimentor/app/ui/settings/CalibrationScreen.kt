@@ -55,6 +55,7 @@ import com.rudimentor.app.ui.component.SettingsNote
 import com.rudimentor.app.ui.component.SettingsPanel
 import com.rudimentor.app.ui.component.SettingsSliderRow
 import com.rudimentor.app.ui.component.SettingsValueRow
+import com.rudimentor.app.ui.component.SettingsWarning
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.util.DevLog
@@ -101,6 +102,12 @@ fun CalibrationScreen(
     latencyCalibrated: Boolean,
     micThresholdLevel: Float,
     headphonesConnected: Boolean,
+    /**
+     * Whether the click sounds on the selected output. With the built-in speaker it does not
+     * (decisions 50 and 172), so there is no round trip to measure and the round is closed
+     * rather than left to measure the speaker behind text asking for an earcup (decision 178).
+     */
+    clickSounds: Boolean,
     /** The output profile this round writes into, shown so it is never a surprise. */
     profileName: String,
     buildInfo: BuildInfo,
@@ -469,10 +476,19 @@ fun CalibrationScreen(
                 )
             },
         ) {
-            SettingsNote(text = stringResource(R.string.check_latency_action))
-            SettingsGap()
-            SettingsNote(text = stringResource(R.string.check_latency_manual))
-            SettingsGap()
+            if (clickSounds) {
+                SettingsNote(text = stringResource(R.string.check_latency_action))
+                SettingsGap()
+                SettingsNote(text = stringResource(R.string.check_latency_manual))
+                SettingsGap()
+            } else {
+                // Same message the sound check shows, so neither screen invites a
+                // measurement the selected output cannot produce (decision 178).
+                SettingsWarning(text = stringResource(R.string.check_silent_body))
+                SettingsGap()
+                SettingsNote(text = stringResource(R.string.check_silent_invite))
+                SettingsGap()
+            }
             SettingsValueRow(
                 label = stringResource(R.string.calibration_strokes_label),
                 value = stringResource(
@@ -533,7 +549,7 @@ fun CalibrationScreen(
                     // otherwise Start would come up on a counter that is already full.
                     enabled = when (mode) {
                         CalibrationMode.Latency -> true
-                        CalibrationMode.Idle -> !reading.finished
+                        CalibrationMode.Idle -> clickSounds && !reading.finished
                         else -> false
                     },
                     modifier = Modifier.weight(1f),

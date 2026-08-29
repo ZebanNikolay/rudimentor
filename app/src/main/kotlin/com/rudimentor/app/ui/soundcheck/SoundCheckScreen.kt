@@ -70,7 +70,18 @@ import kotlin.math.roundToInt
  * round can be trusted. That is why the pad step runs first even though the headphones are
  * what the player came to check (decision 169).
  */
-enum class SoundCheckStep { Pad, Headphones, FirstClick }
+enum class SoundCheckStep {
+    Pad,
+    Headphones,
+    FirstClick,
+
+    /**
+     * Shown instead of the two click steps when the selected output does not sound the
+     * click. Nothing is measured here: it says why the metronome is silent, that levels
+     * work regardless, and what connecting headphones would change (decision 178).
+     */
+    Silent,
+}
 
 /** What the microphone is being used for right now. */
 private enum class Stage { Idle, ProbeNoise, ProbeStrokes, Latency, Play }
@@ -97,6 +108,16 @@ fun SoundCheckScreen(
     latencyMs: Float,
     latencyCalibrated: Boolean,
     headphonesConnected: Boolean,
+    /**
+     * Whether the click sounds on the selected output. It belongs to the output profile and
+     * is off for the built-in speaker, because the microphone would count the click as a
+     * stroke (decisions 50 and 172).
+     *
+     * With no click there is no round trip to measure and no click to play along with, so
+     * the check is the loudness step plus one card that explains it -- not two steps quietly
+     * measuring the speaker while the text asks for an earcup (decision 178).
+     */
+    clickSounds: Boolean,
     buildInfo: BuildInfo,
     /** Start on this step: a freshly connected pair of headphones needs only its own step. */
     startStep: SoundCheckStep = SoundCheckStep.Pad,
@@ -113,7 +134,18 @@ fun SoundCheckScreen(
     val probe = remember { ThresholdProbe() }
     val calibration = remember { LatencyCalibration() }
 
-    var step by remember { mutableStateOf(startStep) }
+    // The steps this visit actually has. Without an audible click the walk is one
+    // measurement and one explanation.
+    val steps = remember(clickSounds) {
+        if (clickSounds) {
+            listOf(SoundCheckStep.Pad, SoundCheckStep.Headphones, SoundCheckStep.FirstClick)
+        } else {
+            listOf(SoundCheckStep.Pad, SoundCheckStep.Silent)
+        }
+    }
+    var step by remember {
+        mutableStateOf(if (startStep in steps) startStep else SoundCheckStep.Pad)
+    }
     var stage by remember { mutableStateOf(Stage.Idle) }
     var gate by remember { mutableFloatStateOf(MicThreshold.clamp(micThresholdLevel)) }
     var probeStrokes by remember { mutableIntStateOf(0) }
@@ -391,8 +423,8 @@ fun SoundCheckScreen(
         Text(
             text = stringResource(
                 R.string.sound_check_step_of,
-                step.ordinal + 1,
-                SoundCheckStep.entries.size,
+                steps.indexOf(step) + 1,
+                steps.size,
                 stringResource(step.titleRes),
             ),
             style = MaterialTheme.typography.labelLarge,
@@ -451,7 +483,7 @@ fun SoundCheckScreen(
                         if (startEngine(clickAudible = false)) stage = Stage.ProbeNoise
                     },
                     onStop = { stopEngine() },
-                    onNext = { step = SoundCheckStep.Headphones },
+                    onNext = { step = steps[steps.indexOf(SoundCheckStep.Pad) + 1] },
                 )
             }
 
@@ -522,6 +554,23 @@ fun SoundCheckScreen(
                 )
             }
 
+            SoundCheckStep.Silent -> SettingsPanel(
+                title = stringResource(R.string.check_silent_title),
+            ) {
+                SettingsNote(text = stringResource(R.string.check_silent_body))
+                SettingsGap()
+                SettingsNote(text = stringResource(R.string.check_silent_invite))
+                SettingsGap()
+                RudiButton(
+                    text = stringResource(R.string.sound_check_finish),
+                    onClick = {
+                        stopEngine()
+                        saveLog()
+                        onFinished()
+                    },
+                )
+            }
+
             SoundCheckStep.FirstClick -> SettingsPanel(
                 title = stringResource(R.string.sound_check_play_title),
             ) {
@@ -578,6 +627,7 @@ private val SoundCheckStep.titleRes: Int
         SoundCheckStep.Pad -> R.string.sound_check_pad_short
         SoundCheckStep.Headphones -> R.string.sound_check_headphones_short
         SoundCheckStep.FirstClick -> R.string.sound_check_play_short
+        SoundCheckStep.Silent -> R.string.check_silent_short
     }
 
 /** Start / stop on the left, and the way onwards once the step has produced something. */
