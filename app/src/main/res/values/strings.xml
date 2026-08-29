@@ -27,9 +27,10 @@
     <string name="levels_family_complete">Family complete</string>
     <string name="levels_required_path_complete">Required path complete</string>
     <string name="levels_open_next">Open next level</string>
-    <string name="levels_sound_check_call">Start here: three short steps so the app hears your pad and your headphones.</string>
+    <string name="levels_sound_check_call">Three short steps so the app hears your pad and your headphones. It stays on the map if you skip it.</string>
     <string name="levels_sound_check_node">Sound check. Checks that the app hears your pad. Can be replayed at any time.</string>
-    <string name="levels_sound_check_hide">Hide this call. The sound check stays on the map.</string>
+    <string name="levels_sound_check_hide">Not now</string>
+    <string name="levels_sound_check_open">Sound check</string>
 
     <!-- Level detail -->
     <string name="level_detail_title">LEVEL %1$s</string>
@@ -164,7 +165,6 @@
 
     <!-- Calibration screen -->
     <string name="calibration_title">CALIBRATION</string>
-    <string name="calibration_intro">Two things are measured here, in this order: how loud a stroke of yours is, and how late the microphone hears it. Step 2 uses the level from step 1, so measure step 1 first.</string>
     <string name="calibration_start">Start</string>
     <string name="calibration_stop">Stop</string>
     <string name="calibration_reset">Reset</string>
@@ -175,20 +175,21 @@
     <string name="calibration_spread_value">±%1$d ms</string>
     <string name="calibration_pending">—</string>
     <string name="calibration_need_more">%1$d more strokes needed.</string>
-    <string name="calibration_ready">Steady enough. Apply it, or keep playing to tighten it.</string>
+    <string name="calibration_ready">Steady enough \u2014 apply it, or keep playing.</string>
     <string name="calibration_wide_spread">The strokes scatter a lot. Play more evenly, or reset and try again.</string>
     <string name="calibration_skipped">%1$d warm-up strokes ignored.</string>
     <string name="calibration_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
     <string name="calibration_permission_body">Calibration needs the microphone to hear your strokes.</string>
-    <string name="calibration_complete">Enough strokes. The round stopped by itself: apply the value, or reset to measure again.</string>
+    <string name="calibration_complete">Enough strokes \u2014 apply the value, or reset.</string>
 
     <string name="calibration_step1_title">STEP 1 · STROKE LOUDNESS</string>
-    <string name="calibration_step1_intro">Nothing plays in this step. Press Measure, keep quiet while it listens to the room, then play 8 strokes at your normal loudness. The mark on the bar is the result: anything quieter is ignored, here and in a level.</string>
+    <string name="calibration_step1_help_title">Stroke loudness</string>
+    <string name="calibration_step1_intro">Nothing plays here. Press Measure, keep quiet while the app listens to the room, then play 8 strokes as you normally would.\n\nThe mark on the bar is the gate: anything quieter is ignored, here and in a level. Step 2 counts only strokes above it, so measure this first.</string>
     <string name="calibration_gate_label">Gate</string>
     <string name="calibration_gate_value">%1$d dB</string>
     <string name="calibration_gate_measure">Measure loudness</string>
     <string name="calibration_gate_cancel">Stop measuring</string>
-    <string name="calibration_gate_hint">Not measured yet in this visit. Measure it, or drag the gate just above the room by hand.</string>
+    <string name="calibration_gate_hint">Not measured yet in this visit.</string>
     <string name="calibration_gate_silence">Keep quiet for a moment: listening to the room.</string>
     <string name="calibration_gate_strokes">Now play %2$d strokes at your normal loudness (%1$d of %2$d).</string>
     <string name="calibration_gate_measured">Room %1$d dB, your strokes %2$d dB. The gate sits between them.</string>
@@ -196,12 +197,12 @@
     <string name="calibration_meter_cd">Microphone level with the gate mark</string>
 
     <string name="calibration_step2_title">STEP 2 · LATENCY</string>
-    <string name="calibration_step2_intro">Wear the headphones you practise with. Press Start: a click plays out loud on purpose, because it is what is being measured. Play one stroke on every click, evenly, for about half a minute. The first few strokes are ignored while you settle in, and only strokes above the gate from step 1 are counted.</string>
-    <string name="calibration_stalled">The round stopped: not one stroke was counted. Check that the phone can hear the pad, play harder, or lower the gate in step\u00a01.</string>
+    <string name="calibration_step2_help_title">Latency</string>
+    <string name="calibration_step2_intro">Wear the headphones you practise with and play one stroke on every click, evenly, for about half a minute. The click plays out loud on purpose \u2014 it is what is being measured.\n\nThe first few strokes are ignored while you settle in, and quiet ones are counted at half the gate of step 1, so a softer stroke still counts. Anything dropped is reported under the counter.</string>
+    <string name="calibration_stalled">Not one stroke was counted. Play harder, or lower the gate in step\u00a01.</string>
     <string name="calibration_quiet_dropped">%1$d strokes were too quiet to count. Play harder, or lower the gate in step\u00a01.</string>
     <string name="calibration_stray_dropped">%1$d strokes landed too far from a click to be a round trip.</string>
-    <string name="calibration_step2_profile">The measurement is saved for \u201c%1$s\u201d. Switch outputs on the settings screen before measuring another pair.</string>
-    <string name="calibration_step2_gate">Only strokes above the step\u00a01 gate are counted, at half that level, so a softer stroke still counts. Anything dropped is reported under the counter.</string>
+    <string name="calibration_step2_profile">Saved for \u201c%1$s\u201d.</string>
 
     <!-- Practice result screen -->
     <string name="practice_result_passed">LEVEL PASSED</string>
@@ -255,6 +256,8 @@
 
     <!-- Sound check: the onboarding node of the level map -->
     <string name="sound_check_title">SOUND CHECK</string>
+    <string name="help_open">What %1$s does</string>
+    <string name="help_close">Got it</string>
     <string name="sound_check_step_of">STEP %1$d OF %2$d \u00b7 %3$s</string>
     <string name="sound_check_pad_short">PAD AND PHONE</string>
     <string name="sound_check_headphones_short">HEADPHONES</string>

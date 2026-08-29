@@ -43,14 +43,20 @@ fun SettingsPanel(
     title: String,
     modifier: Modifier = Modifier,
     buildLabel: String? = null,
+    /** Sits on the trailing edge of the title, for a [HelpButton] and nothing louder. */
+    titleAction: @Composable (() -> Unit)? = null,
     rows: @Composable () -> Unit,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = RudiTextStyles.Rubric,
-            color = RudiColors.Muted,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = title,
+                style = RudiTextStyles.Rubric,
+                color = RudiColors.Muted,
+                modifier = Modifier.weight(1f),
+            )
+            titleAction?.invoke()
+        }
         Spacer(modifier = Modifier.height(SECTION_GAP))
         rows()
         if (buildLabel != null) {

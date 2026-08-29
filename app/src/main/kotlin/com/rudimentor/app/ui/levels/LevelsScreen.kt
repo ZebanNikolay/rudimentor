@@ -76,6 +76,8 @@ import com.rudimentor.app.ui.component.SquareIconButton
 import com.rudimentor.app.ui.component.Pad
 import com.rudimentor.app.ui.component.PadShape
 import com.rudimentor.app.ui.component.PadTone
+import com.rudimentor.app.ui.component.RudiButton
+import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.RudiTab
 import com.rudimentor.app.ui.component.RudiTabRow
 import com.rudimentor.app.ui.theme.RudiColors
@@ -229,45 +231,43 @@ fun LevelsScreen(
  */
 @Composable
 private fun SoundCheckPlate(onClick: () -> Unit, onDismiss: () -> Unit) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(RudiColors.Surface)
-            .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.sound_check_title),
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.BrickLit,
-                letterSpacing = 1.6.sp,
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = stringResource(R.string.levels_sound_check_call),
-                style = MaterialTheme.typography.bodyMedium,
-                color = RudiColors.Text,
-            )
-        }
-        LevelPlayButton(
-            onClick = onClick,
-            contentDescription = stringResource(R.string.sound_check_title),
-            active = true,
+        Text(
+            text = stringResource(R.string.sound_check_title),
+            style = RudiTextStyles.RowNumber,
+            color = RudiColors.BrickLit,
+            letterSpacing = 1.6.sp,
         )
-        Spacer(modifier = Modifier.width(8.dp))
-        SquareIconButton(
-            onClick = onDismiss,
-            contentDescription = stringResource(R.string.levels_sound_check_hide),
-            size = 28.dp,
+        Spacer(modifier = Modifier.height(3.dp))
+        Text(
+            text = stringResource(R.string.levels_sound_check_call),
+            style = MaterialTheme.typography.bodyMedium,
+            color = RudiColors.Text,
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        // Two named buttons, dismissive first and confirming last, as Material lays out the
+        // actions of a card: the plate used to carry the round play button of a level, which
+        // promised an attempt, and a 28 dp cross, which was below the touch target size and
+        // never said whether it meant "later" or "never" (decision 174).
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_close),
-                contentDescription = null,
-                tint = RudiColors.Muted,
-                modifier = Modifier.size(14.dp),
+            RudiButton(
+                text = stringResource(R.string.levels_sound_check_hide),
+                onClick = onDismiss,
+                style = RudiButtonStyle.Secondary,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            RudiButton(
+                text = stringResource(R.string.levels_sound_check_open),
+                onClick = onClick,
             )
         }
     }
@@ -549,6 +549,7 @@ private val DIALOG_MARGIN = 24.dp
  */
 private const val RANK_ART_RATIO = 1.7f
 
+
 @Composable
 private fun LevelMap(
     catalog: LevelCatalog,
@@ -563,20 +564,18 @@ private fun LevelMap(
     val verticalScroll = rememberScrollState()
     val horizontalScroll = rememberScrollState()
     val density = LocalDensity.current
-    val mapHeight = MAP_VERTICAL_PADDING * 2 + MAP_ROW_HEIGHT * (catalog.lastRow + 1)
+    // The sound check is row zero of the map: its own row under the first level, so the
+    // levels start one row higher than the bottom padding (decision 174).
+    val mapHeight = MAP_VERTICAL_PADDING * 2 + MAP_ROW_HEIGHT * (catalog.lastRow + 1) +
+        SOUND_CHECK_ROW_HEIGHT
     // A locked family has no level to start, so no node is highlighted as the current one and
     // every pad reads as locked — the map is there to be read, not to be played.
     val currentLevel = if (locked) null else progress.currentLevel(catalog, rank)
     val currentRow = currentLevel?.row ?: 0
-    // The sound check sits beside the first level of the map, in whichever side column is
-    // free on that row, so it never lands on top of an optional branch.
+    // The level the sound check hangs under: the first one of the main path.
     val soundCheckAnchor = remember(catalog) {
         val firstRow = catalog.levels.filter { it.row == 0 }
         firstRow.firstOrNull { it.column == LevelColumn.Center } ?: firstRow.firstOrNull()
-    }
-    val soundCheckSide = remember(catalog) {
-        val leftTaken = catalog.levels.any { it.row == 0 && it.column == LevelColumn.Left }
-        if (leftTaken) 1f else -1f
     }
 
     BoxWithConstraints(
@@ -600,7 +599,10 @@ private fun LevelMap(
         LaunchedEffect(verticalScroll.maxValue, verticalScroll.viewportSize, catalog.family.id, rank) {
             if (verticalScroll.maxValue == 0) return@LaunchedEffect
             val currentY = with(density) {
-                (mapHeight - MAP_VERTICAL_PADDING - MAP_ROW_HEIGHT * currentRow - NODE_SIZE)
+                (
+                    mapHeight - MAP_VERTICAL_PADDING - SOUND_CHECK_ROW_HEIGHT -
+                        MAP_ROW_HEIGHT * currentRow - NODE_SIZE
+                    )
                     .roundToPx()
             }
             verticalScroll.scrollTo(
@@ -637,7 +639,8 @@ private fun LevelMap(
                         val halfNode = nodePx / 2f
                         val rowPx = MAP_ROW_HEIGHT.toPx()
                         val columnPx = MAP_COLUMN_WIDTH.toPx()
-                        val bottomPx = MAP_VERTICAL_PADDING.toPx()
+                        val bottomPx = MAP_VERTICAL_PADDING.toPx() +
+                            SOUND_CHECK_ROW_HEIGHT.toPx()
 
                         fun centerOf(level: Level) = Offset(
                             x = size.width / 2f + level.column.direction * columnPx,
@@ -707,18 +710,24 @@ private fun LevelMap(
                             }
                         }
 
-                        // The sound check hangs off the first level on a dashed line, the same
-                        // way an optional branch does: it is not on the path to any rank, and
-                        // it can be walked again at any time (decision 171).
+                        // The sound check hangs under the first level on a dashed line: the
+                        // dash says it is not on the path to any rank and can be walked again
+                        // at any time (decisions 171, 174).
                         if (soundCheckAnchor != null) {
                             val anchor = centerOf(soundCheckAnchor)
                             val node = Offset(
-                                x = size.width / 2f + soundCheckSide * columnPx,
-                                y = anchor.y,
+                                x = size.width / 2f,
+                                y = size.height - MAP_VERTICAL_PADDING.toPx() - nodePx / 2f,
                             )
-                            val dirX = if (node.x < anchor.x) -1f else 1f
-                            val start = Offset(anchor.x + dirX * halfNode, anchor.y)
-                            val end = Offset(node.x - dirX * halfNode, node.y)
+                            val dx = anchor.x - node.x
+                            val dy = anchor.y - node.y
+                            val length = kotlin.math.hypot(dx, dy)
+                            val unitX = dx / length
+                            val unitY = dy / length
+                            val reach = halfNode /
+                                maxOf(kotlin.math.abs(unitX), kotlin.math.abs(unitY))
+                            val start = Offset(node.x + unitX * reach, node.y + unitY * reach)
+                            val end = Offset(anchor.x - unitX * reach, anchor.y - unitY * reach)
                             drawLine(
                                 color = if (soundCheckDone) RudiColors.Brick else RudiColors.Line,
                                 start = start,
@@ -740,14 +749,29 @@ private fun LevelMap(
                     },
             ) {
                 if (soundCheckAnchor != null) {
-                    val x = mapWidth / 2 + MAP_COLUMN_WIDTH * soundCheckSide - NODE_SIZE / 2
-                    val y = mapHeight - MAP_VERTICAL_PADDING -
-                        MAP_ROW_HEIGHT * soundCheckAnchor.row - NODE_SIZE
-                    SoundCheckMapNode(
-                        done = soundCheckDone,
-                        onClick = onOpenSoundCheck,
+                    // Row zero, centred: the column beside it is empty, so the node can be
+                    // named in place instead of leaving the learner to guess the pictogram
+                    // (decision 174). The caption stays English in every locale.
+                    val x = mapWidth / 2 - NODE_SIZE / 2
+                    val y = mapHeight - MAP_VERTICAL_PADDING - NODE_SIZE
+                    Row(
                         modifier = Modifier.absoluteOffset(x = x, y = y),
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SoundCheckMapNode(
+                            done = soundCheckDone,
+                            onClick = onOpenSoundCheck,
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = stringResource(R.string.sound_check_title),
+                            style = RudiTextStyles.RowNumber,
+                            color = if (soundCheckDone) RudiColors.Muted else RudiColors.BrickLit,
+                            letterSpacing = 1.6.sp,
+                            maxLines = 1,
+                            modifier = Modifier.clickable(onClick = onOpenSoundCheck),
+                        )
+                    }
                 }
                 catalog.levels.forEach { level ->
                     val x = mapWidth / 2 +
@@ -824,7 +848,7 @@ private fun SoundCheckMapNode(
             tone = if (done) PadTone.Normal else PadTone.Accent,
             lit = done,
             iconRes = R.drawable.ic_sound_check,
-            showLetter = false,
+            showLetter = true,
             pressed = false,
         )
     }
@@ -909,6 +933,9 @@ private val LevelColumn.direction: Float
 
 private val NODE_SIZE = 46.dp
 private val MAP_ROW_HEIGHT = 78.dp
+
+/** The row the sound check owns, under row 0 of the levels (decision 174). */
+private val SOUND_CHECK_ROW_HEIGHT = MAP_ROW_HEIGHT
 private val MAP_COLUMN_WIDTH = 74.dp
 private val MAP_CENTER_WIDTH = 200.dp
 private val MAP_VERTICAL_PADDING = 30.dp

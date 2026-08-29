@@ -46,6 +46,7 @@ import com.rudimentor.app.telemetry.CalibrationTelemetry
 import com.rudimentor.app.telemetry.PracticeLogStore
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.ToolbarScreen
+import com.rudimentor.app.ui.component.HelpButton
 import com.rudimentor.app.ui.component.MicLevelMeter
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
@@ -403,16 +404,17 @@ fun CalibrationScreen(
             return@ToolbarScreen
         }
 
-        Text(
-            text = stringResource(R.string.calibration_intro),
-            style = MaterialTheme.typography.bodyMedium,
-            color = RudiColors.Muted,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        SettingsPanel(title = stringResource(R.string.calibration_step1_title)) {
-            StepIntro(text = stringResource(R.string.calibration_step1_intro))
-            SettingsGap()
+        // The step titles already say what happens in which order, so the paragraphs that
+        // used to sit above the controls now live behind the question marks (decision 174).
+        SettingsPanel(
+            title = stringResource(R.string.calibration_step1_title),
+            titleAction = {
+                HelpButton(
+                    title = stringResource(R.string.calibration_step1_help_title),
+                    body = stringResource(R.string.calibration_step1_intro),
+                )
+            },
+        ) {
             MicLevelMeter(
                 envelope = status.envelope,
                 peak = peak,
@@ -454,9 +456,15 @@ fun CalibrationScreen(
 
         Spacer(modifier = Modifier.height(22.dp))
 
-        SettingsPanel(title = stringResource(R.string.calibration_step2_title)) {
-            StepIntro(text = stringResource(R.string.calibration_step2_intro))
-            SettingsGap()
+        SettingsPanel(
+            title = stringResource(R.string.calibration_step2_title),
+            titleAction = {
+                HelpButton(
+                    title = stringResource(R.string.calibration_step2_help_title),
+                    body = stringResource(R.string.calibration_step2_intro),
+                )
+            },
+        ) {
             SettingsValueRow(
                 label = stringResource(R.string.calibration_strokes_label),
                 value = stringResource(
@@ -496,8 +504,6 @@ fun CalibrationScreen(
             )
             SettingsGap()
             SettingsNote(text = stringResource(R.string.calibration_step2_profile, profileName))
-            SettingsGap()
-            SettingsNote(text = stringResource(R.string.calibration_step2_gate))
             SettingsGap()
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 RudiButton(
@@ -584,16 +590,6 @@ fun CalibrationScreen(
         }
         Spacer(modifier = Modifier.height(24.dp))
     }
-}
-
-/** The instructions of one step, kept inside its own panel so they cannot be read as global. */
-@Composable
-private fun StepIntro(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = RudiColors.Muted,
-    )
 }
 
 /** What the screen is doing with the microphone right now. */
