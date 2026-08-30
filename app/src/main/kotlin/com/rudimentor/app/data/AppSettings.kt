@@ -6,6 +6,7 @@ import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.BeatState
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.audio.Hand
+import com.rudimentor.app.audio.LatencyModel
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.audio.MicThreshold
 
@@ -34,6 +35,17 @@ data class AppSettings(
      * of it a second time (decision 154).
      */
     val latencyCalibrated: Boolean = false,
+    /**
+     * Microphone half of [inputLatencyMs], in milliseconds, as the input stream reported it;
+     * 0 while nothing has measured it.
+     *
+     * Not per output: it is the phone's own microphone, the same one for every pair of
+     * headphones. The split decides where each half of the path goes -- the stroke is pulled
+     * back by this one, the picture and the click by what is left of the round trip. Before
+     * the split existed the picture stood on the render clock, and a level played by eye
+     * scored zero however well it was struck (decision 188).
+     */
+    val micLatencyMs: Float = 0f,
     /**
      * Loudness an onset has to reach before it is treated as a stroke, as an envelope
      * level. Room noise and a real stroke are 25-80x apart, and without this gate the
@@ -110,6 +122,11 @@ data class AppSettings(
             // written straight into the field cannot drift away from the list.
             inputLatencyMs = selected.latencyMs.coerceIn(LATENCY_MIN_MS, LATENCY_MAX_MS),
             latencyCalibrated = selected.latencyCalibrated,
+            micLatencyMs = if (micLatencyMs.isFinite()) {
+                micLatencyMs.coerceIn(0f, LatencyModel.MAX_MIC_MS)
+            } else {
+                0f
+            },
             clickAudible = selected.clickAudible,
             micThresholdLevel = MicThreshold.clamp(selected.micThresholdLevel),
             outputProfiles = profiles,

@@ -66,6 +66,18 @@ class PracticeSession(
          */
         val appliedLatencyMs: Float = 0f,
         /**
+         * Input half of the path, in milliseconds: what the stroke itself is late by. The
+         * stream reports it, or [LatencyModel.DEFAULT_MIC_MS] stands in (decision 188).
+         */
+        val micLatencyMs: Float = 0f,
+        /**
+         * How far ahead of the render clock the picture is drawn, in milliseconds -- the
+         * output half of the path. Equal to [micLatencyMs] subtracted from the round trip
+         * once the round trip is measured, so that what the player sees and what the player
+         * hears land on the hit line together (decision 188).
+         */
+        val visualShiftMs: Float = 0f,
+        /**
          * Stream-start skew of this run, in milliseconds: how far the input counter had
          * advanced when the output stream first ran. The native drain subtracts it from
          * every hit, so a run whose skew differs from the run the trim was calibrated in
@@ -107,6 +119,9 @@ class PracticeSession(
     private var appliedLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS
     private var latencyCalibrated: Boolean = false
 
+    /** Last measured microphone half, used until this run's stream reports its own. */
+    private var storedMicLatencyMs: Float = 0f
+
     /**
      * Loudness an onset has to reach to be scored at all (decision 158). The onset
      * detector's own threshold is adaptive and sits on its floor in a noisy room, where it
@@ -146,6 +161,12 @@ class PracticeSession(
         inputLatencyMs: Float = MicLab.DEFAULT_LATENCY_MS,
         latencyCalibrated: Boolean = false,
         calibrationSkewMs: Float? = null,
+        /**
+         * Microphone half of the round trip as it was last measured, or 0 when unknown. Used
+         * only while this run's own stream has not reported its input latency yet, so the
+         * picture does not start on a guess and then jump (decision 188).
+         */
+        storedMicLatencyMs: Float = 0f,
         sensitivity: Float = MicLab.DEFAULT_SENSITIVITY,
         micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
         tempoPlan: IntArray = IntArray(0),
@@ -160,6 +181,7 @@ class PracticeSession(
         streamSkewMs = 0f
         this.calibrationSkewMs = calibrationSkewMs
         this.latencyCalibrated = latencyCalibrated
+        this.storedMicLatencyMs = storedMicLatencyMs
         this.micThresholdLevel = MicThreshold.clamp(micThresholdLevel)
         hitScratch.clear()
         tickScratch.clear()
@@ -265,14 +287,30 @@ class PracticeSession(
             appliedLatencyMs = target
             native.setInputLatencyMillis(appliedLatencyMs)
         }
-        // How far the notes are drawn ahead of the render clock. Normally that is the
-        // measured output latency; when the OS reports none -- A2DP on this device gives
-        // no timestamps -- a calibrated round trip still knows roughly how much of it
-        // was the output side, which is better than drawing on the render clock.
-        val visualShiftMs = when {
-            outputLatencyMs > 0f -> outputLatencyMs
-            latencyCalibrated -> (baseLatencyMs - INPUT_PART_MS).coerceAtLeast(0f)
-            else -> 0f
+        // How far the notes are drawn ahead of the render clock: the output half of the
+        // path, and nothing else (decision 188).
+        //
+        // A measured round trip decides it, split by the input latency the input stream
+        // reports. What must not decide it is `calculateLatencyMillis()` on the output
+        // stream: over A2DP this phone answers 4 ms, which is not zero, so the split was
+        // never reached -- the picture stood on the render clock while the strokes had the
+        // whole round trip taken off them. A player following the picture was then judged
+        // a full output latency early, and the dev.48 log scored a run of 39 near-perfect
+        // strokes as 0.0 %. The OS number is still worth its drift: A2DP latency moves
+        // during a run, and the picture has to move with it.
+        val reportedMicMs = if (snapshot.inputLatencyMs > 0f) {
+            snapshot.inputLatencyMs
+        } else {
+            storedMicLatencyMs
+        }
+        val micLatencyMs = LatencyModel.micPart(reportedMicMs, baseLatencyMs)
+        val visualShiftMs = if (latencyCalibrated) {
+            (
+                LatencyModel.outputPart(baseLatencyMs, micLatencyMs) +
+                    (outputLatencyMs - (anchorOutputLatencyMs ?: outputLatencyMs))
+                ).coerceAtLeast(0f)
+        } else {
+            outputLatencyMs
         }
 
         val anchor = anchorFrame
@@ -321,6 +359,8 @@ class PracticeSession(
             outputLatencyMs = outputLatencyMs,
             appliedLatencyMs = appliedLatencyMs,
             streamSkewMs = streamSkewMs,
+            micLatencyMs = micLatencyMs,
+            visualShiftMs = visualShiftMs,
         )
     }
 
@@ -352,10 +392,9 @@ class PracticeSession(
         private const val LATENCY_TRIM_MAX_MS = 400f
 
         /**
-         * Rough input side of a round trip: microphone buffer plus onset detection. Only
-         * used to split a calibrated round trip when the OS reports no output latency
-         * at all (decision 154).
+         * Where the input half of the path now comes from: measured per run, no longer a
+         * constant. Kept as an alias so the number has one home (decision 188).
          */
-        const val INPUT_PART_MS = 25f
+        const val INPUT_PART_MS = LatencyModel.DEFAULT_MIC_MS
     }
 }

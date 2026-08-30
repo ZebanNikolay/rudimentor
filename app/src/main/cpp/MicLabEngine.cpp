@@ -40,6 +40,8 @@ bool MicLabEngine::start() {
     inputFrameZero_.store(-1, std::memory_order_release);
     outputLatencyMillis_.store(0.0f, std::memory_order_release);
     latencyPollCountdown_ = 0;
+    inputLatencyMillis_.store(0.0f, std::memory_order_release);
+    inputLatencyPollCountdown_ = 0;
     nextTickFrame_ = static_cast<double>(sampleRate_) * 0.30;  // brief warm-up
     step_ = 0;
     clickFrame_ = kClickFrames;
@@ -187,6 +189,7 @@ MicLabEngine::Snapshot MicLabEngine::snapshot() const {
             running_.load(std::memory_order_acquire),
             outputLatencyMillis_.load(std::memory_order_acquire),
             skewMs,
+            inputLatencyMillis_.load(std::memory_order_acquire),
     };
 }
 
@@ -250,6 +253,28 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
                                               onsets, 16);
         for (int i = 0; i < emitted; ++i) {
             publishHit(onsets[i]);
+        }
+        // The other half of the round trip, sampled the same way the output half is.
+        // `calculateLatencyMillis()` on the input stream says how long ago these
+        // samples were captured, and that path is local hardware: the device reports
+        // it honestly even on the Bluetooth output where it reports nothing usable.
+        // Which half is which decides where the correction goes -- the stroke is
+        // moved by this one, the picture and the click by the output one
+        // (decision 188).
+        if (--inputLatencyPollCountdown_ <= 0) {
+            inputLatencyPollCountdown_ =
+                    std::max(1, static_cast<int>(sampleRate_ / 10 / std::max(1, numFrames)));
+            const auto latency = audioStream->calculateLatencyMillis();
+            if (latency) {
+                const float measured = static_cast<float>(latency.value());
+                if (measured >= 0.0f && measured < 1000.0f) {
+                    const float previous = inputLatencyMillis_.load(std::memory_order_acquire);
+                    const float next = previous <= 0.0f
+                            ? measured
+                            : previous + 0.25f * (measured - previous);
+                    inputLatencyMillis_.store(next, std::memory_order_release);
+                }
+            }
         }
         inputFrames_.store(startFrame + numFrames, std::memory_order_release);
         return running_.load(std::memory_order_acquire)

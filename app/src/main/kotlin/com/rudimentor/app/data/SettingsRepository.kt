@@ -55,6 +55,7 @@ class DataStoreSettingsRepository(
             clickAudible = preferences[Keys.ClickAudible] ?: false,
             inputLatencyMs = preferences[Keys.InputLatencyMs] ?: MicLab.DEFAULT_LATENCY_MS,
             latencyCalibrated = preferences[Keys.LatencyCalibrated] ?: false,
+            micLatencyMs = preferences[Keys.MicLatencyMs] ?: 0f,
             micThresholdLevel = preferences[Keys.MicThresholdLevel]
                 ?: MicThreshold.DEFAULT_LEVEL,
             showOffsetMs = preferences[Keys.ShowOffsetMs] ?: false,
@@ -82,6 +83,7 @@ class DataStoreSettingsRepository(
         this[Keys.ClickAudible] = safe.clickAudible
         this[Keys.InputLatencyMs] = safe.inputLatencyMs
         this[Keys.LatencyCalibrated] = safe.latencyCalibrated
+        this[Keys.MicLatencyMs] = safe.micLatencyMs
         this[Keys.MicThresholdLevel] = safe.micThresholdLevel
         this[Keys.ShowOffsetMs] = safe.showOffsetMs
         this[Keys.OutputProfiles] = safe.outputProfiles.serialize()
@@ -92,6 +94,8 @@ class DataStoreSettingsRepository(
 
     private object Keys {
         val Grid = stringPreferencesKey("beat_grid")
+        // The measured microphone half of the round trip (decision 188).
+        val MicLatencyMs = floatPreferencesKey("mic_latency_ms")
         val Bpm = intPreferencesKey("bpm")
         val ActiveRow = intPreferencesKey("active_row")
         val ShowHandLetters = booleanPreferencesKey("show_hand_letters")

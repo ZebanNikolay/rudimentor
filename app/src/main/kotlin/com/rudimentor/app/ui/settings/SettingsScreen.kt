@@ -223,6 +223,20 @@ private fun OutputProfileCard(
                 draft.latencyMs.roundToInt(),
             ),
         )
+        // The second half of the path, shown next to the whole: one number could not say
+        // where the correction belongs, and while it did not, a level played by eye scored
+        // zero (decision 188).
+        SettingsValueRow(
+            label = stringResource(R.string.settings_mic_share_label),
+            value = if (draft.micLatencyMs > 0f) {
+                stringResource(
+                    R.string.practice_latency_value,
+                    draft.micLatencyMs.roundToInt(),
+                )
+            } else {
+                stringResource(R.string.settings_mic_share_unknown)
+            },
+        )
         SettingsValueRow(
             label = stringResource(R.string.settings_gate_label),
             value = stringResource(
@@ -240,6 +254,8 @@ private fun OutputProfileCard(
                 },
             ),
         )
+        SettingsGap()
+        SettingsNote(text = stringResource(R.string.settings_latency_split_note))
         SettingsGap()
         RudiButton(
             text = stringResource(R.string.settings_calibrate),

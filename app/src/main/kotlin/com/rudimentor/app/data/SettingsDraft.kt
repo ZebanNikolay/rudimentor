@@ -1,5 +1,6 @@
 package com.rudimentor.app.data
 
+import com.rudimentor.app.audio.LatencyModel
 import com.rudimentor.app.audio.MicThreshold
 import kotlin.math.abs
 
@@ -18,6 +19,15 @@ data class SettingsDraft(
     val latencyMs: Float,
     val latencyCalibrated: Boolean,
     val micThresholdLevel: Float,
+    /**
+     * Measured microphone half of [latencyMs], in milliseconds; 0 while nothing measured it.
+     *
+     * It belongs to the phone rather than to the headphones, so unlike [latencyMs] it is not
+     * per output: the same microphone hears every stroke. The split is what tells the app
+     * where each half goes -- the stroke moves by this one, the picture and the click by
+     * what is left (decision 188).
+     */
+    val micLatencyMs: Float = 0f,
     /**
      * The saved outputs and the one in use. [latencyMs] above is the selected profile's
      * value while it is being edited; Save writes it back into that profile (decision 161).
@@ -156,6 +166,17 @@ data class SettingsDraft(
         return withCalibration(latencyMs + biasMs, selectedProfile.calibrationSkewMs)
     }
 
+    /**
+     * The draft with a freshly measured microphone half of the path. Ignored when the stream
+     * reported nothing believable, so a bad reading never overwrites a good one
+     * (decision 188).
+     */
+    fun withMicLatency(measuredMs: Float?): SettingsDraft {
+        if (measuredMs == null || !measuredMs.isFinite()) return this
+        if (measuredMs <= 0f || measuredMs > LatencyModel.MAX_MIC_MS) return this
+        return copy(micLatencyMs = measuredMs)
+    }
+
     /** The draft with a new microphone gate, set by hand or measured (decision 158). */
     fun withMicThreshold(level: Float): SettingsDraft = copy(
         micThresholdLevel = MicThreshold.clamp(level),
@@ -173,6 +194,7 @@ data class SettingsDraft(
         showOffsetMs = showOffsetMs,
         inputLatencyMs = latencyMs,
         latencyCalibrated = latencyCalibrated,
+        micLatencyMs = micLatencyMs,
         micThresholdLevel = micThresholdLevel,
         outputProfiles = outputProfiles.map { profile ->
             if (profile.id == selectedProfileId) {
@@ -211,6 +233,7 @@ data class SettingsDraft(
                 showOffsetMs = safe.showOffsetMs,
                 latencyMs = safe.inputLatencyMs,
                 latencyCalibrated = safe.latencyCalibrated,
+                micLatencyMs = safe.micLatencyMs,
                 micThresholdLevel = safe.micThresholdLevel,
                 outputProfiles = safe.outputProfiles,
                 selectedProfileId = safe.selectedProfileId,

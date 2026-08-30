@@ -98,6 +98,11 @@ fun PracticeScreen(
      */
     latencyCalibrated: Boolean,
     /**
+     * Microphone half of [latencyMs] as it was last measured, 0 when unknown. The run's own
+     * stream replaces it as soon as it reports (decision 188).
+     */
+    micLatencyMs: Float = 0f,
+    /**
      * Stream-start skew that held while [latencyMs] was measured, or null when unknown. Hits
      * are re-anchored by the skew of their own run, so the difference of the two skews is
      * what a calibrated round trip is short by (decision 164).
@@ -264,6 +269,8 @@ fun PracticeScreen(
                         outputLatencyMs = poll.outputLatencyMs,
                         appliedMs = poll.appliedLatencyMs,
                         streamSkewMs = poll.streamSkewMs,
+                        micLatencyMs = poll.micLatencyMs,
+                        visualShiftMs = poll.visualShiftMs,
                     )
                 }
                 if (abs(poll.outputLatencyMs - loggedLatencyMs) > LATENCY_LOG_STEP_MS) {
@@ -280,6 +287,8 @@ fun PracticeScreen(
                         outputLatencyMs = poll.outputLatencyMs,
                         appliedMs = poll.appliedLatencyMs,
                         streamSkewMs = poll.streamSkewMs,
+                        micLatencyMs = poll.micLatencyMs,
+                        visualShiftMs = poll.visualShiftMs,
                     )
                 }
                 val now = poll.positionMs
@@ -492,6 +501,7 @@ fun PracticeScreen(
                         inputLatencyMs = latencyMs,
                         latencyCalibrated = latencyCalibrated,
                         calibrationSkewMs = calibrationSkewMs,
+                        storedMicLatencyMs = micLatencyMs,
                         micThresholdLevel = micThresholdLevel,
                         tempoPlan = tempoPlan,
                     )

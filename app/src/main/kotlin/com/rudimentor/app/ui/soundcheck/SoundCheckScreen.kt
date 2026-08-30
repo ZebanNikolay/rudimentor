@@ -37,6 +37,7 @@ import androidx.core.content.ContextCompat
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.audio.LatencyCalibration
+import com.rudimentor.app.audio.LatencyModel
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.audio.MicThreshold
 import com.rudimentor.app.audio.ThresholdProbe
@@ -132,8 +133,13 @@ fun SoundCheckScreen(
     buildInfo: BuildInfo,
     /** Start on this step: a freshly connected pair of headphones needs only its own step. */
     startStep: SoundCheckStep = SoundCheckStep.Pad,
-    /** Round trip and the skew it was measured under (both null when nothing was measured), gate. */
-    onApply: (Float?, Float?, Float) -> Unit,
+    /**
+     * Round trip and the skew it was measured under (both null when nothing was measured),
+     * gate, and the microphone half of the path the input stream reported (null when it
+     * reported nothing). The round trip alone does not say where the correction goes, so the
+     * split travels with it (decision 188).
+     */
+    onApply: (Float?, Float?, Float, Float?) -> Unit,
     /**
      * The player says they have no headphones. The click has to stop sounding on this output:
      * through a speaker the microphone hears it and counts it as a stroke (decision 186).
@@ -178,6 +184,9 @@ fun SoundCheckScreen(
     var playOffsets by remember { mutableStateOf(listOf<Float>()) }
     var playFinished by remember { mutableStateOf(false) }
     var skewMs by remember { mutableStateOf<Float?>(null) }
+    // Microphone half of the path, as the running input stream reports it. Measured, not
+    // asked of the player: it is a fact about the phone (decision 188).
+    var micPathMs by remember { mutableStateOf<Float?>(null) }
     var stalled by remember { mutableStateOf(false) }
     var audioFailed by remember { mutableStateOf(false) }
     var peak by remember { mutableFloatStateOf(0f) }
@@ -319,6 +328,13 @@ fun SoundCheckScreen(
                 Stage.Latency -> {
                     val skew = status.streamSkewMs
                     if (skew > 0f) skewMs = skew
+                    // The other half of what this round measures. The round trip is the sum;
+                    // the microphone reports its own share, so the two never have to be
+                    // guessed apart (decision 188).
+                    val micPath = status.micPathLatencyMs
+                    if (micPath > 0f && micPath <= LatencyModel.MAX_MIC_MS) {
+                        micPathMs = micPath
+                    }
                     val outcome = if (event.loud) {
                         calibration.add(event.offsetMs)
                     } else {
@@ -406,7 +422,7 @@ fun SoundCheckScreen(
         // The gate is worth keeping even if the player walks away here: it is the part of
         // the check that makes every later attempt scoreable.
         telemetry.thresholdApplied(elapsedMs(), gate, "sound check probe")
-        onApply(null, null, gate)
+        onApply(null, null, gate, micPathMs)
         padDone = true
     }
 
@@ -424,9 +440,18 @@ fun SoundCheckScreen(
                 medianMs = median,
                 spreadMs = reading.spreadMs,
                 samples = reading.samples.size,
+                micLatencyMs = micPathMs ?: Float.NaN,
             )
         }
-        onApply(median, skewMs, gate)
+        DevLog.log(
+            "soundcheck",
+            "path split: microphone ${micPathMs?.roundToInt() ?: -1} ms, " +
+                "picture ahead ${
+                    median?.let { (it - (micPathMs ?: LatencyModel.DEFAULT_MIC_MS)).roundToInt() }
+                        ?: -1
+                } ms",
+        )
+        onApply(median, skewMs, gate, micPathMs)
         headphonesDone = true
     }
 
@@ -627,6 +652,26 @@ fun SoundCheckScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = RudiColors.Muted,
                 )
+                // What the round actually learned, in the two numbers it is made of: one
+                // moves the strokes, the other moves the notes. Said in words, without the
+                // word "latency" (decision 188).
+                val measuredRoundTripMs = reading.medianMs
+                if (headphonesDone && measuredRoundTripMs != null) {
+                    SettingsGap()
+                    val micMs = LatencyModel.micPart(
+                        micPathMs ?: 0f,
+                        roundTripMs = measuredRoundTripMs,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.sound_check_path_split,
+                            micMs.roundToInt(),
+                            LatencyModel.outputPart(measuredRoundTripMs, micMs).roundToInt(),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = RudiColors.Muted,
+                    )
+                }
                 if (quietStrokes > 0 && !headphonesDone) {
                     SettingsGap()
                     Text(

@@ -71,6 +71,8 @@ class CalibrationTelemetry(
     private var measuredStrokeLevel = Float.NaN
 
     private var appliedMs = Float.NaN
+    // Microphone half of the round trip this round measured (decision 188).
+    private var appliedMicMs = Float.NaN
     private var finalMedianMs = Float.NaN
     private var finalSpreadMs = Float.NaN
     private var finalSamples = 0
@@ -211,8 +213,21 @@ class CalibrationTelemetry(
     }
 
     /** Closes the round with the value handed back to the settings draft. */
-    fun applied(atMs: Float, medianMs: Float, spreadMs: Float, samples: Int) {
+    fun applied(
+        atMs: Float,
+        medianMs: Float,
+        spreadMs: Float,
+        samples: Int,
+        /**
+         * Microphone half of the measured round trip, as the input stream reported it during
+         * this round; NaN when it reported nothing. The round trip alone cannot say where
+         * the correction goes, and the split is what the picture is drawn from
+         * (decision 188).
+         */
+        micLatencyMs: Float = Float.NaN,
+    ) {
         appliedMs = medianMs
+        appliedMicMs = micLatencyMs
         finalMedianMs = medianMs
         finalSpreadMs = spreadMs
         finalSamples = samples
@@ -222,6 +237,7 @@ class CalibrationTelemetry(
                 .num("medianMs", medianMs)
                 .num("spreadMs", spreadMs)
                 .int("samples", samples)
+                .num("micMs", micLatencyMs)
                 .done(),
         )
     }
@@ -304,6 +320,19 @@ class CalibrationTelemetry(
                     "$finalSamples strokes · complete ${yesNo(completed)}"
             },
         )
+        // The split the round trip was cut into. Two numbers, because one cannot say where
+        // the correction belongs: the microphone half moves the stroke, the rest moves the
+        // picture and the click (decision 188).
+        if (!appliedMs.isNaN()) {
+            lines.add(
+                if (appliedMicMs.isNaN()) {
+                    "path split: microphone not reported · picture ahead ${ms(appliedMs)}"
+                } else {
+                    "path split: microphone ${ms(appliedMicMs)} · " +
+                        "picture ahead ${ms(appliedMs - appliedMicMs)}"
+                },
+            )
+        }
         if (audioFailed) lines.add("AUDIO FAILED to start")
         return lines.joinToString(separator = "\n")
     }

@@ -259,6 +259,7 @@ fun RudiMentorApp(
                             clickAudible = clickAudible,
                             latencyMs = settings.inputLatencyMs,
                             latencyCalibrated = settings.latencyCalibrated,
+                            micLatencyMs = settings.micLatencyMs,
                             calibrationSkewMs = settings.selectedProfile.calibrationSkewMs,
                             micThresholdLevel = settings.micThresholdLevel,
                             headphonesConnected = headphonesConnected,
@@ -379,13 +380,14 @@ fun RudiMentorApp(
                 headphonesConnected = headphonesConnected,
                 clickSounds = clickAudible,
                 buildInfo = buildInfo,
-                onApply = { measuredMs, measuredSkewMs, micThreshold ->
+                onApply = { measuredMs, measuredSkewMs, micThreshold, measuredMicMs ->
                     // The screen stores as it measures, and stays open: a finished round is
                     // the act of choosing the number, so there is nothing left to confirm.
                     // A dev.40 attempt played with the previous 123 ms because a fresh
                     // 190 ms measurement waited for a Save that never came (decision 166).
                     val applied = (settingsDraft ?: SettingsDraft.from(settings))
                         .withMicThreshold(micThreshold)
+                        .withMicLatency(measuredMicMs)
                         .let { draft ->
                             if (measuredMs == null) {
                                 draft
@@ -416,9 +418,10 @@ fun RudiMentorApp(
                     // (decision 186).
                     onApplyDraft(SettingsDraft.from(settings).withClickAudible(false))
                 },
-                onApply = { measuredMs, measuredSkewMs, micThreshold ->
+                onApply = { measuredMs, measuredSkewMs, micThreshold, measuredMicMs ->
                     val applied = SettingsDraft.from(settings)
                         .withMicThreshold(micThreshold)
+                        .withMicLatency(measuredMicMs)
                         .let { draft ->
                             if (measuredMs == null) {
                                 draft

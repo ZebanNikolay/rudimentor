@@ -55,6 +55,14 @@ class NativeMicLab {
          * in another run once the difference of the two skews is corrected (decision 164).
          */
         val streamSkewMs: Float = 0f,
+        /**
+         * Measured input latency in milliseconds: how long ago the samples the detector is
+         * looking at were struck. The microphone path is local hardware, so this number is
+         * reported even where the Bluetooth output reports nothing usable -- which is what
+         * lets a measured round trip be split into the half that moves the stroke and the
+         * half that moves the picture (decision 188). 0 means no timestamps.
+         */
+        val inputLatencyMs: Float = 0f,
     )
 
     /**
@@ -106,7 +114,7 @@ class NativeMicLab {
         val index: Long,
     )
 
-    private val snapshotBuffer = IntArray(14)
+    private val snapshotBuffer = IntArray(15)
     private val streamInfoBuffer = IntArray(14)
     private val hitBuffer = LongArray(HIT_DRAIN_CAPACITY * 3)
     private val tickBuffer = LongArray(TICK_DRAIN_CAPACITY * 2)
@@ -148,6 +156,7 @@ class NativeMicLab {
             running = snapshotBuffer[9] != 0,
             outputLatencyMs = snapshotBuffer[12] / 1_000f,
             streamSkewMs = snapshotBuffer[13] / 1_000f,
+            inputLatencyMs = snapshotBuffer[14] / 1_000f,
         )
     }
 

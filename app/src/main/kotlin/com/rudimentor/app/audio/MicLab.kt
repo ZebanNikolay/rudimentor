@@ -75,6 +75,20 @@ class MicLab(
          * follows can correct for its own skew (decision 164).
          */
         val streamSkewMs: Float = 0f,
+        /**
+         * Measured input half of the path, in milliseconds: how late the stroke reaches the
+         * detector. Not to be confused with [inputLatencyMs], which is the compensation the
+         * engine has been told to take off. This one is measured, and it is what splits a
+         * round trip into the half that moves the stroke and the half that moves the picture
+         * and the click (decision 188). 0 means the stream reported nothing.
+         */
+        val micPathLatencyMs: Float = 0f,
+        /**
+         * Measured output half as the OS reports it, in milliseconds. Over A2DP this phone
+         * answers a few milliseconds and means it, so the number is kept for the log and
+         * never used to place the picture on its own (decision 188).
+         */
+        val outputPathLatencyMs: Float = 0f,
     )
 
     private val _events = MutableSharedFlow<MicLabEvent>(
@@ -160,7 +174,10 @@ class MicLab(
     }
 
     fun setInputLatencyMs(value: Float) {
-        val clamped = value.coerceIn(-100f, 300f)
+        // Upper bound is the one the settings allow (AppSettings.LATENCY_MAX_MS). It used to
+        // be 300, which silently swallowed 5 ms of a 305 ms Bluetooth round trip in the
+        // sound check while the level itself applied all of it (decision 188).
+        val clamped = value.coerceIn(-100f, 600f)
         native.setInputLatencyMillis(clamped)
         _status.value = _status.value.copy(inputLatencyMs = clamped)
     }
@@ -242,6 +259,8 @@ class MicLab(
             meanOffsetMs = mean,
             stdDevMs = stdDev,
             streamSkewMs = snapshot.streamSkewMs,
+            micPathLatencyMs = snapshot.inputLatencyMs,
+            outputPathLatencyMs = snapshot.outputLatencyMs,
         )
     }
 

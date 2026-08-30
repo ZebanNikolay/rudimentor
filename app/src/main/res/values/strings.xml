@@ -136,7 +136,10 @@
     <string name="settings_title">SETTINGS</string>
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
-    <string name="settings_latency_label">Latency compensation</string>
+    <string name="settings_latency_label">Sound path, there and back</string>
+    <string name="settings_mic_share_label">Of it, the microphone</string>
+    <string name="settings_mic_share_unknown">not measured yet</string>
+    <string name="settings_latency_split_note">The microphone part moves your strokes back to where you played them; the rest moves the notes and the click together, so what you see and what you hear reach the line at the same moment.</string>
     <string name="settings_latency_measured">Measured by the sound check.</string>
     <string name="settings_latency_guessed">Not measured yet \u2014 run the sound check.</string>
     <string name="settings_calibrate">Sound check…</string>
@@ -294,6 +297,7 @@
     <string name="sound_check_headphones_title">HEADPHONES</string>
     <string name="sound_check_headphones_ready">Hold the earcup against the microphone, then press Start.</string>
     <string name="sound_check_headphones_done">Headphones checked \u2014 saved for \u201c%1$s\u201d. This does not need repeating unless you switch to another pair.</string>
+    <string name="sound_check_path_split">A stroke takes %1$d ms to come back through the microphone; the click takes %2$d ms to reach your ears. The app now moves your strokes by the first and the notes by the second, so both land on the line together.</string>
     <string name="sound_check_play_title">CHECK</string>
     <string name="sound_check_play_intro">Press Start and hit the pad once on every click, eight times. This one tells you whether the two measurements hold up.</string>
     <string name="check_play_help_title">The check</string>

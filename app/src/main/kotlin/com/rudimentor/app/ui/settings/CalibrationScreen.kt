@@ -39,6 +39,7 @@ import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.audio.LatencyCalibration
+import com.rudimentor.app.audio.LatencyModel
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.audio.MicThreshold
 import com.rudimentor.app.audio.ThresholdProbe
@@ -118,7 +119,7 @@ fun CalibrationScreen(
      * hits are re-anchored by the skew of their own run, so a round trip is only valid in
      * another run once the difference of the two skews is corrected (decision 164).
      */
-    onApply: (Float?, Float?, Float) -> Unit,
+    onApply: (Float?, Float?, Float, Float?) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -147,6 +148,9 @@ fun CalibrationScreen(
     // Stream-start skew of the run the measurement is taken in, saved with the number
     // (decision 164).
     var measuredSkewMs by remember { mutableStateOf<Float?>(null) }
+    // Microphone half of the round trip, reported by the input stream while the round runs
+    // (decision 188).
+    var measuredMicMs by remember { mutableStateOf<Float?>(null) }
     // Guards against writing the same number twice on every recomposition.
     var storedMedianMs by remember { mutableStateOf<Float?>(null) }
     var storedThreshold by remember { mutableFloatStateOf(MicThreshold.clamp(micThresholdLevel)) }
@@ -235,6 +239,10 @@ fun CalibrationScreen(
                 CalibrationMode.Latency -> {
                     val skew = status.streamSkewMs
                     if (skew > 0f) measuredSkewMs = skew
+                    val micPath = status.micPathLatencyMs
+                    if (micPath > 0f && micPath <= LatencyModel.MAX_MIC_MS) {
+                        measuredMicMs = micPath
+                    }
                     // A quiet onset is logged and ignored: letting it into the median is
                     // exactly what produced the 114 ms of dev.37 (decision 158).
                     val outcome = if (event.loud) {
@@ -546,7 +554,7 @@ fun CalibrationScreen(
                 value = handMs,
                 valueRange = 0f..AppSettings.LATENCY_MAX_MS,
                 onValueChange = { handMs = it },
-                onValueChangeFinished = { onApply(handMs, null, threshold) },
+                onValueChangeFinished = { onApply(handMs, null, threshold, measuredMicMs) },
             )
             SettingsNote(text = stringResource(R.string.check_latency_hand_note))
             SettingsGap()
@@ -619,8 +627,9 @@ fun CalibrationScreen(
                 medianMs = measuredMs,
                 spreadMs = reading.spreadMs,
                 samples = reading.samples.size,
+                micLatencyMs = measuredMicMs ?: Float.NaN,
             )
-            onApply(measuredMs, measuredSkewMs, threshold)
+            onApply(measuredMs, measuredSkewMs, threshold, measuredMicMs)
         }
         // The gate follows a dragged slider too, once the finger has been still for a
         // moment, so a drag is one write instead of a hundred.
@@ -633,7 +642,7 @@ fun CalibrationScreen(
                 level = threshold,
                 source = if (probeResult == null) SOURCE_SLIDER else SOURCE_PROBE,
             )
-            onApply(null, null, threshold)
+            onApply(null, null, threshold, measuredMicMs)
         }
         Spacer(modifier = Modifier.height(24.dp))
     }

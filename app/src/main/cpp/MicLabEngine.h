@@ -100,6 +100,17 @@ public:
          * is corrected for (decision 164), which is why it is published here.
          */
         float streamSkewMs;
+        /**
+         * Measured input latency in milliseconds: how long ago the samples the
+         * detector is looking at were actually struck. Unlike the output side this
+         * number can be trusted -- the microphone path is local hardware, so the
+         * device does report timestamps for it even when A2DP reports none.
+         *
+         * It is the half of the round trip that belongs to the stroke: the stroke
+         * is corrected by it, while the picture and the click are moved by the
+         * output half (decision 188). 0 means no timestamps.
+         */
+        float inputLatencyMs;
     };
 
     MicLabEngine();
@@ -181,6 +192,10 @@ private:
     // callback. Read by the UI thread through snapshot().
     std::atomic<float> outputLatencyMillis_{0.0f};
     int latencyPollCountdown_ = 0;
+    // Smoothed input latency, sampled from the input stream the same way. This is
+    // the half of the round trip that belongs to the stroke (decision 188).
+    std::atomic<float> inputLatencyMillis_{0.0f};
+    int inputLatencyPollCountdown_ = 0;
 
     int32_t sampleRate_ = 48000;
     int64_t outputFrames_ = 0;

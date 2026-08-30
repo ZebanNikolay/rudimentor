@@ -107,6 +107,10 @@ class PracticeTelemetry(
     private var maxOutputLatencyMs = Float.NaN
     private var lastOutputLatencyMs = Float.NaN
     private var lastAppliedLatencyMs = Float.NaN
+    // The two halves of the path this run used: the stroke's and the picture's
+    // (decision 188). Read back to see which half a bad run got wrong.
+    private var lastMicLatencyMs = Float.NaN
+    private var lastVisualShiftMs = Float.NaN
     private var lastStreamSkewMs = Float.NaN
 
     /**
@@ -211,8 +215,14 @@ class PracticeTelemetry(
         outputLatencyMs: Float,
         appliedMs: Float,
         streamSkewMs: Float = Float.NaN,
+        /** Measured input half of the path: what the stroke is late by (decision 188). */
+        micLatencyMs: Float = Float.NaN,
+        /** How far ahead of the render clock the picture is drawn (decision 188). */
+        visualShiftMs: Float = Float.NaN,
     ) {
         latencySamples += 1
+        lastMicLatencyMs = micLatencyMs
+        lastVisualShiftMs = visualShiftMs
         lastOutputLatencyMs = outputLatencyMs
         lastAppliedLatencyMs = appliedMs
         lastStreamSkewMs = streamSkewMs
@@ -228,6 +238,8 @@ class PracticeTelemetry(
                 .num("outputMs", outputLatencyMs)
                 .num("appliedMs", appliedMs)
                 .num("skewMs", streamSkewMs)
+                .num("micMs", micLatencyMs)
+                .num("visualShiftMs", visualShiftMs)
                 .done(),
         )
     }
@@ -425,6 +437,18 @@ class PracticeTelemetry(
                     "skew ${ms(lastStreamSkewMs)} · $latencySamples changes"
             },
         )
+        // The split the run actually used. The two numbers are what the model is made of:
+        // the stroke is moved by the microphone half, the picture and the click by the
+        // output half, and a run where the two disagree scores near zero however well it
+        // was played (decision 188).
+        if (!lastMicLatencyMs.isNaN() || !lastVisualShiftMs.isNaN()) {
+            lines.add(
+                "path split: microphone ${ms(lastMicLatencyMs)} · " +
+                    "picture ahead ${ms(lastVisualShiftMs)} · " +
+                    "sum ${ms(lastMicLatencyMs + lastVisualShiftMs)} " +
+                    "vs compensation ${ms(lastAppliedLatencyMs)}",
+            )
+        }
         // Every stroke against its nearest note, extras included. A run that is late
         // everywhere says so here even when it scored nothing at all (decision 164).
         val drift = medianOf(driftOffsets)
