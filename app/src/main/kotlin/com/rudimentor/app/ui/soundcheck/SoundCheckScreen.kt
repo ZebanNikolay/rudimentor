@@ -446,6 +446,7 @@ fun SoundCheckScreen(
         DevLog.log(
             "soundcheck",
             "path split: microphone ${micPathMs?.roundToInt() ?: -1} ms, " +
+                "OS output ${status.outputPathLatencyMs.roundToInt()} ms, " +
                 "picture ahead ${
                     median?.let { (it - (micPathMs ?: LatencyModel.DEFAULT_MIC_MS)).roundToInt() }
                         ?: -1

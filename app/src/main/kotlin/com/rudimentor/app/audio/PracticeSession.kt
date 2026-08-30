@@ -390,11 +390,5 @@ class PracticeSession(
         /** Range the native hit compensation accepts, in milliseconds. */
         private const val LATENCY_TRIM_MIN_MS = -100f
         private const val LATENCY_TRIM_MAX_MS = 400f
-
-        /**
-         * Where the input half of the path now comes from: measured per run, no longer a
-         * constant. Kept as an alias so the number has one home (decision 188).
-         */
-        const val INPUT_PART_MS = LatencyModel.DEFAULT_MIC_MS
     }
 }
