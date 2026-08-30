@@ -410,6 +410,12 @@ fun RudiMentorApp(
                 clickSounds = clickAudible,
                 buildInfo = buildInfo,
                 startStep = soundCheckStartStep,
+                onNoHeadphones = {
+                    // Said on the headphones step: no pair at all. The click stops sounding on
+                    // this output, which is the same state the speaker branch starts in
+                    // (decision 186).
+                    onApplyDraft(SettingsDraft.from(settings).withClickAudible(false))
+                },
                 onApply = { measuredMs, measuredSkewMs, micThreshold ->
                     val applied = SettingsDraft.from(settings)
                         .withMicThreshold(micThreshold)

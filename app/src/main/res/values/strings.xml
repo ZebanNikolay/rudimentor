@@ -246,6 +246,9 @@
          The two screens teach the same two measurements, so the instruction, the fallback
          and the troubleshooting live here once (decision 177). -->
     <string name="check_silent_short">NO HEADPHONES</string>
+    <string name="check_headphones_optional">Any headphones will do — the click plays only into them, because a speaker would put it into the microphone and it would be scored as your stroke. With a click the levels also train your timing; without one the notes still roll and you play what you see.</string>
+    <string name="check_no_headphones">I have no headphones</string>
+    <string name="check_measure_headphones">Measure the headphones</string>
     <string name="check_silent_title">WITHOUT HEADPHONES</string>
     <string name="check_silent_body">Nothing else to check: the click can only play into headphones. Through the speaker the microphone would hear it and count it as a stroke, so it stays silent.\n\nLevels work anyway \u2014 the notes roll to the line and you play what you see.</string>
     <string name="check_silent_invite">Connect the headphones you practise with and open this check again. It sets them up in about fifteen seconds, and the click plays in them from then on.</string>
@@ -259,6 +262,7 @@
     <string name="check_gate_strokes">Now play 8 strokes at your normal loudness (%1$d of %2$d).</string>
     <string name="check_gate_noisy">The room is almost as loud as your strokes. It will work, but somewhere quieter works better.</string>
     <string name="check_latency_action">Take one earcup off, hold it against the phone\u2019s microphone and keep still. You play nothing here.</string>
+    <string name="check_latency_aim">The click is already playing. Move the earcup over the phone until the bar jumps with every click — that is the microphone. Then hold it there and press Start.</string>
     <string name="check_latency_manual">No free hand? Play one stroke on every click instead \u2014 less precise, and it takes about half a minute.</string>
     <string name="check_latency_help_body">The app plays a click and hears its own click come back, so it measures the headphones without you playing at all. Held against the microphone it repeats to a fraction of a millisecond and stops on its own after about fifteen seconds.\n\nPlaying along by hand works too, but your own timing goes into the number: it comes out lower than the headphones really are, and it needs about half a minute of even strokes.\n\nThe number is kept per output, so this does not need repeating unless you switch to another pair.</string>
     <string name="check_latency_listening">Keep still \u2014 listening. It stops on its own.</string>

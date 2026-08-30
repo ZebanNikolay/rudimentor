@@ -86,7 +86,11 @@ enum class SoundCheckStep {
 }
 
 /** What the microphone is being used for right now. */
-private enum class Stage { Idle, ProbeNoise, ProbeStrokes, Latency, Play }
+/**
+ * [Aim] is not a measurement: the engine runs so the meter is live while the earcup is being
+ * placed against a microphone whose location nobody knows (decision 187).
+ */
+private enum class Stage { Idle, Aim, ProbeNoise, ProbeStrokes, Latency, Play }
 
 /**
  * The onboarding node of the level map: it proves the phone can hear the pad, measures how
@@ -130,6 +134,11 @@ fun SoundCheckScreen(
     startStep: SoundCheckStep = SoundCheckStep.Pad,
     /** Round trip and the skew it was measured under (both null when nothing was measured), gate. */
     onApply: (Float?, Float?, Float) -> Unit,
+    /**
+     * The player says they have no headphones. The click has to stop sounding on this output:
+     * through a speaker the microphone hears it and counts it as a stroke (decision 186).
+     */
+    onNoHeadphones: () -> Unit,
     /** Called once the last step is walked, so the map can mark the node as done. */
     onFinished: () -> Unit,
     onBack: () -> Unit,
@@ -143,8 +152,11 @@ fun SoundCheckScreen(
 
     // The steps this visit actually has. Without an audible click the walk is one
     // measurement and one explanation.
-    val steps = remember(clickSounds) {
-        if (clickSounds) {
+    // Said out loud on the headphones step: no pair to hold, walk the silent branch instead
+    // of standing on a step whose only button measures something impossible (decision 186).
+    var noHeadphones by remember { mutableStateOf(false) }
+    val steps = remember(clickSounds, noHeadphones) {
+        if (clickSounds && !noHeadphones) {
             listOf(SoundCheckStep.Pad, SoundCheckStep.Headphones, SoundCheckStep.FirstClick)
         } else {
             listOf(SoundCheckStep.Pad, SoundCheckStep.Silent)
@@ -225,7 +237,12 @@ fun SoundCheckScreen(
      * corrected by a previous one; the third step passes the stored compensation, so its
      * strokes come back the way a level would score them (decision 183).
      */
-    fun startEngine(clickAudible: Boolean, compensationMs: Float = 0f): Boolean {
+    fun startEngine(
+        clickAudible: Boolean,
+        compensationMs: Float = 0f,
+        /** Aiming the earcup, not measuring: nothing is counted and nothing is logged. */
+        aiming: Boolean = false,
+    ): Boolean {
         micLab.setBpm(LatencyCalibration.CLICK_BPM)
         micLab.setClickAudible(clickAudible)
         micLab.setInputLatencyMs(compensationMs)
@@ -233,11 +250,14 @@ fun SoundCheckScreen(
         // The probe listens to the room with the gate open; anything that counts strokes
         // listens through the softened gate, exactly as the calibration screen does.
         micLab.setMicThresholdLevel(
-            if (clickAudible) MicThreshold.softened(gate) else MicThreshold.MIN_LEVEL,
+            if (clickAudible && !aiming) MicThreshold.softened(gate) else MicThreshold.MIN_LEVEL,
         )
         val started = micLab.start(scope)
         audioFailed = !started
         if (!started) DevLog.error("soundcheck", "audio engine refused to start")
+        if (aiming) {
+            return started
+        }
         if (clickAudible) {
             telemetry.roundStarted(elapsedMs(), started)
         } else {
@@ -341,6 +361,19 @@ fun SoundCheckScreen(
         while (true) {
             delay(PEAK_DECAY_INTERVAL_MS)
             if (peak > 0f) peak *= PEAK_DECAY
+        }
+    }
+
+    // The click runs as soon as the headphones step opens, before anything is measured: the
+    // meter is the only way to find a microphone whose place on the phone nobody is told, and
+    // the earcup has to be moved until the bar jumps with the click (decision 187).
+    LaunchedEffect(step, stage, micGranted, clickSounds, headphonesDone) {
+        val wanted = step == SoundCheckStep.Headphones && micGranted && clickSounds &&
+            !headphonesDone && !audioFailed
+        if (wanted && stage == Stage.Idle) {
+            if (startEngine(clickAudible = true, aiming = true)) stage = Stage.Aim
+        } else if (!wanted && stage == Stage.Aim) {
+            stopEngine()
         }
     }
 
@@ -557,6 +590,17 @@ fun SoundCheckScreen(
                 // will do, so it is offered here rather than hidden (decision 176).
                 SettingsNote(text = stringResource(R.string.check_latency_manual))
                 SettingsGap()
+                MicLevelMeter(
+                    envelope = status.envelope,
+                    peak = peak,
+                    thresholdLevel = gate,
+                    contentDescription = stringResource(R.string.sound_check_meter_cd),
+                )
+                SettingsGap()
+                if (!headphonesDone) {
+                    SettingsNote(text = stringResource(R.string.check_latency_aim))
+                    SettingsGap()
+                }
                 // No target number here: the round ends as soon as the readings agree,
                 // which is 8 strokes when the earcup is held still and up to 32 when it is
                 // not. "8 of 32" made a finished measurement look like a quarter of a job
@@ -599,6 +643,7 @@ fun SoundCheckScreen(
                         if (headphonesDone) R.string.sound_check_again else R.string.sound_check_start,
                     ),
                     onStart = {
+                        if (stage == Stage.Aim) stopEngine()
                         calibration.reset()
                         reading = calibration.reading()
                         quietStrokes = 0
@@ -608,6 +653,23 @@ fun SoundCheckScreen(
                     onStop = { stopEngine() },
                     onNext = { step = SoundCheckStep.FirstClick },
                 )
+                if (stage != Stage.Latency && !headphonesDone) {
+                    SettingsGap()
+                    SettingsNote(text = stringResource(R.string.check_headphones_optional))
+                    SettingsGap()
+                    // A plain third action, not a hidden one: a player with no headphones at
+                    // all had nothing to press here but Back (decision 186).
+                    RudiButton(
+                        text = stringResource(R.string.check_no_headphones),
+                        style = RudiButtonStyle.Secondary,
+                        onClick = {
+                            stopEngine()
+                            onNoHeadphones()
+                            noHeadphones = true
+                            step = SoundCheckStep.Silent
+                        },
+                    )
+                }
             }
 
             SoundCheckStep.Silent -> SettingsPanel(
@@ -617,6 +679,19 @@ fun SoundCheckScreen(
                 SettingsGap()
                 SettingsNote(text = stringResource(R.string.check_silent_invite))
                 SettingsGap()
+                // Headphones plugged in while this card is open: the walk continues here
+                // instead of asking for a trip back to the map and a second entry, which is
+                // what the invite above used to mean literally (decision 186).
+                if (headphonesConnected) {
+                    RudiButton(
+                        text = stringResource(R.string.check_measure_headphones),
+                        onClick = {
+                            noHeadphones = false
+                            step = SoundCheckStep.Headphones
+                        },
+                    )
+                    SettingsGap()
+                }
                 RudiButton(
                     text = stringResource(R.string.sound_check_finish),
                     onClick = {
