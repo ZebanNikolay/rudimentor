@@ -30,14 +30,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.OutputDevice
 import com.rudimentor.app.data.OutputKind
 import com.rudimentor.app.data.OutputProfile
@@ -53,7 +51,6 @@ import com.rudimentor.app.ui.component.SettingsCard
 import com.rudimentor.app.ui.component.SettingsCardDivider
 import com.rudimentor.app.ui.component.SettingsPanel
 import com.rudimentor.app.ui.component.SettingsWarning
-import com.rudimentor.app.ui.component.SettingsSliderRow
 import com.rudimentor.app.ui.component.SettingsSwitchRow
 import com.rudimentor.app.ui.component.SettingsValueRow
 import com.rudimentor.app.ui.theme.RudiColors
@@ -216,20 +213,15 @@ private fun OutputProfileCard(
         }
 
         SettingsGap()
-        // The dragged number lives here until the finger lifts, then it is stored once.
-        var draggedLatencyMs by remember(draft.latencyMs) {
-            mutableFloatStateOf(draft.latencyMs)
-        }
-        SettingsSliderRow(
+        // Both measured numbers are read here and changed on the check, where each one has
+        // the feedback that makes changing it meaningful: the gate has the live meter, the
+        // latency has the round. A slider here moved one of them blind (decision 180).
+        SettingsValueRow(
             label = stringResource(R.string.settings_latency_label),
-            valueLabel = stringResource(
+            value = stringResource(
                 R.string.practice_latency_value,
-                draggedLatencyMs.roundToInt(),
+                draft.latencyMs.roundToInt(),
             ),
-            value = draggedLatencyMs,
-            valueRange = 0f..AppSettings.LATENCY_MAX_MS,
-            onValueChange = { draggedLatencyMs = it },
-            onValueChangeFinished = { onDraftChange(draft.withLatency(draggedLatencyMs)) },
         )
         SettingsValueRow(
             label = stringResource(R.string.settings_gate_label),

@@ -141,7 +141,7 @@
     <string name="settings_cancel">Cancel</string>
     <string name="settings_latency_label">Latency compensation</string>
     <string name="settings_latency_measured">Measured by the sound check.</string>
-    <string name="settings_latency_guessed">Not measured yet — run the sound check, or drag it by hand.</string>
+    <string name="settings_latency_guessed">Not measured yet \u2014 run the sound check.</string>
     <string name="settings_calibrate">Sound check…</string>
     <string name="practice_output_current">Measured for \u201c%1$s\u201d.</string>
     <string name="practice_output_unknown">This output was never measured, so the numbers of \u201c%1$s\u201d are being used.</string>
@@ -254,6 +254,8 @@
     <string name="check_silent_title">WITHOUT HEADPHONES</string>
     <string name="check_silent_body">Nothing else to check: the click can only play into headphones. Through the speaker the microphone would hear it and count it as a stroke, so it stays silent.\n\nLevels work anyway \u2014 the notes roll to the line and you play what you see.</string>
     <string name="check_silent_invite">Connect the headphones you practise with and open this check again. It sets them up in about fifteen seconds, and the click plays in them from then on.</string>
+    <string name="check_latency_hand_label">Set by hand</string>
+    <string name="check_latency_hand_note">Nothing to hold against the microphone? Drag it here, then play a level: if the app reads your strokes early, the number is too high.</string>
     <string name="check_gate_help_title">Stroke loudness</string>
     <string name="check_latency_help_title">Headphones</string>
     <string name="check_gate_action">Put the phone next to the pad. Keep quiet for a moment, then play 8 strokes as you normally would.</string>

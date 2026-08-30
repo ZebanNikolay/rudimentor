@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
+import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.audio.LatencyCalibration
 import com.rudimentor.app.audio.MicLab
 import com.rudimentor.app.audio.MicThreshold
@@ -526,6 +527,20 @@ fun CalibrationScreen(
                 quietStrokes = quietStrokes,
                 strayStrokes = strayStrokes,
             )
+            SettingsGap()
+            // The fallback for a pair the microphone cannot hear, moved off the settings
+            // screen: here the number sits next to the round that would replace it and next
+            // to the only honest way to judge it, which is playing a level (decision 180).
+            var handMs by remember(latencyMs) { mutableFloatStateOf(latencyMs) }
+            SettingsSliderRow(
+                label = stringResource(R.string.check_latency_hand_label),
+                valueLabel = stringResource(R.string.practice_latency_value, handMs.roundToInt()),
+                value = handMs,
+                valueRange = 0f..AppSettings.LATENCY_MAX_MS,
+                onValueChange = { handMs = it },
+                onValueChangeFinished = { onApply(handMs, null, threshold) },
+            )
+            SettingsNote(text = stringResource(R.string.check_latency_hand_note))
             SettingsGap()
             SettingsNote(text = stringResource(R.string.calibration_step2_profile, profileName))
             SettingsGap()
