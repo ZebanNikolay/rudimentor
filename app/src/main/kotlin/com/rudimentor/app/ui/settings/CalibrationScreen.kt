@@ -490,15 +490,19 @@ fun CalibrationScreen(
                 SettingsNote(text = stringResource(R.string.check_silent_invite))
                 SettingsGap()
             }
-            SettingsValueRow(
-                label = stringResource(R.string.calibration_strokes_label),
-                value = stringResource(
-                    R.string.calibration_strokes_value,
-                    reading.samples.size,
-                    LatencyCalibration.MAX_SAMPLES,
-                ),
-            )
-            SettingsGap()
+            // Only while a round is on, or after one: idle, "Strokes 0 of 32" read as a
+            // demand for 32 strokes before anything had been started, and the round does not
+            // take 32 anyway -- it stops when the readings agree (decision 184).
+            if (mode == CalibrationMode.Latency || reading.samples.isNotEmpty()) {
+                SettingsValueRow(
+                    label = stringResource(R.string.calibration_strokes_label),
+                    value = stringResource(
+                        R.string.calibration_strokes_value,
+                        reading.samples.size,
+                    ),
+                )
+                SettingsGap()
+            }
             SettingsValueRow(
                 label = stringResource(R.string.calibration_roundtrip_label),
                 value = reading.medianMs?.let {
@@ -522,12 +526,16 @@ fun CalibrationScreen(
                 SettingsNote(text = stringResource(R.string.check_latency_stalled))
                 SettingsGap()
             }
-            CalibrationHint(
-                reading = reading,
-                quietStrokes = quietStrokes,
-                strayStrokes = strayStrokes,
-            )
-            SettingsGap()
+            // The hint speaks about a round in progress, so it stays quiet until there is
+            // one: what to do before Start is already said by the note above (decision 184).
+            if (mode == CalibrationMode.Latency || reading.samples.isNotEmpty()) {
+                CalibrationHint(
+                    reading = reading,
+                    quietStrokes = quietStrokes,
+                    strayStrokes = strayStrokes,
+                )
+                SettingsGap()
+            }
             // The fallback for a pair the microphone cannot hear, moved off the settings
             // screen: here the number sits next to the round that would replace it and next
             // to the only honest way to judge it, which is playing a level (decision 180).

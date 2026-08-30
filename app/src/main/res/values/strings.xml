@@ -169,7 +169,7 @@
     <string name="calibration_stop">Stop</string>
     <string name="calibration_reset">Reset</string>
     <string name="calibration_strokes_label">Strokes</string>
-    <string name="calibration_strokes_value">%1$d of %2$d</string>
+    <string name="calibration_strokes_value">%1$d</string>
     <string name="calibration_roundtrip_label">Round trip</string>
     <string name="calibration_spread_label">Spread</string>
     <string name="calibration_spread_value">±%1$d ms</string>
