@@ -51,6 +51,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.SettingsGap
 import com.rudimentor.app.ui.component.SettingsNote
+import com.rudimentor.app.ui.component.SettingsWarning
 import com.rudimentor.app.ui.component.SettingsPanel
 import com.rudimentor.app.ui.component.ToolbarScreen
 import com.rudimentor.app.ui.theme.RudiColors
@@ -60,6 +61,7 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
@@ -88,13 +90,16 @@ private enum class Stage { Idle, ProbeNoise, ProbeStrokes, Latency, Play }
 
 /**
  * The onboarding node of the level map: it proves the phone can hear the pad, measures how
- * late the click reaches the player, and lets them play eight strokes with nothing at stake.
+ * late the click reaches the player, and then checks the two measurements against eight
+ * strokes played with the click.
  *
- * Two things this screen deliberately does not do. It never says the word "latency" and
- * never shows a millisecond figure to the player: the number is a fact about the headphones,
- * and every attempt to explain it turned the first minute of the app into a lecture. And it
- * never scores anything -- the third step exists so the first click of the player's life
- * happens without a verdict on it.
+ * The screen never says the word "latency" and never shows the compensation itself to the
+ * player: the number is a fact about the headphones, and every attempt to explain it turned
+ * the first minute of the app into a lecture. The third step does state a verdict, though --
+ * strokes on the click, a systematic distance off it (the measurement to redo), scatter
+ * around it (the playing, which the step does not judge), or strokes the microphone never
+ * heard (the loudness step to redo). A walk that ends without telling the player whether the
+ * setup holds is the one thing this screen must not do (decision 182).
  *
  * The engines are the ones the calibration screen uses; only the wrapping is new, so a fix
  * to the measurement lands in both places at once.
@@ -153,6 +158,11 @@ fun SoundCheckScreen(
     var reading by remember { mutableStateOf(calibration.reading()) }
     var quietStrokes by remember { mutableIntStateOf(0) }
     var playStrokes by remember { mutableIntStateOf(0) }
+    // Where the strokes of the third step landed, uncompensated. The verdict is their
+    // median minus the compensation in force, which is exactly the error a level would
+    // score (decision 182).
+    var playOffsets by remember { mutableStateOf(listOf<Float>()) }
+    var playFinished by remember { mutableStateOf(false) }
     var skewMs by remember { mutableStateOf<Float?>(null) }
     var stalled by remember { mutableStateOf(false) }
     var audioFailed by remember { mutableStateOf(false) }
@@ -234,6 +244,32 @@ fun SoundCheckScreen(
         stage = Stage.Idle
     }
 
+    fun resetPlay() {
+        playStrokes = 0
+        playOffsets = emptyList()
+        playFinished = false
+    }
+
+    // The verdict of the third step: the median of the strokes with the compensation in
+    // force taken off. A systematic distance is a wrong measurement and can be re-measured;
+    // scatter around zero is playing and is left alone (decision 182).
+    val verdict = remember(playFinished, playOffsets, latencyMs) {
+        if (!playFinished) {
+            null
+        } else if (playOffsets.size < PLAY_STROKES) {
+            Verdict.Unheard(playOffsets.size)
+        } else {
+            val sorted = playOffsets.sorted()
+            val median = sorted[sorted.size / 2] - latencyMs
+            val spread = sorted.last() - sorted.first()
+            when {
+                abs(median) > VERDICT_BIAS_MS -> Verdict.Biased(median.roundToInt())
+                spread > VERDICT_SPREAD_MS -> Verdict.Loose
+                else -> Verdict.Good
+            }
+        }
+    }
+
     LaunchedEffect(micLab) {
         micLab.events.collect { event ->
             if (event !is MicLab.MicLabEvent.Hit) return@collect
@@ -275,6 +311,7 @@ fun SoundCheckScreen(
 
                 Stage.Play -> if (event.loud) {
                     playStrokes += 1
+                    playOffsets = playOffsets + event.offsetMs
                     // The third step scores nothing, but a stroke that is not heard here is
                     // the same failure a level would show, so it goes in the log too.
                     telemetry.probeStroke(
@@ -366,9 +403,10 @@ fun SoundCheckScreen(
         }
     }
 
-    // Eight strokes with the click is the whole third step; there is nothing to score.
+    // Eight strokes with the click close the third step, and closing it produces the verdict.
     LaunchedEffect(playStrokes) {
         if (stage != Stage.Play || playStrokes < PLAY_STROKES) return@LaunchedEffect
+        playFinished = true
         stopEngine()
     }
 
@@ -588,13 +626,65 @@ fun SoundCheckScreen(
                 Text(
                     text = when {
                         audioFailed -> stringResource(R.string.sound_check_audio_failed)
-                        playStrokes >= PLAY_STROKES -> stringResource(R.string.sound_check_play_done)
+                        playFinished -> stringResource(R.string.sound_check_play_done)
                         stage == Stage.Play -> stringResource(R.string.sound_check_play_running)
                         else -> stringResource(R.string.sound_check_play_ready)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = RudiColors.Muted,
                 )
+                if (verdict != null) {
+                    SettingsGap()
+                    when (verdict) {
+                        is Verdict.Good -> SettingsNote(
+                            text = stringResource(R.string.check_verdict_good),
+                        )
+
+                        is Verdict.Loose -> SettingsNote(
+                            text = stringResource(R.string.check_verdict_loose),
+                        )
+
+                        is Verdict.Biased -> {
+                            SettingsWarning(
+                                text = stringResource(
+                                    if (verdict.lateMs > 0) {
+                                        R.string.check_verdict_late
+                                    } else {
+                                        R.string.check_verdict_early
+                                    },
+                                    abs(verdict.lateMs),
+                                ),
+                            )
+                            SettingsGap()
+                            RudiButton(
+                                text = stringResource(R.string.check_verdict_again),
+                                style = RudiButtonStyle.Secondary,
+                                onClick = {
+                                    resetPlay()
+                                    step = SoundCheckStep.Headphones
+                                },
+                            )
+                        }
+
+                        is Verdict.Unheard -> {
+                            SettingsWarning(
+                                text = stringResource(
+                                    R.string.check_verdict_unheard,
+                                    verdict.heard,
+                                ),
+                            )
+                            SettingsGap()
+                            RudiButton(
+                                text = stringResource(R.string.check_verdict_gate),
+                                style = RudiButtonStyle.Secondary,
+                                onClick = {
+                                    resetPlay()
+                                    step = SoundCheckStep.Pad
+                                },
+                            )
+                        }
+                    }
+                }
                 SettingsGap()
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     RudiButton(
@@ -610,7 +700,7 @@ fun SoundCheckScreen(
                             if (stage == Stage.Play) {
                                 stopEngine()
                             } else {
-                                playStrokes = 0
+                                resetPlay()
                                 if (startEngine(clickAudible = true)) stage = Stage.Play
                             }
                         },
@@ -727,7 +817,31 @@ private fun logStamp(): String =
     SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
 
 /** Strokes the free-play step asks for: enough to feel the click, short enough to not be a level. */
+/** What the third step can say once its eight strokes are in (decision 182). */
+private sealed interface Verdict {
+    /** Strokes on the click: both measurements hold. */
+    data object Good : Verdict
+
+    /** No systematic distance, but a wide scatter: setup is fine, the playing is not yet. */
+    data object Loose : Verdict
+
+    /** Every stroke the same distance off: that distance is the measurement error. */
+    data class Biased(val lateMs: Int) : Verdict
+
+    /** The microphone missed strokes: a loudness problem, not a latency one. */
+    data class Unheard(val heard: Int) : Verdict
+}
+
 private const val PLAY_STROKES = 8
+
+/**
+ * A median further than this from the click is treated as a wrong measurement rather than
+ * as playing: the practice window is +-85 ms, so a third of it is already worth a re-measure.
+ */
+private const val VERDICT_BIAS_MS = 30f
+
+/** Scatter wider than this is a hand, not a setup: it names the playing and passes the step. */
+private const val VERDICT_SPREAD_MS = 120f
 
 /** Dots the progress row draws at most, so 32 strokes still fit one line. */
 private const val DOT_LIMIT = 8

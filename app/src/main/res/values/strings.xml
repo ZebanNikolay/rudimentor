@@ -277,7 +277,7 @@
     <string name="sound_check_step_of">STEP %1$d OF %2$d \u00b7 %3$s</string>
     <string name="sound_check_pad_short">PAD AND PHONE</string>
     <string name="sound_check_headphones_short">HEADPHONES</string>
-    <string name="sound_check_play_short">FIRST CLICK</string>
+    <string name="sound_check_play_short">CHECK</string>
     <string name="sound_check_start">Start</string>
     <string name="sound_check_again">Again</string>
     <string name="sound_check_stop">Stop</string>
@@ -295,13 +295,20 @@
     <string name="sound_check_headphones_title">HEADPHONES</string>
     <string name="sound_check_headphones_ready">Hold the earcup against the microphone, then press Start.</string>
     <string name="sound_check_headphones_done">Headphones checked \u2014 saved for \u201c%1$s\u201d. This does not need repeating unless you switch to another pair.</string>
-    <string name="sound_check_play_title">FIRST CLICK</string>
-    <string name="sound_check_play_intro">Press Start, then hit the pad once on every click. Eight strokes and it is over.</string>
-    <string name="check_play_help_title">First click</string>
-    <string name="check_play_help_body">This is the shape of every level: a slow click in your headphones, one stroke of yours on each of them. Nothing here is scored, nothing is saved, and there is no way to fail it \u2014 it exists so that the first click of your life is not also your first attempt.\n\nIf the click sounds and your strokes land on it, both measurements are good. If it feels like you are always chasing it, go back a step and measure the headphones again.</string>
+    <string name="sound_check_play_title">CHECK</string>
+    <string name="sound_check_play_intro">Press Start and hit the pad once on every click, eight times. This one tells you whether the two measurements hold up.</string>
+    <string name="check_play_help_title">The check</string>
+    <string name="check_play_help_body">The two steps before this one measured the room and the headphones with the microphone. This step measures the whole thing the way a level does: the click plays, you strike, and the phone reports where your strokes landed.\n\nIf they land on the click, the setup is right and nothing else needs doing. If all eight land the same distance off it, that distance is what the headphone measurement got wrong \u2014 measure it again. Spread that is not the same distance every time is playing, not setup, and this step does not judge it.\n</string>
     <string name="sound_check_play_ready">Press Start when you are ready.</string>
     <string name="sound_check_play_running">One stroke on every click.</string>
     <string name="sound_check_play_done">That is all of it. The levels are open.</string>
+    <string name="check_verdict_good">Set up. Your strokes landed on the click \u2014 nothing left to adjust.</string>
+    <string name="check_verdict_late">Every stroke landed about %1$d ms late. The headphone measurement is short by that much \u2014 measure it again.</string>
+    <string name="check_verdict_early">Every stroke landed about %1$d ms early. The headphone measurement is long by that much \u2014 measure it again.</string>
+    <string name="check_verdict_loose">The setup holds \u2014 your strokes sat around the click, some early, some late. That part is playing, and levels are where it gets better.</string>
+    <string name="check_verdict_unheard">Only %1$d strokes were heard out of eight. That is the pad step, not the headphones \u2014 go back and set the loudness again.</string>
+    <string name="check_verdict_again">Measure the headphones again</string>
+    <string name="check_verdict_gate">Set the loudness again</string>
 
     <!-- About -->
     <string name="about_title">ABOUT</string>
