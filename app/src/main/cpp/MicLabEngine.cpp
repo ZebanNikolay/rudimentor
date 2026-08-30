@@ -1,5 +1,7 @@
 #include "MicLabEngine.h"
 
+#include <time.h>
+
 #include <algorithm>
 #include <cmath>
 
@@ -36,6 +38,12 @@ bool MicLabEngine::start() {
 
     outputFrames_ = 0;
     outputFramesPublished_.store(0, std::memory_order_release);
+    outputStampFrame_.store(0, std::memory_order_release);
+    outputStampNanos_.store(0, std::memory_order_release);
+    inputStampFrame_.store(0, std::memory_order_release);
+    inputStampNanos_.store(0, std::memory_order_release);
+    outputCallbacks_.store(0, std::memory_order_release);
+    inputCallbacks_.store(0, std::memory_order_release);
     inputFrames_.store(0, std::memory_order_release);
     inputFrameZero_.store(-1, std::memory_order_release);
     outputLatencyMillis_.store(0.0f, std::memory_order_release);
@@ -193,6 +201,17 @@ MicLabEngine::Snapshot MicLabEngine::snapshot() const {
     };
 }
 
+MicLabEngine::ClockProbe MicLabEngine::clockProbe() const {
+    ClockProbe probe{};
+    probe.outputFrame = outputStampFrame_.load(std::memory_order_acquire);
+    probe.outputNanos = outputStampNanos_.load(std::memory_order_acquire);
+    probe.inputFrame = inputStampFrame_.load(std::memory_order_acquire);
+    probe.inputNanos = inputStampNanos_.load(std::memory_order_acquire);
+    probe.outputCallbacks = outputCallbacks_.load(std::memory_order_acquire);
+    probe.inputCallbacks = inputCallbacks_.load(std::memory_order_acquire);
+    return probe;
+}
+
 MicLabEngine::StreamInfo MicLabEngine::streamInfo() const {
     std::lock_guard<std::mutex> lock(streamMutex_);
     StreamInfo info{};
@@ -277,6 +296,17 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
             }
         }
         inputFrames_.store(startFrame + numFrames, std::memory_order_release);
+        // Frames against wall time, for the clock-drift diagnostic (decision 188).
+        // `clock_gettime` on CLOCK_MONOTONIC is a vDSO read: no syscall, safe here.
+        {
+            timespec now{};
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            inputStampFrame_.store(startFrame + numFrames, std::memory_order_release);
+            inputStampNanos_.store(
+                    static_cast<int64_t>(now.tv_sec) * 1000000000LL + now.tv_nsec,
+                    std::memory_order_release);
+            inputCallbacks_.fetch_add(1, std::memory_order_acq_rel);
+        }
         return running_.load(std::memory_order_acquire)
                 ? oboe::DataCallbackResult::Continue
                 : oboe::DataCallbackResult::Stop;
@@ -355,6 +385,16 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
 
     outputFrames_ += numFrames;
     outputFramesPublished_.store(outputFrames_, std::memory_order_release);
+    // Same stamp as the input side, on the output clock (decision 188).
+    {
+        timespec now{};
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        outputStampFrame_.store(outputFrames_, std::memory_order_release);
+        outputStampNanos_.store(
+                static_cast<int64_t>(now.tv_sec) * 1000000000LL + now.tv_nsec,
+                std::memory_order_release);
+        outputCallbacks_.fetch_add(1, std::memory_order_acq_rel);
+    }
 
     // Sample the presentation clock every ~100 ms. `calculateLatencyMillis()`
     // compares frames written with the device timestamp, so it reports the real

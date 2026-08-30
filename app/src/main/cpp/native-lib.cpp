@@ -143,6 +143,30 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeSnapshot(
     env->SetIntArrayRegion(out, 0, 15, values);
 }
 
+// Clock probe layout for Kotlin (diagnostics, decision 188):
+//   [0] output frame at the last output callback
+//   [1] monotonic nanos of that callback
+//   [2] input frame at the last input callback
+//   [3] monotonic nanos of that callback
+//   [4] output callbacks served
+//   [5] input callbacks served
+extern "C" JNIEXPORT void JNICALL
+Java_com_rudimentor_app_audio_NativeMicLab_nativeClockProbe(
+        JNIEnv *env, jobject, jlongArray out) {
+    if (out == nullptr || env->GetArrayLength(out) < 6) {
+        return;
+    }
+    const MicLabEngine::ClockProbe p = micLab.clockProbe();
+    jlong values[6];
+    values[0] = p.outputFrame;
+    values[1] = p.outputNanos;
+    values[2] = p.inputFrame;
+    values[3] = p.inputNanos;
+    values[4] = p.outputCallbacks;
+    values[5] = p.inputCallbacks;
+    env->SetLongArrayRegion(out, 0, 6, values);
+}
+
 // Stream info layout for Kotlin: static stream facts plus health counters.
 //   [0] sampleRate            [7] inputExclusive (0/1)
 //   [1] outputBurstFrames     [8] inputPreset (raw oboe value, -1 unknown)

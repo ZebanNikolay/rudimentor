@@ -147,7 +147,29 @@ public:
     int drainHits(HitEvent *outHits, int maxHits);
     int drainTicks(TickEvent *outTicks, int maxTicks);
 
+    /**
+     * One reading of both stream clocks: the frame counter of each stream and the
+     * monotonic time of the callback that last advanced it, plus how many callbacks each
+     * stream has served.
+     *
+     * Diagnostics only, and the reason it exists: the notes are placed on output frames
+     * while strokes are stamped on input frames, and the field logs show the offset of a
+     * run sliding by 0.68 ms/s (680 ppm) -- exactly what two clocks running at slightly
+     * different real rates would do. Frames against wall time say whether that is what
+     * happens, before anything tries to compensate for it (decision 188).
+     */
+    struct ClockProbe {
+        int64_t outputFrame;
+        int64_t outputNanos;
+        int64_t inputFrame;
+        int64_t inputNanos;
+        int64_t outputCallbacks;
+        int64_t inputCallbacks;
+    };
+
     Snapshot snapshot() const;
+
+    ClockProbe clockProbe() const;
 
     StreamInfo streamInfo() const;
 
@@ -196,6 +218,15 @@ private:
     // the half of the round trip that belongs to the stroke (decision 188).
     std::atomic<float> inputLatencyMillis_{0.0f};
     int inputLatencyPollCountdown_ = 0;
+
+    // Frame counter and monotonic time of the last callback of each stream, plus callback
+    // counts. Written by the audio callbacks, read by the UI thread (decision 188).
+    std::atomic<int64_t> outputStampFrame_{0};
+    std::atomic<int64_t> outputStampNanos_{0};
+    std::atomic<int64_t> inputStampFrame_{0};
+    std::atomic<int64_t> inputStampNanos_{0};
+    std::atomic<int64_t> outputCallbacks_{0};
+    std::atomic<int64_t> inputCallbacks_{0};
 
     int32_t sampleRate_ = 48000;
     int64_t outputFrames_ = 0;

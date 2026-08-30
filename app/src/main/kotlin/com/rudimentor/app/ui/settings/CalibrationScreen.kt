@@ -274,6 +274,15 @@ fun CalibrationScreen(
     }
 
     // The peak mark fades so a single loud accident does not sit on the meter forever.
+    // Clock diagnostic (decision 188): one line a second while the streams run, saying
+    // whether the click grid and the stroke grid tick at the same real rate. Nothing is
+    // corrected by it -- it exists so the drift can be told apart from the player.
+    LaunchedEffect(status.clockDrift) {
+        val clock = status.clockDrift ?: return@LaunchedEffect
+        telemetry.clock(elapsedMs(), clock)
+        DevLog.log("calibration", clock.text())
+    }
+
     LaunchedEffect(Unit) {
         while (true) {
             delay(PEAK_DECAY_INTERVAL_MS)

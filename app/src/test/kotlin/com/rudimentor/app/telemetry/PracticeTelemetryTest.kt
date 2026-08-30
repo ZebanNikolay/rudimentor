@@ -105,7 +105,9 @@ class PracticeTelemetryTest {
         )
         val summary = telemetry.summary()
         val lines = summary.lines()
-        assertEquals(11, lines.size)
+        // The clock diagnostic adds its own line, and says so when nothing was sampled.
+        assertEquals(12, lines.size)
+        assertTrue(summary.contains("clocks not sampled"))
         assertTrue(lines.none { it.isBlank() })
         assertTrue(summary.contains("48000 Hz"))
         assertTrue(summary.contains("xruns 0/2"))

@@ -85,6 +85,12 @@ class PracticeSession(
          * this field is what makes it visible in the attempt log (decision 164).
          */
         val streamSkewMs: Float = 0f,
+        /**
+         * One line of the clock diagnostic, at most once a second, or null in between.
+         * Says whether the note grid and the stroke grid run at the same real rate; the
+         * run is never corrected by it (decision 188).
+         */
+        val clockDrift: StreamClockDrift.Reading? = null,
     )
 
     var bpm: Int = MicLab.DEFAULT_BPM
@@ -103,6 +109,9 @@ class PracticeSession(
         private set
 
     private var anchorFrame: Long? = null
+
+    /** Clock-rate diagnostic of this run, fed once per poll (decision 188). */
+    private val clockDrift = StreamClockDrift()
 
     /**
      * The latency trim from settings. What the engine does with it depends on where it
@@ -179,6 +188,7 @@ class PracticeSession(
         anchorFrame = null
         anchorOutputLatencyMs = null
         streamSkewMs = 0f
+        clockDrift.reset()
         this.calibrationSkewMs = calibrationSkewMs
         this.latencyCalibrated = latencyCalibrated
         this.storedMicLatencyMs = storedMicLatencyMs
@@ -239,6 +249,7 @@ class PracticeSession(
         native.drainHits(hitScratch)
         val snapshot = native.snapshot()
         val framesPerMs = snapshot.sampleRate / 1000f
+        val clockReading = clockDrift.sample(native.clockProbe(), snapshot.sampleRate)
 
         // The clock of the attempt starts at tick 0, not at engine start: the first
         // tick tells us where the grid actually landed, and its index lets us project
@@ -323,6 +334,7 @@ class PracticeSession(
                 threshold = snapshot.threshold,
                 peak = snapshot.peak,
                 running = snapshot.running,
+                clockDrift = clockReading,
             )
         }
 
@@ -361,6 +373,7 @@ class PracticeSession(
             streamSkewMs = streamSkewMs,
             micLatencyMs = micLatencyMs,
             visualShiftMs = visualShiftMs,
+            clockDrift = clockReading,
         )
     }
 

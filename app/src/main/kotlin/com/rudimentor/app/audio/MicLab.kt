@@ -89,6 +89,12 @@ class MicLab(
          * never used to place the picture on its own (decision 188).
          */
         val outputPathLatencyMs: Float = 0f,
+        /**
+         * Latest line of the clock diagnostic, refreshed about once a second while the
+         * streams run: does the note grid tick at the same real rate as the stroke grid
+         * (decision 188). Diagnostics only, nothing is corrected by it.
+         */
+        val clockDrift: StreamClockDrift.Reading? = null,
     )
 
     private val _events = MutableSharedFlow<MicLabEvent>(
@@ -108,6 +114,9 @@ class MicLab(
     private val hitScratch = ArrayList<NativeMicLab.HitEvent>(32)
     private val tickScratch = ArrayList<NativeMicLab.TickEvent>(32)
 
+    /** Clock-rate diagnostic of the current round, fed once per poll (decision 188). */
+    private val clockDrift = StreamClockDrift()
+
     /**
      * Opens the stream and starts polling it.
      *
@@ -119,6 +128,7 @@ class MicLab(
         if (pollJob != null) {
             return true
         }
+        clockDrift.reset()
         val ok = native.start()
         if (!ok) {
             _status.value = _status.value.copy(running = false)
@@ -137,6 +147,7 @@ class MicLab(
         pollJob?.cancel()
         pollJob = null
         native.stop()
+        clockDrift.reset()
         pendingTicks.clear()
         recentOffsets.clear()
         _status.value = Status(
@@ -207,6 +218,7 @@ class MicLab(
 
         val snapshot = native.snapshot()
         val framesPerMs = snapshot.sampleRate / 1000f
+        val clockReading = clockDrift.sample(native.clockProbe(), snapshot.sampleRate)
         val bpm = _status.value.bpm
         val framesPerBeat = if (bpm > 0) snapshot.sampleRate * 60.0 / bpm else 0.0
         val gate = _status.value.micThresholdLevel
@@ -261,6 +273,7 @@ class MicLab(
             streamSkewMs = snapshot.streamSkewMs,
             micPathLatencyMs = snapshot.inputLatencyMs,
             outputPathLatencyMs = snapshot.outputLatencyMs,
+            clockDrift = clockReading ?: _status.value.clockDrift,
         )
     }
 

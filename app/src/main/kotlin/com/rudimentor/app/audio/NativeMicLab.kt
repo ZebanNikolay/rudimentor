@@ -114,7 +114,23 @@ class NativeMicLab {
         val index: Long,
     )
 
+    /**
+     * One reading of both stream clocks: how many frames each stream has served and the
+     * monotonic time of the callback that served them. Diagnostics only (decision 188):
+     * notes live on output frames, strokes on input frames, and a run drifts 0.68 ms/s,
+     * so we check whether the two clocks really run at the same rate.
+     */
+    data class ClockProbe(
+        val outputFrame: Long,
+        val outputNanos: Long,
+        val inputFrame: Long,
+        val inputNanos: Long,
+        val outputCallbacks: Long,
+        val inputCallbacks: Long,
+    )
+
     private val snapshotBuffer = IntArray(15)
+    private val clockBuffer = LongArray(6)
     private val streamInfoBuffer = IntArray(14)
     private val hitBuffer = LongArray(HIT_DRAIN_CAPACITY * 3)
     private val tickBuffer = LongArray(TICK_DRAIN_CAPACITY * 2)
@@ -157,6 +173,18 @@ class NativeMicLab {
             outputLatencyMs = snapshotBuffer[12] / 1_000f,
             streamSkewMs = snapshotBuffer[13] / 1_000f,
             inputLatencyMs = snapshotBuffer[14] / 1_000f,
+        )
+    }
+
+    fun clockProbe(): ClockProbe {
+        nativeClockProbe(clockBuffer)
+        return ClockProbe(
+            outputFrame = clockBuffer[0],
+            outputNanos = clockBuffer[1],
+            inputFrame = clockBuffer[2],
+            inputNanos = clockBuffer[3],
+            outputCallbacks = clockBuffer[4],
+            inputCallbacks = clockBuffer[5],
         )
     }
 
@@ -214,6 +242,7 @@ class NativeMicLab {
     private external fun nativeSetInputLatencyMillis(millis: Float)
     private external fun nativeSnapshot(out: IntArray)
     private external fun nativeStreamInfo(out: IntArray)
+    private external fun nativeClockProbe(out: LongArray)
     private external fun nativeDrainHits(out: LongArray): Int
     private external fun nativeDrainTicks(out: LongArray): Int
 

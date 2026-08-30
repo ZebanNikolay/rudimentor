@@ -1,5 +1,6 @@
 package com.rudimentor.app.telemetry
 
+import com.rudimentor.app.audio.StreamClockDrift
 import com.rudimentor.app.ui.practice.HitOutcome
 import com.rudimentor.app.ui.practice.PracticeResult
 import java.util.Locale
@@ -366,6 +367,55 @@ class PracticeTelemetry(
      * it. The log list shows exactly this text, so nothing on the screen has to parse the
      * JSONL body.
      */
+    /**
+     * One second of the clock diagnostic: how fast each stream's frame counter really runs
+     * and how far the note grid has moved away from the stroke grid since the start.
+     *
+     * Diagnostics only, and the reason it is here: a run drifting 0.68 ms/s and a round trip
+     * overstated by ~93 ms both look like two clocks running at different rates, and nothing
+     * should try to compensate before the log says whether they do (decision 188).
+     */
+    fun clock(atMs: Float, reading: StreamClockDrift.Reading) {
+        clockSamples += 1
+        lastClockPpm = reading.driftPpm
+        lastDivergenceMs = reading.divergenceMs
+        if (maxAbsDivergenceMs.isNaN() ||
+            kotlin.math.abs(reading.divergenceMs) > kotlin.math.abs(maxAbsDivergenceMs)
+        ) {
+            maxAbsDivergenceMs = reading.divergenceMs
+        }
+        add(
+            TelemetryJson("clock")
+                .num("atMs", atMs)
+                .num("sec", reading.elapsedSec)
+                .num("inFps", reading.inputRateHz, 1)
+                .num("outFps", reading.outputRateHz, 1)
+                .num("ppm", reading.driftPpm, 0)
+                .num("inLagMs", reading.inputLagMs)
+                .num("outLagMs", reading.outputLagMs)
+                .num("apartMs", reading.divergenceMs)
+                .int("inCb", reading.inputCallbacks.toInt())
+                .int("outCb", reading.outputCallbacks.toInt())
+                .done(),
+        )
+    }
+    // Clock diagnostic of this log (decision 188): the last rate difference, the last and
+    // largest divergence between the note grid and the stroke grid, and how many seconds
+    // were sampled. Reported in the summary so a log can be read without the JSON.
+    private var clockSamples: Int = 0
+    private var lastClockPpm: Float = Float.NaN
+    private var lastDivergenceMs: Float = Float.NaN
+    private var maxAbsDivergenceMs: Float = Float.NaN
+
+    private fun clockLine(): String =
+        if (clockSamples == 0) {
+            "clocks not sampled"
+        } else {
+            "clocks: rate difference ${signed(lastClockPpm)} ppm · " +
+                "grids apart ${signed(lastDivergenceMs)} ms " +
+                "(worst ${signed(maxAbsDivergenceMs)} ms) · $clockSamples s sampled"
+        }
+
     fun summary(): String {
         val audio = finalAudio ?: header.audio
         val lines = ArrayList<String>(7)
@@ -490,6 +540,7 @@ class PracticeTelemetry(
                 "refused $quiet ${envelopeRange(quietEnvelopes)}",
         )
         if (aborted) lines.add("ABORTED at ${ms(abortedAtMs)}")
+        lines.add(clockLine())
         return lines.joinToString(separator = "\n")
     }
 

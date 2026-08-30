@@ -252,6 +252,12 @@ fun PracticeScreen(
         var loggedCaptured = false
         while (true) {
             val poll = session.poll()
+            // Clock diagnostic (decision 188): one line a second, whether the note grid and
+            // the stroke grid tick at the same real rate. Never corrects anything.
+            poll.clockDrift?.let { clock ->
+                telemetry.value?.clock(poll.positionMs, clock)
+                DevLog.log("practice", clock.text())
+            }
             envelope = poll.envelope
             threshold = poll.threshold
             if (poll.anchored) {
