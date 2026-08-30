@@ -502,20 +502,21 @@ fun SoundCheckScreen(
                 // will do, so it is offered here rather than hidden (decision 176).
                 SettingsNote(text = stringResource(R.string.check_latency_manual))
                 SettingsGap()
-                Progress(
-                    done = reading.samples.size,
-                    total = LatencyCalibration.MAX_SAMPLES,
+                // No target number here: the round ends as soon as the readings agree,
+                // which is 8 strokes when the earcup is held still and up to 32 when it is
+                // not. "8 of 32" made a finished measurement look like a quarter of a job
+                // (decision 181).
+                OpenProgress(
+                    samples = reading.samples.size,
+                    done = reading.finished,
                 )
                 SettingsGap()
                 Text(
                     text = when {
                         audioFailed -> stringResource(R.string.sound_check_audio_failed)
                         stalled -> stringResource(R.string.check_latency_stalled)
-                        stage == Stage.Latency -> stringResource(
-                            R.string.check_latency_listening,
-                            reading.samples.size,
-                            LatencyCalibration.MAX_SAMPLES,
-                        )
+                        stage == Stage.Latency ->
+                            stringResource(R.string.check_latency_listening)
 
                         headphonesDone -> stringResource(
                             R.string.sound_check_headphones_done,
@@ -573,6 +574,12 @@ fun SoundCheckScreen(
 
             SoundCheckStep.FirstClick -> SettingsPanel(
                 title = stringResource(R.string.sound_check_play_title),
+                titleAction = {
+                    HelpButton(
+                        title = stringResource(R.string.check_play_help_title),
+                        body = stringResource(R.string.check_play_help_body),
+                    )
+                },
             ) {
                 SettingsNote(text = stringResource(R.string.sound_check_play_intro))
                 SettingsGap()
@@ -684,6 +691,35 @@ private fun Progress(done: Int, total: Int) {
             style = MaterialTheme.typography.bodySmall,
             color = RudiColors.Muted,
         )
+    }
+}
+
+/**
+ * Progress of a round whose length is not known in advance.
+ *
+ * The latency round stops when its readings agree, so there is no total to count towards:
+ * the fill approaches the end without ever claiming to know where it is, and snaps full
+ * when the round is done (decision 181).
+ */
+@Composable
+private fun OpenProgress(samples: Int, done: Boolean) {
+    val fraction = if (done) {
+        1f
+    } else {
+        samples.toFloat() / (samples + LatencyCalibration.MIN_SAMPLES)
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        repeat(DOT_LIMIT) { index ->
+            val filled = index < (fraction * DOT_LIMIT).toInt()
+            Box(
+                modifier = Modifier
+                    .size(DOT_SIZE)
+                    .background(
+                        color = if (filled) RudiColors.Brick else RudiColors.Muted,
+                        shape = CircleShape,
+                    ),
+            )
+        }
     }
 }
 

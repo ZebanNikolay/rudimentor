@@ -266,7 +266,7 @@
     <string name="check_latency_action">Take one earcup off, hold it against the phone\u2019s microphone and keep still. You play nothing here.</string>
     <string name="check_latency_manual">No free hand? Play one stroke on every click instead \u2014 less precise, and it takes about half a minute.</string>
     <string name="check_latency_help_body">The app plays a click and hears its own click come back, so it measures the headphones without you playing at all. Held against the microphone it repeats to a fraction of a millisecond and stops on its own after about fifteen seconds.\n\nPlaying along by hand works too, but your own timing goes into the number: it comes out lower than the headphones really are, and it needs about half a minute of even strokes.\n\nThe number is kept per output, so this does not need repeating unless you switch to another pair.</string>
-    <string name="check_latency_listening">Keep still \u2014 %1$d of %2$d heard.</string>
+    <string name="check_latency_listening">Keep still \u2014 listening. It stops on its own.</string>
     <string name="check_latency_stalled">Nothing was heard. Hold the earcup closer to the microphone, turn the headphone volume up, or lower the gate in the loudness step.</string>
     <string name="check_latency_quiet">%1$d onsets were too quiet to count. Hold the earcup closer, or lower the gate.</string>
 
@@ -296,7 +296,9 @@
     <string name="sound_check_headphones_ready">Hold the earcup against the microphone, then press Start.</string>
     <string name="sound_check_headphones_done">Headphones checked \u2014 saved for \u201c%1$s\u201d. This does not need repeating unless you switch to another pair.</string>
     <string name="sound_check_play_title">FIRST CLICK</string>
-    <string name="sound_check_play_intro">Eight strokes with the click, nothing scored, nothing saved. Just to feel what a level feels like.</string>
+    <string name="sound_check_play_intro">Press Start, then hit the pad once on every click. Eight strokes and it is over.</string>
+    <string name="check_play_help_title">First click</string>
+    <string name="check_play_help_body">This is the shape of every level: a slow click in your headphones, one stroke of yours on each of them. Nothing here is scored, nothing is saved, and there is no way to fail it \u2014 it exists so that the first click of your life is not also your first attempt.\n\nIf the click sounds and your strokes land on it, both measurements are good. If it feels like you are always chasing it, go back a step and measure the headphones again.</string>
     <string name="sound_check_play_ready">Press Start when you are ready.</string>
     <string name="sound_check_play_running">One stroke on every click.</string>
     <string name="sound_check_play_done">That is all of it. The levels are open.</string>
