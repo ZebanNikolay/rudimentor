@@ -96,10 +96,12 @@ private enum class Stage { Idle, ProbeNoise, ProbeStrokes, Latency, Play }
  * The screen never says the word "latency" and never shows the compensation itself to the
  * player: the number is a fact about the headphones, and every attempt to explain it turned
  * the first minute of the app into a lecture. The third step does state a verdict, though --
- * strokes on the click, a systematic distance off it (the measurement to redo), scatter
- * around it (the playing, which the step does not judge), or strokes the microphone never
- * heard (the loudness step to redo). A walk that ends without telling the player whether the
- * setup holds is the one thing this screen must not do (decision 182).
+ * strokes on the click, a human-sized distance off it (which it names as playing and never
+ * as a wrong measurement), strokes the microphone never heard (the loudness step to redo), or
+ * a distance no player can produce (the audio path). What it deliberately cannot say is "the
+ * measurement is wrong": one round cannot tell a mis-measured pair of headphones from a
+ * beginner who is late, and of those two the beginner is the likelier by an order of
+ * magnitude (decisions 182 and 183).
  *
  * The engines are the ones the calibration screen uses; only the wrapping is new, so a fix
  * to the measurement lands in both places at once.
@@ -217,10 +219,16 @@ fun SoundCheckScreen(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted -> micGranted = granted }
 
-    fun startEngine(clickAudible: Boolean): Boolean {
+    /**
+     * [compensationMs] is what the engine should take off the strokes it hears. The two
+     * measuring steps pass zero, because a measurement of the round trip must not be
+     * corrected by a previous one; the third step passes the stored compensation, so its
+     * strokes come back the way a level would score them (decision 183).
+     */
+    fun startEngine(clickAudible: Boolean, compensationMs: Float = 0f): Boolean {
         micLab.setBpm(LatencyCalibration.CLICK_BPM)
         micLab.setClickAudible(clickAudible)
-        micLab.setInputLatencyMs(0f)
+        micLab.setInputLatencyMs(compensationMs)
         micLab.setSensitivity(MicLab.DEFAULT_SENSITIVITY)
         // The probe listens to the room with the gate open; anything that counts strokes
         // listens through the softened gate, exactly as the calibration screen does.
@@ -250,22 +258,24 @@ fun SoundCheckScreen(
         playFinished = false
     }
 
-    // The verdict of the third step: the median of the strokes with the compensation in
-    // force taken off. A systematic distance is a wrong measurement and can be re-measured;
-    // scatter around zero is playing and is left alone (decision 182).
-    val verdict = remember(playFinished, playOffsets, latencyMs) {
+    // What the third step is allowed to conclude. The strokes already come back compensated,
+    // so their median is the player's own timing plus whatever the measurement got wrong --
+    // and those two cannot be separated by one round. The measurement has no human in it and
+    // errs by single milliseconds; a beginner is off by tens. So a human-sized distance is
+    // named as playing and never blamed on the measurement, and only a distance no player
+    // can produce is treated as a broken audio path (decision 183).
+    val verdict = remember(playFinished, playOffsets) {
         if (!playFinished) {
             null
         } else if (playOffsets.size < PLAY_STROKES) {
             Verdict.Unheard(playOffsets.size)
         } else {
-            val sorted = playOffsets.sorted()
-            val median = sorted[sorted.size / 2] - latencyMs
-            val spread = sorted.last() - sorted.first()
+            val median = playOffsets.sorted()[playOffsets.size / 2]
             when {
-                abs(median) > VERDICT_BIAS_MS -> Verdict.Biased(median.roundToInt())
-                spread > VERDICT_SPREAD_MS -> Verdict.Loose
-                else -> Verdict.Good
+                abs(median) > HUMAN_LIMIT_MS -> Verdict.Broken
+                abs(median) <= ON_CLICK_MS -> Verdict.OnClick
+                median > 0f -> Verdict.Behind
+                else -> Verdict.Ahead
             }
         }
     }
@@ -407,6 +417,13 @@ fun SoundCheckScreen(
     LaunchedEffect(playStrokes) {
         if (stage != Stage.Play || playStrokes < PLAY_STROKES) return@LaunchedEffect
         playFinished = true
+        // The player is never shown the number, so the log is the only place it survives.
+        val median = playOffsets.sorted().getOrNull(playOffsets.size / 2)
+        DevLog.log(
+            "soundcheck",
+            "check round done, median ${median?.roundToInt() ?: -1} ms after ${latencyMs
+                .roundToInt()} ms compensation, heard ${playOffsets.size}",
+        )
         stopEngine()
     }
 
@@ -636,24 +653,21 @@ fun SoundCheckScreen(
                 if (verdict != null) {
                     SettingsGap()
                     when (verdict) {
-                        is Verdict.Good -> SettingsNote(
-                            text = stringResource(R.string.check_verdict_good),
+                        Verdict.OnClick -> SettingsNote(
+                            text = stringResource(R.string.check_verdict_onclick),
                         )
 
-                        is Verdict.Loose -> SettingsNote(
-                            text = stringResource(R.string.check_verdict_loose),
+                        Verdict.Behind -> SettingsNote(
+                            text = stringResource(R.string.check_verdict_behind),
                         )
 
-                        is Verdict.Biased -> {
+                        Verdict.Ahead -> SettingsNote(
+                            text = stringResource(R.string.check_verdict_ahead),
+                        )
+
+                        Verdict.Broken -> {
                             SettingsWarning(
-                                text = stringResource(
-                                    if (verdict.lateMs > 0) {
-                                        R.string.check_verdict_late
-                                    } else {
-                                        R.string.check_verdict_early
-                                    },
-                                    abs(verdict.lateMs),
-                                ),
+                                text = stringResource(R.string.check_verdict_broken),
                             )
                             SettingsGap()
                             RudiButton(
@@ -684,6 +698,8 @@ fun SoundCheckScreen(
                             )
                         }
                     }
+                    SettingsGap()
+                    SettingsNote(text = stringResource(R.string.check_verdict_replay))
                 }
                 SettingsGap()
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -701,7 +717,9 @@ fun SoundCheckScreen(
                                 stopEngine()
                             } else {
                                 resetPlay()
-                                if (startEngine(clickAudible = true)) stage = Stage.Play
+                                if (startEngine(clickAudible = true, compensationMs = latencyMs)) {
+                                    stage = Stage.Play
+                                }
                             }
                         },
                     )
@@ -817,16 +835,19 @@ private fun logStamp(): String =
     SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
 
 /** Strokes the free-play step asks for: enough to feel the click, short enough to not be a level. */
-/** What the third step can say once its eight strokes are in (decision 182). */
+/** What the third step is allowed to say once its eight strokes are in (decision 183). */
 private sealed interface Verdict {
-    /** Strokes on the click: both measurements hold. */
-    data object Good : Verdict
+    /** Strokes on the click: nothing visible to fix. */
+    data object OnClick : Verdict
 
-    /** No systematic distance, but a wide scatter: setup is fine, the playing is not yet. */
-    data object Loose : Verdict
+    /** Human-sized distance behind the click: named as playing, never as a wrong measurement. */
+    data object Behind : Verdict
 
-    /** Every stroke the same distance off: that distance is the measurement error. */
-    data class Biased(val lateMs: Int) : Verdict
+    /** Human-sized distance ahead of the click. */
+    data object Ahead : Verdict
+
+    /** Further off than a player can be: the audio path, not the hands. */
+    data object Broken : Verdict
 
     /** The microphone missed strokes: a loudness problem, not a latency one. */
     data class Unheard(val heard: Int) : Verdict
@@ -834,14 +855,14 @@ private sealed interface Verdict {
 
 private const val PLAY_STROKES = 8
 
-/**
- * A median further than this from the click is treated as a wrong measurement rather than
- * as playing: the practice window is +-85 ms, so a third of it is already worth a re-measure.
- */
-private const val VERDICT_BIAS_MS = 30f
+/** Inside this the strokes count as on the click; the practice window is +-85 ms. */
+private const val ON_CLICK_MS = 25f
 
-/** Scatter wider than this is a hand, not a setup: it names the playing and passes the step. */
-private const val VERDICT_SPREAD_MS = 120f
+/**
+ * Beyond this the distance is nobody's playing: human timing error against a 60 bpm click
+ * stays in the tens of milliseconds, so anything past this is the audio path.
+ */
+private const val HUMAN_LIMIT_MS = 150f
 
 /** Dots the progress row draws at most, so 32 strokes still fit one line. */
 private const val DOT_LIMIT = 8

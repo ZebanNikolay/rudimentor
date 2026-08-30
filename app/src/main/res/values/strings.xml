@@ -302,11 +302,12 @@
     <string name="sound_check_play_ready">Press Start when you are ready.</string>
     <string name="sound_check_play_running">One stroke on every click.</string>
     <string name="sound_check_play_done">That is all of it. The levels are open.</string>
-    <string name="check_verdict_good">Set up. Your strokes landed on the click \u2014 nothing left to adjust.</string>
-    <string name="check_verdict_late">Every stroke landed about %1$d ms late. The headphone measurement is short by that much \u2014 measure it again.</string>
-    <string name="check_verdict_early">Every stroke landed about %1$d ms early. The headphone measurement is long by that much \u2014 measure it again.</string>
-    <string name="check_verdict_loose">The setup holds \u2014 your strokes sat around the click, some early, some late. That part is playing, and levels are where it gets better.</string>
+    <string name="check_verdict_onclick">Nothing looks off \u2014 your strokes sat on the click.</string>
+    <string name="check_verdict_behind">Your strokes sat behind the click. The setup looks fine \u2014 playing behind the click is what everybody does at first, and it is exactly what the levels train.</string>
+    <string name="check_verdict_ahead">Your strokes sat ahead of the click. The setup looks fine \u2014 running ahead of the click is ordinary at first, and it is exactly what the levels train.</string>
+    <string name="check_verdict_broken">Your strokes came back further from the click than any player can be off. That is the audio path, not your hands \u2014 measure the headphones again, and if it repeats, the numbers are in the check log.</string>
     <string name="check_verdict_unheard">Only %1$d strokes were heard out of eight. That is the pad step, not the headphones \u2014 go back and set the loudness again.</string>
+    <string name="check_verdict_replay">You can walk this check again whenever you like \u2014 nothing here is spent.</string>
     <string name="check_verdict_again">Measure the headphones again</string>
     <string name="check_verdict_gate">Set the loudness again</string>
 
