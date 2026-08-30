@@ -115,9 +115,6 @@
     <string name="transport_stop">Stop</string>
 
     <!-- Practice screen -->
-    <string name="practice_settings_title">SETTINGS</string>
-    <string name="practice_settings_tab_cd">Practice settings</string>
-    <string name="practice_settings_done">Done</string>
     <string name="practice_click_label">Metronome click</string>
     <string name="practice_click_warning">The microphone will hear the speaker and count the click as a hit.</string>
     <string name="practice_latency_value">%1$d ms</string>
@@ -143,8 +140,6 @@
     <string name="settings_latency_measured">Measured by the sound check.</string>
     <string name="settings_latency_guessed">Not measured yet \u2014 run the sound check.</string>
     <string name="settings_calibrate">Sound check…</string>
-    <string name="practice_output_current">Measured for \u201c%1$s\u201d.</string>
-    <string name="practice_output_unknown">This output was never measured, so the numbers of \u201c%1$s\u201d are being used.</string>
     <string name="settings_output_card_title">Output: \u201c%1$s\u201d</string>
     <string name="settings_output_measured_for">MEASURED FOR THIS OUTPUT</string>
     <string name="settings_practice_title">Practice</string>

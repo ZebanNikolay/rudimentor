@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,17 +33,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.rudimentor.app.BuildInfo
 import com.rudimentor.app.R
-import com.rudimentor.app.data.AppSettings
-import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.RudiChip
-import com.rudimentor.app.ui.component.SideSettingsDrawer
 import com.rudimentor.app.ui.component.padStarPath
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
@@ -57,10 +53,13 @@ import kotlin.math.roundToInt
  * The pass bar is accuracy only for now (decision 89) -- the level tree does not
  * gate on score yet, so a clean run at a slow tempo still opens the next node.
  *
- * Settings are reachable here through the same drawer as during an attempt, so the click
- * or the millisecond readout can be changed right after seeing the run that motivated it
- * (decision 102). The drawer commits on Done only: closing it by swipe drops the edits,
- * which is what the `key` around the panel is for (decision 154).
+ * No settings drawer here (decision 185): a run just ended, and a screen that both judges
+ * the run and lets its terms be changed made every reading arguable. The levels screen owns
+ * settings now; the only way out of this screen into a setting is the advice card offering
+ * the sound check when the numbers say the audio path is at fault.
+ *
+ * The plot takes a third of the width, not all of it: the screen is landscape, so full width
+ * was length the distribution never needed. The rest of the row carries the advice.
  */
 @Composable
 fun PracticeResultScreen(
@@ -69,55 +68,27 @@ fun PracticeResultScreen(
     rank: PracticeRank,
     bpm: Int,
     result: PracticeResult,
-    buildInfo: BuildInfo,
-    settings: AppSettings,
-    unknownOutput: Boolean,
-    onApplyDraft: (SettingsDraft) -> Unit,
     onRetry: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
     /** Opens the sound check, offered when the run says the audio path is the problem. */
     onSoundCheck: () -> Unit,
 ) {
-    var settingsOpen by remember { mutableStateOf(false) }
-
     // Without this the system back gesture closed the app from the result screen
     // instead of leaving the practice flow.
-    BackHandler { if (settingsOpen) settingsOpen = false else onToMap() }
+    BackHandler { onToMap() }
 
-    SideSettingsDrawer(
-        open = settingsOpen,
-        onOpenChange = { settingsOpen = it },
-        panel = {
-            // A fresh draft every time the drawer opens: an abandoned edit is gone
-            // rather than waiting to be committed by the next Done.
-            key(settingsOpen) {
-                PracticeSettingsPanel(
-                    settings = settings,
-                    unknownOutput = unknownOutput,
-                    buildInfo = buildInfo,
-                    onApply = onApplyDraft,
-                    onSoundCheck = {
-                        settingsOpen = false
-                        onSoundCheck()
-                    },
-                    onDone = { settingsOpen = false },
-                )
-            }
-        },
-    ) {
-        ResultBody(
-            level = level,
-            family = family,
-            rank = rank,
-            bpm = bpm,
-            result = result,
-            onRetry = onRetry,
-            onNextLevel = onNextLevel,
-            onToMap = onToMap,
-            onSoundCheck = onSoundCheck,
-        )
-    }
+    ResultBody(
+        level = level,
+        family = family,
+        rank = rank,
+        bpm = bpm,
+        result = result,
+        onRetry = onRetry,
+        onNextLevel = onNextLevel,
+        onToMap = onToMap,
+        onSoundCheck = onSoundCheck,
+    )
 }
 
 @Composable
@@ -230,39 +201,40 @@ private fun ResultBody(
         }
 
         Spacer(modifier = Modifier.height(14.dp))
-        if (expanded) {
-            // Opened on purpose: the plot gets the room and the numbers under it explain
-            // where the advice came from.
-            OffsetHistogram(
-                offsets = result.offsets,
-                windows = result.windows,
-                modifier = Modifier.fillMaxWidth().weight(1f),
-            )
-            HistogramScale()
-            Spacer(modifier = Modifier.height(10.dp))
-            AdviceDetails(
-                metrics = metrics,
-                advice = advice,
-                onCollapse = { expanded = false },
-            )
-        } else {
-            // The plot used to own half the screen and say the same thing every run. As a
-            // strip it still shows the shape of the run, and the space it gave up is where
-            // the advice lives (decision 168).
-            OffsetHistogram(
-                offsets = result.offsets,
-                windows = result.windows,
-                modifier = Modifier.fillMaxWidth().height(STRIP_HEIGHT),
-            )
-            HistogramScale()
-            Spacer(modifier = Modifier.height(12.dp))
-            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                AdviceCard(
-                    advice = advice,
-                    metrics = metrics,
-                    onExpand = { expanded = true },
-                    onSoundCheck = onSoundCheck,
+        Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            // A third of the width is enough for the shape of the run: the bars come out
+            // three times thinner and read the same, and the length they gave up is where
+            // the advice lives (decision 185).
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(HISTOGRAM_WIDTH_FRACTION)
+                    .fillMaxHeight(),
+            ) {
+                OffsetHistogram(
+                    offsets = result.offsets,
+                    windows = result.windows,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                 )
+                HistogramScale()
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                if (expanded) {
+                    // Opened on purpose: the numbers behind the advice, for the run where
+                    // the one line is not believed.
+                    AdviceDetails(
+                        metrics = metrics,
+                        advice = advice,
+                        onCollapse = { expanded = false },
+                    )
+                } else {
+                    AdviceCard(
+                        advice = advice,
+                        metrics = metrics,
+                        onExpand = { expanded = true },
+                        onSoundCheck = onSoundCheck,
+                    )
+                }
             }
         }
 
@@ -295,9 +267,6 @@ private fun ResultBody(
                 onClick = onToMap,
                 style = RudiButtonStyle.Secondary,
             )
-            Spacer(modifier = Modifier.weight(1f))
-            // The drawer handle lives on the trailing edge: keep the row clear of it.
-            Spacer(modifier = Modifier.width(28.dp))
         }
     }
 }
@@ -624,7 +593,8 @@ private fun DetailRow(label: String, value: Measured, proven: Boolean) {
 }
 
 /** Height of the collapsed plot: enough to read its shape, small enough to leave room. */
-private val STRIP_HEIGHT = 56.dp
+/** Share of the width the plot takes, the rest going to the advice (decision 185). */
+private const val HISTOGRAM_WIDTH_FRACTION = 0.34f
 
 private val HistogramRule = Color(0xFF202020)
 private val HistogramCentre = Color(0xFF3A3A3A)

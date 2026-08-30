@@ -320,10 +320,6 @@ fun RudiMentorApp(
                         rank = practiceRank,
                         bpm = practiceBpm,
                         result = result,
-                        buildInfo = buildInfo,
-                        settings = settings,
-                        unknownOutput = unknownOutput,
-                        onApplyDraft = onApplyDraft,
                         onRetry = {
                             practiceRunId += 1
                             screenName = Screen.Practice.name
