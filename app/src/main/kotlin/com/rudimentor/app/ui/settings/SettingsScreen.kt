@@ -219,6 +219,8 @@ private fun OutputProfileCard(
             WarningBanner(
                 title = stringResource(R.string.practice_click_warning_title),
                 body = stringResource(R.string.practice_click_warning),
+                helpTitle = stringResource(R.string.practice_click_warning_help_title),
+                helpBody = stringResource(R.string.practice_click_warning_help_body),
             )
         }
 

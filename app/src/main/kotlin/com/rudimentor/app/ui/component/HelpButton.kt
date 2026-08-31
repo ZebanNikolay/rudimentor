@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,7 @@ fun HelpButton(
     title: String,
     body: String,
     modifier: Modifier = Modifier,
+    tint: Color = RudiColors.Muted,
 ) {
     var open by remember { mutableStateOf(false) }
     SquareIconButton(
@@ -44,7 +46,7 @@ fun HelpButton(
         Icon(
             painter = painterResource(R.drawable.ic_help),
             contentDescription = null,
-            tint = RudiColors.Muted,
+            tint = tint,
             modifier = Modifier.size(16.dp),
         )
     }

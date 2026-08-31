@@ -118,6 +118,10 @@
     <string name="practice_click_label">Metronome click</string>
     <string name="practice_click_warning_title">Click on the speaker — scores are wrong</string>
     <string name="practice_click_warning">The microphone hears the click and counts it as your stroke, so the result means nothing. Use headphones for the click.</string>
+    <string name="practice_click_warning_help_title">Click without headphones</string>
+    <string name="practice_click_warning_help_body">The click leaves through the speaker, and the microphone that listens for your strokes hears it. Nothing can be filtered out: the click lands exactly on the note it marks, and on a practice pad it is louder than your stroke, so the app cannot tell them apart. It scores the click as a stroke, hides the real one behind it, and the accuracy, stars and timing you get afterwards describe the click instead of your playing — one recorded run had 37 of 88 detected strokes coming from the app itself.
+
+Better never to turn this on. The one case where it holds: you know your microphone cannot hear the speaker — an external microphone far from the phone, or the sound routed to a speaker out of its reach. Otherwise wear headphones for the click, or leave the click off and play by the moving notes.</string>
     <string name="practice_latency_value">%1$d ms</string>
     <string name="practice_offset_ms_label">Show timing in ms</string>
     <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>

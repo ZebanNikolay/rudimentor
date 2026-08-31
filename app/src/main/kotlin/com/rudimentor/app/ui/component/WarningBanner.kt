@@ -31,12 +31,18 @@ import com.rudimentor.app.ui.theme.RudiColors
  * entirely. A one-line grey-red caption under a switch does not stop that, so the warning is
  * now a panel that cannot be read past -- and the switch stays available, because a strange
  * routing setup is the learner's business, not the app's (decision 192).
+ *
+ * The panel says the short version. The long one -- why nothing can be filtered out, and the
+ * one case where the switch is defensible -- sits behind the question mark of [HelpButton],
+ * the same pattern the sound check uses (decision 174), so the panel stays two lines.
  */
 @Composable
 fun WarningBanner(
     title: String,
     body: String,
     modifier: Modifier = Modifier,
+    helpTitle: String? = null,
+    helpBody: String? = null,
 ) {
     Row(
         modifier = modifier
@@ -52,7 +58,10 @@ fun WarningBanner(
             tint = RudiColors.BrickBright,
             modifier = Modifier.size(22.dp),
         )
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.weight(1f),
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
@@ -64,6 +73,9 @@ fun WarningBanner(
                 style = MaterialTheme.typography.bodySmall,
                 color = RudiColors.Text,
             )
+        }
+        if (helpTitle != null && helpBody != null) {
+            HelpButton(title = helpTitle, body = helpBody, tint = RudiColors.BrickBright)
         }
     }
 }
