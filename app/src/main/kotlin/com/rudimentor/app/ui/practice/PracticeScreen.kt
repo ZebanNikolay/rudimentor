@@ -52,6 +52,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.TransportButton
 import com.rudimentor.app.ui.component.TransportSize
+import com.rudimentor.app.ui.component.WarningBanner
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
@@ -463,6 +464,20 @@ fun PracticeScreen(
                 // Reserve the corner the floating transport button sits in.
                 Spacer(modifier = Modifier.width(TRANSPORT_RESERVE))
             }
+        }
+
+        // The last place the warning can still change the outcome: the click is on, nothing
+        // private is attached, so the microphone is about to score the app's own click as a
+        // stroke. Shown only before Start -- during the attempt it would cover the track, and
+        // there is nothing left to decide by then (decision 192).
+        if (!running && clickAudible && !headphonesConnected) {
+            WarningBanner(
+                title = stringResource(R.string.practice_click_warning_title),
+                body = stringResource(R.string.practice_click_warning),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 24.dp),
+            )
         }
 
         if (audioFailed) {

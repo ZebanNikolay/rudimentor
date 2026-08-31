@@ -48,6 +48,13 @@ object RudiColors {
     val PadMuteLitBorder = Color(0xFF585856)
     val PadMuteLitLetter = Color(0xFF6D6D6A)
 
+    /**
+     * Fill of the warning panel: brick mixed into the dark background rather than brick
+     * itself, so the white body text keeps its contrast and the border carries the colour
+     * (decision 192). Opaque on purpose -- the panel is drawn over the practice track.
+     */
+    val BannerWarnFill = Color(0xFF2E1414)
+
     /** Chrome. */
     val RowNumber = Color(0xFF5C5C5A)
     val Guide = Color(0x12FFFFFF)

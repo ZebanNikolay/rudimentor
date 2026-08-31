@@ -116,7 +116,8 @@
 
     <!-- Practice screen -->
     <string name="practice_click_label">Metronome click</string>
-    <string name="practice_click_warning">The microphone will hear the speaker and count the click as a hit.</string>
+    <string name="practice_click_warning_title">Click on the speaker — scores are wrong</string>
+    <string name="practice_click_warning">The microphone hears the click and counts it as your stroke, so the result means nothing. Use headphones for the click.</string>
     <string name="practice_latency_value">%1$d ms</string>
     <string name="practice_offset_ms_label">Show timing in ms</string>
     <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>

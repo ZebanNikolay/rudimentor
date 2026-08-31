@@ -50,9 +50,10 @@ import com.rudimentor.app.ui.component.SettingsNote
 import com.rudimentor.app.ui.component.SettingsCard
 import com.rudimentor.app.ui.component.SettingsCardDivider
 import com.rudimentor.app.ui.component.SettingsPanel
-import com.rudimentor.app.ui.component.SettingsWarning
 import com.rudimentor.app.ui.component.SettingsSwitchRow
 import com.rudimentor.app.ui.component.SettingsValueRow
+import com.rudimentor.app.ui.component.SettingsWarning
+import com.rudimentor.app.ui.component.WarningBanner
 import com.rudimentor.app.ui.theme.RudiColors
 import kotlin.math.roundToInt
 
@@ -202,14 +203,23 @@ private fun OutputProfileCard(
         SettingsCardDivider(text = stringResource(R.string.settings_output_measured_for))
 
         // Over the built-in output the microphone hears the click and scores it as a stroke,
-        // which is the one thing on this screen worth a loud caption (decision 173).
+        // which is the one thing on this screen worth a loud caption (decision 173) -- and,
+        // since the dev.49 speaker log, worth the full panel rather than a caption
+        // (decision 192). The switch is left alone: a learner with an odd routing setup may
+        // have a reason, and a disabled switch cannot explain itself.
         SettingsSwitchRow(
             label = stringResource(R.string.practice_click_label),
             checked = draft.clickAudible,
             onCheckedChange = { onDraftChange(draft.withClickAudible(it)) },
         )
-        if (draft.clickAudible && selected.kind == OutputKind.Default) {
-            SettingsWarning(text = stringResource(R.string.practice_click_warning))
+        // Either half is enough: the speaker profile is being edited, or nothing private is
+        // attached right now, so the click leaves through the speaker whatever the profile says.
+        if (draft.clickAudible && (selected.kind == OutputKind.Default || currentOutput == null)) {
+            SettingsGap()
+            WarningBanner(
+                title = stringResource(R.string.practice_click_warning_title),
+                body = stringResource(R.string.practice_click_warning),
+            )
         }
 
         SettingsGap()
