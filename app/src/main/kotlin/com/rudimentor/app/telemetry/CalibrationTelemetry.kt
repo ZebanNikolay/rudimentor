@@ -445,6 +445,9 @@ class CalibrationTelemetry(
         const val REASON_BACKGROUNDED = "backgrounded"
         const val REASON_LEFT = "left"
 
+        /** The audio device changed under the round, so what it measured is gone. */
+        const val REASON_OUTPUT_CHANGED = "output changed"
+
         /** Envelope levels are small numbers: three decimals is what tells 0.012 from 0.02. */
         private const val LEVEL_DIGITS = 4
 

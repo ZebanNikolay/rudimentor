@@ -53,6 +53,14 @@ class MicLab(
 
     data class Status(
         val running: Boolean = false,
+        /**
+         * How many times the streams were reopened after the audio device changed under
+         * them. Oboe closes both streams when headphones are connected or disconnected and
+         * never reopens them, so the click used to disappear for good; a screen that is
+         * measuring has to know it happened, because the measurement belongs to the output
+         * that just went away (decision 190).
+         */
+        val restarts: Int = 0,
         val sampleRate: Int = 0,
         val tickCount: Long = 0,
         val bpm: Int = DEFAULT_BPM,
@@ -108,6 +116,8 @@ class MicLab(
     val status: StateFlow<Status> = _status.asStateFlow()
 
     private var pollJob: Job? = null
+    private var restarts = 0
+    private var restartAtNanos = 0L
 
     private val pendingTicks = ArrayDeque<NativeMicLab.TickEvent>()
     private val recentOffsets = LinkedList<Float>()
@@ -129,6 +139,8 @@ class MicLab(
             return true
         }
         clockDrift.reset()
+        restarts = 0
+        restartAtNanos = 0L
         val ok = native.start()
         if (!ok) {
             _status.value = _status.value.copy(running = false)
@@ -148,6 +160,8 @@ class MicLab(
         pollJob = null
         native.stop()
         clockDrift.reset()
+        restarts = 0
+        restartAtNanos = 0L
         pendingTicks.clear()
         recentOffsets.clear()
         _status.value = Status(
@@ -217,6 +231,7 @@ class MicLab(
         trimPendingTicks()
 
         val snapshot = native.snapshot()
+        if (!snapshot.running) reopenStreams()
         val framesPerMs = snapshot.sampleRate / 1000f
         val clockReading = clockDrift.sample(native.clockProbe(), snapshot.sampleRate)
         val bpm = _status.value.bpm
@@ -261,6 +276,7 @@ class MicLab(
 
         _status.value = _status.value.copy(
             running = snapshot.running,
+            restarts = restarts,
             sampleRate = snapshot.sampleRate,
             tickCount = snapshot.tickCount,
             envelope = snapshot.envelope,
@@ -275,6 +291,27 @@ class MicLab(
             outputPathLatencyMs = snapshot.outputLatencyMs,
             clockDrift = clockReading ?: _status.value.clockDrift,
         )
+    }
+
+    /**
+     * Reopens the streams after the engine stopped on its own. That happens on every audio
+     * route change: Oboe reports the disconnect, closes both streams and leaves them closed,
+     * which is why the click went silent for good when a Bluetooth pair connected while a
+     * screen was open. Reopening is attempted from this polling coroutine and never from the
+     * error callback, and it is spaced out because a pair of headphones takes seconds to
+     * become usable (decision 190).
+     */
+    private fun reopenStreams() {
+        val now = System.nanoTime()
+        if (restarts >= MAX_RESTARTS) return
+        if (restartAtNanos != 0L && now - restartAtNanos < RESTART_INTERVAL_MS * 1_000_000L) return
+        restartAtNanos = now
+        native.stop()
+        if (!native.start()) return
+        restarts += 1
+        clockDrift.reset()
+        pendingTicks.clear()
+        recentOffsets.clear()
     }
 
     private fun trimPendingTicks() {
@@ -345,6 +382,12 @@ class MicLab(
         private const val POLL_INTERVAL_MS = 8L
         private const val TICK_HISTORY = 64
         private const val OFFSET_WINDOW = 32
+
+        /** Spacing between attempts to reopen a closed stream, in milliseconds. */
+        private const val RESTART_INTERVAL_MS = 700L
+
+        /** Roughly half a minute of attempts, which covers a Bluetooth pair connecting. */
+        private const val MAX_RESTARTS = 40
 
         fun accuracyBucketMs(offsetMs: Float): Int = abs(offsetMs.roundToInt())
     }

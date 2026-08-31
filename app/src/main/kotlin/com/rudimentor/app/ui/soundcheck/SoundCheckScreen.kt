@@ -88,8 +88,8 @@ enum class SoundCheckStep {
 
 /** What the microphone is being used for right now. */
 /**
- * [Aim] is not a measurement: the engine runs so the meter is live while the earcup is being
- * placed against a microphone whose location nobody knows (decision 187).
+ * [Aim] is not a measurement: the microphone runs so the meter is live while the earcup is
+ * being placed, and the click stays silent until Start (decisions 187 and 190).
  */
 private enum class Stage { Idle, Aim, ProbeNoise, ProbeStrokes, Latency, Play }
 
@@ -188,6 +188,8 @@ fun SoundCheckScreen(
     // asked of the player: it is a fact about the phone (decision 188).
     var micPathMs by remember { mutableStateOf<Float?>(null) }
     var stalled by remember { mutableStateOf(false) }
+    // Set when a round was dropped because the audio output changed under it (decision 190).
+    var outputChanged by remember { mutableStateOf(false) }
     var audioFailed by remember { mutableStateOf(false) }
     var peak by remember { mutableFloatStateOf(0f) }
     // Steps already walked in this visit, so the header can show progress and the last step
@@ -389,17 +391,42 @@ fun SoundCheckScreen(
         }
     }
 
-    // The click runs as soon as the headphones step opens, before anything is measured: the
-    // meter is the only way to find a microphone whose place on the phone nobody is told, and
-    // the earcup has to be moved until the bar jumps with the click (decision 187).
+    // The microphone runs as soon as the headphones step opens so the meter is live while the
+    // earcup is being placed. The click stays silent until Start: clicks before the round were
+    // read as the round itself, and the round that followed sounded like a second, unexplained
+    // one (decision 190 refines 187).
     LaunchedEffect(step, stage, micGranted, clickSounds, headphonesDone) {
         val wanted = step == SoundCheckStep.Headphones && micGranted && clickSounds &&
             !headphonesDone && !audioFailed
         if (wanted && stage == Stage.Idle) {
-            if (startEngine(clickAudible = true, aiming = true)) stage = Stage.Aim
+            if (startEngine(clickAudible = false, aiming = true)) stage = Stage.Aim
         } else if (!wanted && stage == Stage.Aim) {
             stopEngine()
         }
+    }
+
+    // Headphones connected or disconnected mid-round: the streams come back by themselves
+    // (decision 190), but the round does not -- it was measuring the output that just went
+    // away. So it is dropped and said out loud instead of finishing with a number that
+    // belongs to nothing.
+    LaunchedEffect(status.restarts) {
+        if (status.restarts == 0) return@LaunchedEffect
+        val measuring = stage == Stage.Latency || stage == Stage.ProbeNoise ||
+            stage == Stage.ProbeStrokes || stage == Stage.Play
+        if (!measuring) return@LaunchedEffect
+        if (stage == Stage.Latency) {
+            telemetry.roundStopped(elapsedMs(), CalibrationTelemetry.REASON_OUTPUT_CHANGED)
+        }
+        stopEngine()
+        probe.reset()
+        probeStrokes = 0
+        calibration.reset()
+        reading = calibration.reading()
+        quietStrokes = 0
+        stalled = false
+        resetPlay()
+        outputChanged = true
+        DevLog.log("soundcheck", "audio output changed mid-round, round dropped")
     }
 
     // The silent half of the pad step: the room alone, sampled off the live meter.
@@ -521,13 +548,34 @@ fun SoundCheckScreen(
         onBack()
     }
 
-    BackHandler { leave() }
+    /**
+     * Back goes one step back and keeps every measurement this visit already has; only the
+     * first step leaves the flow. It used to close the whole check, so a player who stepped
+     * back to look at something had to measure both steps again from scratch -- and the walk
+     * is the one place in the app where redoing a step costs half a minute of holding an
+     * earcup still (decision 190).
+     */
+    fun goBack() {
+        val index = steps.indexOf(step)
+        if (index <= 0) {
+            leave()
+            return
+        }
+        if (stage == Stage.Latency) {
+            telemetry.roundStopped(elapsedMs(), CalibrationTelemetry.REASON_LEFT)
+        }
+        stopEngine()
+        resetPlay()
+        step = steps[index - 1]
+    }
+
+    BackHandler { goBack() }
 
     ToolbarScreen(
         toolbar = {
             AppToolbar(
                 title = stringResource(R.string.sound_check_title),
-                onBack = { leave() },
+                onBack = { goBack() },
             )
         },
     ) {
@@ -577,6 +625,7 @@ fun SoundCheckScreen(
                 Text(
                     text = when {
                         audioFailed -> stringResource(R.string.sound_check_audio_failed)
+                        outputChanged -> stringResource(R.string.sound_check_output_changed)
                         stage == Stage.ProbeNoise -> stringResource(R.string.check_gate_silence)
                         stage == Stage.ProbeStrokes -> stringResource(
                             R.string.check_gate_strokes,
@@ -601,6 +650,7 @@ fun SoundCheckScreen(
                         if (padDone) R.string.sound_check_again else R.string.sound_check_start,
                     ),
                     onStart = {
+                        outputChanged = false
                         probe.reset()
                         probeStrokes = 0
                         if (startEngine(clickAudible = false)) stage = Stage.ProbeNoise
@@ -648,6 +698,7 @@ fun SoundCheckScreen(
                 Text(
                     text = when {
                         audioFailed -> stringResource(R.string.sound_check_audio_failed)
+                        outputChanged -> stringResource(R.string.sound_check_output_changed)
                         stalled -> stringResource(R.string.check_latency_stalled)
                         stage == Stage.Latency ->
                             stringResource(R.string.check_latency_listening)
@@ -698,6 +749,7 @@ fun SoundCheckScreen(
                         if (headphonesDone) R.string.sound_check_again else R.string.sound_check_start,
                     ),
                     onStart = {
+                        outputChanged = false
                         if (stage == Stage.Aim) stopEngine()
                         calibration.reset()
                         reading = calibration.reading()

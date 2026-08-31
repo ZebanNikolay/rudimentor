@@ -411,9 +411,9 @@ class PracticeTelemetry(
         if (clockSamples == 0) {
             "clocks not sampled"
         } else {
-            "clocks: rate difference ${signed(lastClockPpm)} ppm · " +
-                "grids apart ${signed(lastDivergenceMs)} ms " +
-                "(worst ${signed(maxAbsDivergenceMs)} ms) · $clockSamples s sampled"
+            "clocks: rate difference ${signedPlain(lastClockPpm)} ppm · " +
+                "grids apart ${signed(lastDivergenceMs)} " +
+                "(worst ${signed(maxAbsDivergenceMs)}) · $clockSamples s sampled"
         }
 
     fun summary(): String {
@@ -674,6 +674,13 @@ class PracticeTelemetry(
 
         private fun ms(value: Float): String =
             if (value.isNaN()) "n/a" else "${value.roundToInt()} ms"
+
+        /** Signed number without a unit, for the parts per million of the clock line. */
+        private fun signedPlain(value: Float): String {
+            if (value.isNaN()) return "n/a"
+            val rounded = value.roundToInt()
+            return if (rounded > 0) "+$rounded" else "$rounded"
+        }
 
         private fun signed(value: Float): String {
             if (value.isNaN()) return "n/a"
