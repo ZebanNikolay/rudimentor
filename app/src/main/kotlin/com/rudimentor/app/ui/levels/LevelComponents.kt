@@ -106,18 +106,35 @@ private fun StickingBlockCard(
                 letterSpacing = 1.4.sp,
             )
         }
-        Text(
-            // The pattern never wraps: a long sticking runs off the card and the row scrolls,
-            // which keeps the letters in one line the way they are read.
-            text = block.sticking,
-            color = RudiColors.Text,
-            fontFamily = JetBrainsMono,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 17.sp,
-            letterSpacing = 3.sp,
-            softWrap = false,
-            maxLines = 1,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                // The pattern never wraps: a long sticking runs off the card and the row scrolls,
+                // which keeps the letters in one line the way they are read.
+                text = block.sticking,
+                color = RudiColors.Text,
+                fontFamily = JetBrainsMono,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 17.sp,
+                letterSpacing = 3.sp,
+                softWrap = false,
+                maxLines = 1,
+            )
+            // The multiplier sits on the pattern rather than in the line below it: it counts
+            // the words just written, and a block that plays its group once states nothing
+            // at all instead of a bare `×1` (decision 204).
+            block.repeats?.takeIf { it > 1 }?.let { repeats ->
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = stringResource(R.string.level_detail_block_repeats, repeats),
+                    color = RudiColors.BrickBright,
+                    fontFamily = JetBrainsMono,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 17.sp,
+                    softWrap = false,
+                    maxLines = 1,
+                )
+            }
+        }
         Text(
             text = blockSize(block),
             style = MaterialTheme.typography.bodySmall,
@@ -126,25 +143,15 @@ private fun StickingBlockCard(
     }
 }
 
-/** `32 sixteenth notes · pattern ×8`, the density named the way a drummer counts it. */
+/**
+ * `128 hits · 2 per beat`, counted the way the drummer counts it. Note names (`eighth notes`)
+ * said the same thing in a vocabulary that has to be translated back into hits per click, and a
+ * block whose density moves reads it as the switch it is: `1→2→1 per beat` (decision 204).
+ */
 @Composable
 private fun blockSize(block: StickingBlock): String {
-    val density = when (block.hitsPerBeat) {
-        1 -> R.string.level_detail_density_quarters
-        2 -> R.string.level_detail_density_eighths
-        3 -> R.string.level_detail_density_eighth_triplets
-        4 -> R.string.level_detail_density_sixteenths
-        6 -> R.string.level_detail_density_sixteenth_triplets
-        8 -> R.string.level_detail_density_thirty_seconds
-        else -> null
-    }
-    val notes = if (density == null) {
-        stringResource(R.string.level_detail_block_notes, block.notes)
-    } else {
-        stringResource(R.string.level_detail_block_notes_named, block.notes, stringResource(density))
-    }
-    val cycles = block.cycles ?: return notes
-    return stringResource(R.string.level_detail_block_cycles, notes, cycles)
+    val density = block.densities.joinToString("→")
+    return stringResource(R.string.level_detail_block_hits, block.notes, density)
 }
 
 /** How the blocks add up to one attempt, when there is more than one pass to state. */

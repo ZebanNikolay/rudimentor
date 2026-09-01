@@ -97,13 +97,15 @@ internal fun Level.attemptSeconds(target: RankTarget): Int {
 internal data class StickingBlock(
     val index: Int,
     val beats: Int,
-    /** The pattern of the block, grouped for reading: `RLRL RLRL`. */
+    /** The reading group of the block, grouped for reading: `RLRL RLRL`. */
     val sticking: String,
     val notes: Int,
-    /** How many times the pattern runs inside the block; null when it does not divide evenly. */
-    val cycles: Int?,
+    /** How many times the reading group runs inside the block; null when it does not divide evenly. */
+    val repeats: Int?,
     /** Notes per beat; null when the density changes inside the block. */
     val hitsPerBeat: Int?,
+    /** Densities in the order they are played, `1, 2, 1`, with repeats collapsed. */
+    val densities: List<Int>,
 )
 
 /** Every block one pass of an attempt plays, in order. A one-pattern level has one block. */
@@ -113,22 +115,25 @@ internal fun Level.stickingBlocks(target: RankTarget): List<StickingBlock> {
     phases.forEach { phase ->
         if (phase.steps.isEmpty()) return@forEach
         var notes = 0
-        val densities = mutableSetOf<Int>()
+        val densities = mutableListOf<Int>()
         repeat(phase.beatCount) {
             val hits = target.hitsPerBeatAtBeat(beat)
-            densities += hits
+            if (densities.lastOrNull() != hits) densities += hits
             notes += hits
             beat += 1
         }
+        val hitsPerBeat = densities.singleOrNull()
+        val group = readingGroup(phase.steps.map { it.label })
         blocks += StickingBlock(
             index = phase.index,
             beats = phase.beatCount,
-            sticking = phase.steps
-                .chunked(STICKING_GROUP)
-                .joinToString(" ") { group -> group.joinToString("") { it.label } },
+            sticking = group
+                .chunked(readingStride(group.size, hitsPerBeat))
+                .joinToString(" ") { chunk -> chunk.joinToString("") },
             notes = notes,
-            cycles = notes.takeIf { it > 0 && it % phase.steps.size == 0 }?.div(phase.steps.size),
-            hitsPerBeat = densities.singleOrNull(),
+            repeats = notes.takeIf { it > 0 && it % group.size == 0 }?.div(group.size),
+            hitsPerBeat = hitsPerBeat,
+            densities = densities.toList(),
         )
     }
     return blocks
@@ -165,6 +170,24 @@ private const val SEPARATOR = " · "
 
 /** Sticking is read in fours: `RLRL RLRL` instead of `RLRLRLRL`. */
 private const val STICKING_GROUP = 4
+
+/**
+ * A one- or two-step pattern printed as itself turns the card into `R ×64`, which nobody counts
+ * that way: a drummer reads sticking in words of four, then counts the words (decision 204). So
+ * the pattern is doubled until it fills a word, which lands a single on `RRRR` and an alternating
+ * pair on `RLRL`, while a triplet grows to `RLR RLL` instead of being cut across the beat.
+ */
+private const val MIN_READING_GROUP = 4
+
+private fun readingGroup(steps: List<String>): List<String> {
+    var group = steps
+    while (group.size in 1 until MIN_READING_GROUP) group = group + group
+    return group
+}
+
+/** Triplet densities are spaced in threes, everything else in fours. */
+private fun readingStride(groupSize: Int, hitsPerBeat: Int?): Int =
+    if (hitsPerBeat != null && hitsPerBeat % 3 == 0 && groupSize % 3 == 0) 3 else STICKING_GROUP
 
 /**
  * Track code -> exercise name. A key may be prefixed with the family id when the same code

@@ -106,11 +106,12 @@ class LevelLabelsTest {
 
         assertEquals(1, blocks.size)
         val block = blocks.single()
-        assertEquals("RL", block.sticking)
+        assertEquals("RLRL", block.sticking)
         assertEquals(64, block.beats)
         assertEquals(128, block.notes)
-        assertEquals(64, block.cycles)
+        assertEquals(32, block.repeats)
         assertEquals(2, block.hitsPerBeat)
+        assertEquals(listOf(2), block.densities)
     }
 
     @Test
@@ -131,9 +132,9 @@ class LevelLabelsTest {
 
         val blocks = level.stickingBlocks(target)
 
-        assertEquals(listOf("RL", "RRLL"), blocks.map { it.sticking })
+        assertEquals(listOf("RLRL", "RRLL"), blocks.map { it.sticking })
         assertEquals(listOf(8, 4), blocks.map { it.notes })
-        assertEquals(listOf(4, 1), blocks.map { it.cycles })
+        assertEquals(listOf(2, 1), blocks.map { it.repeats })
         assertEquals(3, level.attemptPasses(target))
     }
 
@@ -144,6 +145,23 @@ class LevelLabelsTest {
         )
 
         assertEquals("RLRR LRLL", level.stickingBlocks(level.target(PracticeRank.Practice)).single().sticking)
+    }
+
+    @Test
+    fun `a triplet pattern grows to six and is spaced in threes`() {
+        val level = level(
+            lesson("singles.ST-01").copy(
+                pattern = pattern("RLR"),
+                rankTargets = listOf(
+                    RankTarget(rank = PracticeRank.Practice, bpm = 90, hitsPerBeat = 3),
+                ),
+            ),
+        )
+
+        val block = level.stickingBlocks(level.target(PracticeRank.Practice)).single()
+
+        assertEquals("RLR RLR", block.sticking)
+        assertEquals(3, block.hitsPerBeat)
     }
 
     @Test
@@ -164,10 +182,12 @@ class LevelLabelsTest {
 
         val block = level.stickingBlocks(level.target(PracticeRank.Practice)).single()
 
-        // Eight beats of one note plus eight of two: 24 notes, and no one density to name.
+        // Eight beats of one note plus eight of two: 24 notes, six runs of the four-step word,
+        // and no one density to name.
         assertEquals(24, block.notes)
         assertEquals(null, block.hitsPerBeat)
-        assertEquals(12, block.cycles)
+        assertEquals(listOf(1, 2), block.densities)
+        assertEquals(6, block.repeats)
     }
 
     @Test
