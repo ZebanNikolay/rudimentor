@@ -42,6 +42,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.RudiChip
 import com.rudimentor.app.ui.component.padStarPath
+import com.rudimentor.app.ui.levels.title
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
@@ -142,7 +143,11 @@ private fun ResultBody(
             Spacer(modifier = Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "${family.name} · ${level.displayNumber}",
+                    // The exercise the attempt was, named the way the map and the level
+                    // screen name it, plus its code. The family name with a bare number
+                    // read `Paradiddles · 1` here while the level itself was called
+                    // `Sticking transition · TR-1` two screens earlier (decision 201).
+                    text = "${level.title(family)} · ${level.displayCode}",
                     style = MaterialTheme.typography.titleLarge,
                     color = RudiColors.Text,
                 )

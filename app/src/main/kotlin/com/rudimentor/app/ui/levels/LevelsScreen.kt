@@ -378,7 +378,7 @@ private fun gateText(tab: CurriculumTab, course: LevelCourse): String =
         UnlockRule.Never -> stringResource(R.string.levels_tab_planned)
         is UnlockRule.LessonRank -> stringResource(
             R.string.levels_tab_locked,
-            course.level(unlock.lessonId)?.displayNumber ?: unlock.lessonId,
+            course.level(unlock.lessonId)?.displayCode ?: unlock.lessonId,
             course.family(unlock.lessonId)?.name ?: unlock.lessonId.substringBefore('.'),
             unlock.rank.displayName,
         )

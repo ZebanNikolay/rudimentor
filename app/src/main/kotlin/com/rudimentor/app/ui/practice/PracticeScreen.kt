@@ -53,6 +53,7 @@ import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.TransportButton
 import com.rudimentor.app.ui.component.TransportSize
 import com.rudimentor.app.ui.component.WarningBanner
+import com.rudimentor.app.ui.levels.title
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
@@ -417,7 +418,8 @@ fun PracticeScreen(
             // Toolbar first, progress under it: on the device the progress line ran
             // into the status bar when it sat on the very top edge (decision 101).
             PracticeHud(
-                rubric = "${family.name} · ${level.displayNumber}",
+                // Same name as the map, the level screen and the result (decision 201).
+                rubric = "${level.title(family)} · ${level.displayCode}",
                 chips = listOf(
                     rank.name.uppercase(),
                     stringResource(R.string.practice_bpm, tempo),
@@ -551,7 +553,7 @@ fun PracticeScreen(
                                     "(sdk ${Build.VERSION.SDK_INT})",
                                 build = buildInfo.displayLabel,
                                 levelId = level.id,
-                                levelLabel = level.displayNumber,
+                                levelLabel = level.displayCode,
                                 family = family.name,
                                 rank = rank.name,
                                 bpm = tempo,
