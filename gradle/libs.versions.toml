@@ -10,6 +10,7 @@ materialComponents = "1.12.0"
 coroutines = "1.10.2"
 oboe = "1.10.0"
 junit = "4.13.2"
+robolectric = "4.14.1"
 androidxTestExt = "1.2.1"
 espresso = "3.6.1"
 playPublisher = "3.12.1"
@@ -30,6 +31,7 @@ material-color-utilities = { module = "com.google.android.material:material", ve
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 oboe = { module = "com.google.oboe:oboe", version.ref = "oboe" }
 junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExt" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }

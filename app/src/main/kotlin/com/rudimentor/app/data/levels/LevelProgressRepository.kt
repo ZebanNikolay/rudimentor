@@ -76,13 +76,13 @@ class DataStoreLevelProgressRepository(
     override suspend fun selectFamily(familyId: String) {
         require(familyId in familyIds) { "Unknown family: $familyId" }
         context.levelProgressDataStore.edit { preferences ->
-            preferences[Keys.ActiveFamily] = familyId
+            preferences[LevelProgressKeys.ActiveFamily] = familyId
         }
     }
 
     override suspend fun selectRank(rank: PracticeRank) {
         context.levelProgressDataStore.edit { preferences ->
-            preferences[Keys.ActiveRank] = rank.storageName
+            preferences[LevelProgressKeys.ActiveRank] = rank.storageName
         }
     }
 
@@ -100,19 +100,15 @@ class DataStoreLevelProgressRepository(
             if (migrationsApplied) return
             context.levelProgressDataStore.edit { preferences ->
                 mapVersions.forEach { (familyId, currentVersion) ->
-                    val versionKey = Keys.mapVersion(familyId)
+                    val versionKey = LevelProgressKeys.mapVersion(familyId)
                     val appliedVersion = preferences[versionKey]
                         ?: CourseMapMigrations.INITIAL_MAP_VERSION
-                    CourseMapMigrations.completionResets(
+                    val migration = CourseMapMigrations.plan(
                         familyId = familyId,
                         fromVersion = appliedVersion,
                         toVersion = currentVersion,
-                    ).forEach { reset ->
-                        preferences[Keys.completed(reset.levelId, reset.rank)] = false
-                        preferences[Keys.stars(reset.levelId, reset.rank)] = 0
-                        preferences[Keys.crown(reset.levelId, reset.rank)] = false
-                    }
-                    preferences[versionKey] = maxOf(appliedVersion, currentVersion)
+                    )
+                    preferences.applyMapMigration(familyId, migration)
                 }
             }
             migrationsApplied = true
@@ -120,16 +116,16 @@ class DataStoreLevelProgressRepository(
     }
 
     private fun toLearningProgress(preferences: Preferences): LearningProgress = LearningProgress(
-        streakDays = preferences[Keys.StreakDays] ?: 0,
+        streakDays = preferences[LevelProgressKeys.StreakDays] ?: 0,
         levels = levelIds.associateWith { levelId ->
             LevelProgress(
                 ranks = PracticeRank.entries.associateWith { rank ->
                     RankProgress(
-                        completed = preferences[Keys.completed(levelId, rank)] ?: false,
-                        stars = preferences[Keys.stars(levelId, rank)] ?: 0,
-                        bestAccuracy = preferences[Keys.bestAccuracy(levelId, rank)]
+                        completed = preferences[LevelProgressKeys.completed(levelId, rank)] ?: false,
+                        stars = preferences[LevelProgressKeys.stars(levelId, rank)] ?: 0,
+                        bestAccuracy = preferences[LevelProgressKeys.bestAccuracy(levelId, rank)]
                             ?.takeUnless { it < 0f },
-                        crown = preferences[Keys.crown(levelId, rank)] ?: false,
+                        crown = preferences[LevelProgressKeys.crown(levelId, rank)] ?: false,
                     )
                 },
             )
@@ -137,40 +133,56 @@ class DataStoreLevelProgressRepository(
     )
 
     private fun toUiState(preferences: Preferences): LevelsUiState = LevelsUiState(
-        familyId = preferences[Keys.ActiveFamily]?.takeIf { it in familyIds },
-        rank = preferences[Keys.ActiveRank]
+        familyId = preferences[LevelProgressKeys.ActiveFamily]?.takeIf { it in familyIds },
+        rank = preferences[LevelProgressKeys.ActiveRank]
             ?.let { stored -> PracticeRank.entries.firstOrNull { it.storageName == stored } }
             ?: PracticeRank.Practice,
     )
 
     private fun MutablePreferences.write(levelId: String, rank: PracticeRank, progress: RankProgress) {
-        this[Keys.completed(levelId, rank)] = progress.completed
-        this[Keys.stars(levelId, rank)] = progress.clampedStars
-        this[Keys.bestAccuracy(levelId, rank)] = progress.bestAccuracy ?: NO_ACCURACY
-        this[Keys.crown(levelId, rank)] = progress.crown
-    }
-
-    private object Keys {
-        val StreakDays = intPreferencesKey("streak_days")
-        val ActiveFamily = stringPreferencesKey("levels.active_family")
-        val ActiveRank = stringPreferencesKey("levels.active_rank")
-
-        fun mapVersion(familyId: String) = intPreferencesKey("map.$familyId.applied_version")
-
-        fun completed(levelId: String, rank: PracticeRank) =
-            booleanPreferencesKey("level.$levelId.${rank.storageName}.completed")
-
-        fun stars(levelId: String, rank: PracticeRank) =
-            intPreferencesKey("level.$levelId.${rank.storageName}.stars")
-
-        fun bestAccuracy(levelId: String, rank: PracticeRank) =
-            floatPreferencesKey("level.$levelId.${rank.storageName}.best_accuracy")
-
-        fun crown(levelId: String, rank: PracticeRank) =
-            booleanPreferencesKey("level.$levelId.${rank.storageName}.crown")
+        this[LevelProgressKeys.completed(levelId, rank)] = progress.completed
+        this[LevelProgressKeys.stars(levelId, rank)] = progress.clampedStars
+        this[LevelProgressKeys.bestAccuracy(levelId, rank)] = progress.bestAccuracy ?: NO_ACCURACY
+        this[LevelProgressKeys.crown(levelId, rank)] = progress.crown
     }
 
     companion object {
         private const val NO_ACCURACY = -1f
     }
+}
+
+internal object LevelProgressKeys {
+    val StreakDays = intPreferencesKey("streak_days")
+    val ActiveFamily = stringPreferencesKey("levels.active_family")
+    val ActiveRank = stringPreferencesKey("levels.active_rank")
+
+    fun mapVersion(familyId: String) = intPreferencesKey("map.$familyId.applied_version")
+
+    fun completed(levelId: String, rank: PracticeRank) =
+        booleanPreferencesKey("level.$levelId.${rank.storageName}.completed")
+
+    fun stars(levelId: String, rank: PracticeRank) =
+        intPreferencesKey("level.$levelId.${rank.storageName}.stars")
+
+    fun bestAccuracy(levelId: String, rank: PracticeRank) =
+        floatPreferencesKey("level.$levelId.${rank.storageName}.best_accuracy")
+
+    fun crown(levelId: String, rank: PracticeRank) =
+        booleanPreferencesKey("level.$levelId.${rank.storageName}.crown")
+}
+
+/**
+ * Applies only the progress fields a map migration is allowed to invalidate.
+ * Accuracy is historical evidence and intentionally survives completion resets.
+ */
+internal fun MutablePreferences.applyMapMigration(
+    familyId: String,
+    migration: MapMigrationPlan,
+) {
+    migration.completionResets.forEach { reset ->
+        this[LevelProgressKeys.completed(reset.levelId, reset.rank)] = false
+        this[LevelProgressKeys.stars(reset.levelId, reset.rank)] = 0
+        this[LevelProgressKeys.crown(reset.levelId, reset.rank)] = false
+    }
+    this[LevelProgressKeys.mapVersion(familyId)] = migration.appliedVersion
 }
