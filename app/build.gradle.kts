@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.play.publisher)
 }
 
 val developmentKeystorePath = providers.environmentVariable("RUDIMENTOR_DEBUG_KEYSTORE")
@@ -17,8 +18,24 @@ val developmentKeyPassword = providers.environmentVariable("RUDIMENTOR_DEBUG_KEY
 val allowLocalDebugSigning = providers.gradleProperty("rudimentor.localDebugSigning")
     .map(String::toBoolean)
     .orElse(false)
-val appVersionName = "0.1.0-dev.51"
-val appVersionCode = 51
+// The release key that signs the App Bundle uploaded to Google Play. Google holds the
+// real app signing key under Play App Signing; this is only the upload key, so it can
+// be reset by Google if it is ever lost. It never lives in this repository.
+val uploadKeystorePath = providers.environmentVariable("RUDIMENTOR_UPLOAD_KEYSTORE")
+val uploadKeystorePassword = providers.environmentVariable("RUDIMENTOR_UPLOAD_KEYSTORE_PASSWORD")
+val uploadKeyAlias = providers.environmentVariable("RUDIMENTOR_UPLOAD_KEY_ALIAS")
+    .orElse("rudimentor-upload")
+val uploadKeyPassword = providers.environmentVariable("RUDIMENTOR_UPLOAD_KEY_PASSWORD")
+    .orElse(uploadKeystorePassword)
+
+// Versioning: `versionName` is semver, `versionCode` is a plain monotonic counter that
+// keeps rising across every build regardless of the semver channel. Play only requires
+// monotonicity, and a counter survives building the same version twice.
+//   1.0.0-dev.N  sandbox build installed on the developer's phone
+//   1.0.0-rc.N   candidate uploaded to the internal / closed testing track
+//   1.0.0        production
+val appVersionName = "1.0.0-dev.52"
+val appVersionCode = 52
 
 base {
     archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")
@@ -26,13 +43,13 @@ base {
 
 android {
     namespace = "com.rudimentor.app"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "28.2.13676358"
 
     defaultConfig {
         applicationId = "com.rudimentor.app"
         minSdk = 27
-        targetSdk = 35
+        targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
 
@@ -77,11 +94,34 @@ android {
             }
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (uploadKeystorePath.isPresent) {
+                signingConfig = signingConfigs.create("upload").apply {
+                    storeFile = rootProject.file(uploadKeystorePath.get())
+                    storePassword = uploadKeystorePassword.get()
+                    keyAlias = uploadKeyAlias.get()
+                    keyPassword = uploadKeyPassword.get()
+                }
+            } else {
+                // An unsigned (or debug-signed) release artifact is worse than no artifact:
+                // Play rejects it, and a locally installed one can collide with the store
+                // build later. Fail at packaging time so IDE sync still works.
+                tasks.matching { it.name == "packageRelease" || it.name == "bundleRelease" }
+                    .configureEach {
+                        doFirst {
+                            throw GradleException(
+                                "RUDIMENTOR_UPLOAD_KEYSTORE is not set, so this release artifact " +
+                                    "would not carry the Play upload key. Export the upload " +
+                                    "keystore (see the rudimentor-release skill).",
+                            )
+                        }
+                    }
+            }
         }
     }
 
@@ -105,6 +145,21 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+}
+
+// Google Play publishing. Credentials come from the ANDROID_PUBLISHER_CREDENTIALS
+// environment variable (the service account JSON), never from a file in this repository.
+// Release notes are read from `src/main/play/release-notes/<locale>/<track>.txt`.
+play {
+    defaultToAppBundles.set(true)
+    // Every automated publish lands on `internal`. Moving a build to closed testing or
+    // production is a separate, deliberate `promoteArtifact` run.
+    track.set("internal")
+    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.COMPLETED)
+    if (!providers.environmentVariable("ANDROID_PUBLISHER_CREDENTIALS").isPresent) {
+        // Keeps `./gradlew tasks` and IDE sync usable before the service account exists.
+        enabled.set(false)
     }
 }
 

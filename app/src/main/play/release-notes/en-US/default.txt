@@ -1,0 +1,1 @@
+First internal build of RudiMentor: metronome, the Singles / Doubles / Paradiddles level maps, microphone hit scoring and the latency Sound check.
