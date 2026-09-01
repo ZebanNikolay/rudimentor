@@ -39,6 +39,7 @@ import com.rudimentor.app.R
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiMentorLogo
+import com.rudimentor.app.ui.component.SettingsSwitchRow
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiTextStyles
@@ -49,9 +50,10 @@ private const val REPO_URL = "https://github.com/ZebanNikolay/rudimentor"
  * The About screen: what the app is, how to reach its author, what it honestly does
  * and does not do with the device, and the licenses of everything it borrows.
  *
- * The screen has no settings and no switches -- it is a page to read. Its only two
- * actions are a mail app and a browser; both fall back to the clipboard when the
- * device has neither.
+ * The screen is a page to read; its actions are a mail app and a browser, and both
+ * fall back to the clipboard when the device has neither. The one switch on it decides
+ * whether a report carries the diagnostic log, and it is off until it is turned on --
+ * see [DiagnosticLogScreen] for what that log is and how it can be read first.
  */
 @Composable
 fun AboutScreen(
@@ -64,6 +66,16 @@ fun AboutScreen(
         LicenseTextScreen(title = licensesTitle, onBack = { showLicenses = false })
         return
     }
+
+    var showLog by remember { mutableStateOf(false) }
+    if (showLog) {
+        DiagnosticLogScreen(onBack = { showLog = false })
+        return
+    }
+
+    // Off on every visit, deliberately: attaching a log is a decision about this one
+    // report, not a setting that quietly keeps sending logs from then on.
+    var attachLog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
@@ -104,10 +116,38 @@ fun AboutScreen(
                 AboutSection(title = stringResource(R.string.about_feedback_title)) {
                     Body(stringResource(R.string.about_feedback_body))
                     Spacer(modifier = Modifier.height(12.dp))
+                    SettingsSwitchRow(
+                        label = stringResource(R.string.about_log_attach),
+                        checked = attachLog,
+                        onCheckedChange = { attachLog = it },
+                    )
+                    Body(stringResource(R.string.about_log_note))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val readLog = stringResource(R.string.about_log_view)
+                    Text(
+                        text = readLog,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = RudiColors.BrickBright,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { showLog = true }
+                            .semantics {
+                                role = Role.Button
+                                contentDescription = readLog
+                            }
+                            .padding(vertical = 4.dp),
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
                     RudiButton(
                         text = stringResource(R.string.about_feedback_button),
                         onClick = {
-                            val sent = FeedbackMail.send(context, buildInfo, feedbackPrompt)
+                            // With the switch on, a device without a mail app and a log
+                            // that could not be written look the same from here, so the
+                            // plain letter is tried before giving up on the tap.
+                            val sent = (
+                                attachLog &&
+                                    FeedbackMail.sendWithLog(context, buildInfo, feedbackPrompt)
+                                ) || FeedbackMail.send(context, buildInfo, feedbackPrompt)
                             if (!sent) {
                                 clipboard.setText(AnnotatedString(FeedbackMail.ADDRESS))
                                 notice = noMailApp

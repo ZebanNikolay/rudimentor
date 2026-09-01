@@ -331,6 +331,13 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="about_feedback_body">Found a bug, or thought of something the app should do? Write to me. Every message goes to one mailbox and is read by the one person who makes this app.</string>
     <string name="about_feedback_button">Send feedback</string>
     <string name="about_feedback_prompt">What happened, or what would you like the app to do?</string>
+    <string name="about_log_attach">Attach a diagnostic log</string>
+    <string name="about_log_note">A short technical record of this device: audio output, measured latency, errors. No recordings, no practice data, nothing that identifies you.</string>
+    <string name="about_log_view">Read the log first</string>
+    <string name="about_log_title">DIAGNOSTIC LOG</string>
+    <string name="about_log_copy">Copy the log</string>
+    <string name="about_log_copied">Log copied to the clipboard.</string>
+    <string name="about_log_empty">Nothing logged yet.</string>
     <string name="about_no_mail_app">No mail app on this device. The address is copied to the clipboard.</string>
     <string name="about_no_browser">No browser on this device. The link is copied to the clipboard.</string>
     <string name="about_honest_title">THE HONEST BITS</string>

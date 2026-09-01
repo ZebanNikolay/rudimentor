@@ -58,7 +58,7 @@ import com.rudimentor.app.ui.soundcheck.SoundCheckScreen
 import com.rudimentor.app.ui.soundcheck.SoundCheckStep
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import kotlin.math.roundToInt
 
 /** Top-level destinations. Added to as new sections come online. */
@@ -177,10 +177,20 @@ fun RudiMentorApp(
         newOutputPrompt = device
     }
 
+    // Which audio path is open explains most timing reports, so the route change
+    // itself is an event: a stranger's log shows the switch, not just the result.
+    LaunchedEffect(currentOutput?.key) {
+        val device = currentOutput ?: return@LaunchedEffect
+        AppLog.event(
+            "audio",
+            "output ${device.kind.name} \"${OutputProfile.cleanName(device.name)}\"",
+        )
+    }
+
     // The navigation trail is the first thing a field report needs: every screen
     // change is in the log the developer screen can share.
     LaunchedEffect(screen, selectedLevelId) {
-        DevLog.log("nav", "screen=${screen.name} level=${selectedLevelId ?: "-"}")
+        AppLog.trace("nav") { "screen=${screen.name} level=${selectedLevelId ?: "-"}" }
     }
 
     // One stage for the whole practice flow, so the attempt and its result do not
@@ -266,7 +276,7 @@ fun RudiMentorApp(
                 if (level == null || family == null) {
                     LaunchedEffect(Unit) {
                         if (screen != Screen.LevelDetail) return@LaunchedEffect
-                        DevLog.error("nav", "level detail without a level, back to the map")
+                        AppLog.error("nav", "level detail without a level, back to the map")
                         screenName = Screen.Levels.name
                     }
                 } else {
@@ -297,7 +307,7 @@ fun RudiMentorApp(
                     // a transition the outgoing screen must not steer navigation.
                     LaunchedEffect(Unit) {
                         if (screen != Screen.Practice) return@LaunchedEffect
-                        DevLog.error("nav", "practice without a level, back to the map")
+                        AppLog.error("nav", "practice without a level, back to the map")
                         screenName = Screen.Levels.name
                     }
                 } else {
@@ -319,13 +329,12 @@ fun RudiMentorApp(
                             unknownOutput = unknownOutput,
                             onExit = { screenName = Screen.LevelDetail.name },
                             onFinished = { result ->
-                                DevLog.log(
-                                    "practice",
+                                AppLog.trace("practice") {
                                     "finished ${level.id} rank=${practiceRank.name} " +
                                         "bpm=$practiceBpm " +
                                         "accuracy=${(result.accuracy * 100f).roundToInt()}% " +
-                                        "stars=${result.stars} passed=${result.passed}",
-                                )
+                                        "stars=${result.stars} passed=${result.passed}"
+                                }
                                 // Read the record before the attempt is stored: the store
                                 // keeps the better of the two, so after the write there is
                                 // nothing left to compare against (decision 202).
@@ -339,7 +348,7 @@ fun RudiMentorApp(
                                 val current = settingsDraft ?: SettingsDraft.from(settings)
                                 val tuned = current.withLatencyBias(result.latencyBiasMs)
                                 if (tuned != current) {
-                                    DevLog.log(
+                                    AppLog.event(
                                         "practice",
                                         "self-tuned latency " +
                                             "${current.latencyMs.roundToInt()} -> " +
@@ -363,7 +372,7 @@ fun RudiMentorApp(
                 if (level == null || family == null || result == null) {
                     LaunchedEffect(Unit) {
                         if (screen != Screen.PracticeResult) return@LaunchedEffect
-                        DevLog.error("nav", "result without level/result, back to the map")
+                        AppLog.error("nav", "result without level/result, back to the map")
                         screenName = Screen.Levels.name
                     }
                 } else {
@@ -404,7 +413,7 @@ fun RudiMentorApp(
                 if (draft == null) {
                     LaunchedEffect(Unit) {
                         if (screen != Screen.Settings) return@LaunchedEffect
-                        DevLog.error("nav", "settings without a draft, back to the menu")
+                        AppLog.error("nav", "settings without a draft, back to the menu")
                         screenName = Screen.Menu.name
                     }
                 } else {

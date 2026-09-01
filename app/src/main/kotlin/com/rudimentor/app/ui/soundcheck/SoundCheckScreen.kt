@@ -57,7 +57,7 @@ import com.rudimentor.app.ui.component.SettingsPanel
 import com.rudimentor.app.ui.component.ToolbarScreen
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -214,7 +214,7 @@ fun SoundCheckScreen(
     var headphonesDone by remember { mutableStateOf(false) }
 
     // One log per visit, written the same way a calibration round is: the sound check used to
-    // leave two DevLog lines behind, so a walk-through that felt wrong could not be read back
+    // leave two AppLog lines behind, so a walk-through that felt wrong could not be read back
     // afterwards. It lands in the same list as the attempts, and Share sends it the same way
     // (decision 175).
     val telemetry = remember {
@@ -281,7 +281,7 @@ fun SoundCheckScreen(
         )
         val started = micLab.start(scope)
         audioFailed = !started
-        if (!started) DevLog.error("soundcheck", "audio engine refused to start")
+        if (!started) AppLog.error("soundcheck", "audio engine refused to start")
         if (aiming) {
             return started
         }
@@ -397,7 +397,7 @@ fun SoundCheckScreen(
     LaunchedEffect(status.clockDrift) {
         val clock = status.clockDrift ?: return@LaunchedEffect
         telemetry.clock(elapsedMs(), clock)
-        DevLog.log("soundcheck", clock.text())
+        AppLog.trace("soundcheck") { clock.text() }
     }
 
     LaunchedEffect(Unit) {
@@ -442,7 +442,7 @@ fun SoundCheckScreen(
         stalled = false
         resetPlay()
         outputChanged = true
-        DevLog.log("soundcheck", "audio output changed mid-round, round dropped")
+        AppLog.event("soundcheck", "audio output changed mid-round, round dropped")
     }
 
     // The silent half of the pad step: the room alone, sampled off the live meter.
@@ -464,7 +464,7 @@ fun SoundCheckScreen(
         val result = probe.result() ?: return@LaunchedEffect
         gate = result.thresholdLevel
         probeSeparated = result.separated
-        DevLog.log(
+        AppLog.event(
             "soundcheck",
             "gate ${result.thresholdLevel} from room ${result.noiseLevel} " +
                 "stroke ${result.strokeLevel} separated ${result.separated}",
@@ -483,7 +483,7 @@ fun SoundCheckScreen(
     LaunchedEffect(reading.finished, stage) {
         if (!reading.finished || stage != Stage.Latency) return@LaunchedEffect
         val median = reading.medianMs
-        DevLog.log("soundcheck", "round complete, median ${median?.roundToInt() ?: -1} ms")
+        AppLog.event("soundcheck", "round complete, median ${median?.roundToInt() ?: -1} ms")
         telemetry.roundStopped(elapsedMs(), CalibrationTelemetry.REASON_COMPLETE)
         stopEngine()
         if (median != null) {
@@ -495,7 +495,7 @@ fun SoundCheckScreen(
                 micLatencyMs = micPathMs ?: Float.NaN,
             )
         }
-        DevLog.log(
+        AppLog.event(
             "soundcheck",
             "path split: microphone ${micPathMs?.roundToInt() ?: -1} ms, " +
                 "OS output ${status.outputPathLatencyMs.roundToInt()} ms, " +
@@ -515,7 +515,7 @@ fun SoundCheckScreen(
         if (stage != Stage.Latency) return@LaunchedEffect
         if (reading.samples.isEmpty() && reading.skipped == 0) {
             stalled = true
-            DevLog.error(
+            AppLog.error(
                 "soundcheck",
                 "round counted nothing, gate $gate, quiet $quietStrokes",
             )
@@ -530,7 +530,7 @@ fun SoundCheckScreen(
         playFinished = true
         // The player is never shown the number, so the log is the only place it survives.
         val median = playOffsets.sorted().getOrNull(playOffsets.size / 2)
-        DevLog.log(
+        AppLog.event(
             "soundcheck",
             "check round done, median ${median?.roundToInt() ?: -1} ms after ${latencyMs
                 .roundToInt()} ms compensation, heard ${playOffsets.size}",

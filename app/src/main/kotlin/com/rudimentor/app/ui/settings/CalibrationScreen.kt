@@ -60,7 +60,7 @@ import com.rudimentor.app.ui.component.SettingsValueRow
 import com.rudimentor.app.ui.component.SettingsWarning
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -208,7 +208,7 @@ fun CalibrationScreen(
             if (clickAudible) MicThreshold.softened(threshold) else MicThreshold.MIN_LEVEL,
         )
         val started = micLab.start(scope)
-        if (!started) DevLog.error("calibration", "audio engine refused to start")
+        if (!started) AppLog.error("calibration", "audio engine refused to start")
         audioFailed = !started
         return started
     }
@@ -280,7 +280,7 @@ fun CalibrationScreen(
     LaunchedEffect(status.clockDrift) {
         val clock = status.clockDrift ?: return@LaunchedEffect
         telemetry.clock(elapsedMs(), clock)
-        DevLog.log("calibration", clock.text())
+        AppLog.trace("calibration") { clock.text() }
     }
 
     LaunchedEffect(Unit) {
@@ -329,7 +329,7 @@ fun CalibrationScreen(
         if (mode != CalibrationMode.Latency) return@LaunchedEffect
         if (reading.samples.isEmpty() && reading.skipped == 0) {
             stalled = true
-            DevLog.error(
+            AppLog.error(
                 "calibration",
                 "round counted nothing in ${STALL_TIMEOUT_MS / 1000} s, " +
                     "gate $threshold, quiet $quietStrokes, stray $strayStrokes",
@@ -360,7 +360,7 @@ fun CalibrationScreen(
         probeResult = result
         threshold = result.thresholdLevel
         telemetry.probeFinished(elapsedMs(), result)
-        DevLog.log(
+        AppLog.event(
             "calibration",
             "gate probe: noise ${result.noiseLevel} stroke ${result.strokeLevel} " +
                 "-> ${result.thresholdLevel} (separated ${result.separated})",
@@ -373,7 +373,7 @@ fun CalibrationScreen(
     // learner is never left playing into a counter that has stopped counting.
     LaunchedEffect(reading.finished, mode) {
         if (reading.finished && mode == CalibrationMode.Latency) {
-            DevLog.log(
+            AppLog.event(
                 "calibration",
                 "round complete at ${reading.samples.size} strokes, " +
                     "median ${reading.medianMs?.roundToInt() ?: -1} ms",
@@ -387,7 +387,7 @@ fun CalibrationScreen(
     // to the round they were in the middle of.
     OnBackgrounded {
         if (mode == CalibrationMode.Latency) {
-            DevLog.log("calibration", "backgrounded, round stopped")
+            AppLog.trace("calibration") { "backgrounded, round stopped" }
             stopRound(CalibrationTelemetry.REASON_BACKGROUNDED)
         } else {
             cancelProbe()
@@ -626,7 +626,7 @@ fun CalibrationScreen(
             if (!reading.ready || measuredMs == null) return@LaunchedEffect
             if (storedMedianMs == measuredMs) return@LaunchedEffect
             storedMedianMs = measuredMs
-            DevLog.log(
+            AppLog.event(
                 "calibration",
                 "stored latency ${measuredMs.roundToInt()} ms from ${reading.samples.size} " +
                     "strokes spread ±${reading.spreadMs.roundToInt()} ms",

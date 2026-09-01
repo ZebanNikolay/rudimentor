@@ -18,7 +18,7 @@ import com.rudimentor.app.ui.RudiMentorApp
 import com.rudimentor.app.ui.dev.CrashReportScreen
 import com.rudimentor.app.ui.metronome.MetronomeActions
 import com.rudimentor.app.ui.theme.RudiMentorTheme
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 
 class MainActivity : ComponentActivity() {
     // The whole course: the curriculum and every family package that ships with it.
@@ -35,17 +35,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val buildLabel = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · " +
             "${Build.MANUFACTURER} ${Build.MODEL} · API ${Build.VERSION.SDK_INT}"
-        DevLog.install(context = applicationContext, sessionLabel = buildLabel)
+        AppLog.install(context = applicationContext, sessionLabel = buildLabel)
         // A non-null bundle means the activity was recreated. The practice flow is
         // built on the assumption that it is not, so it is worth seeing in the log.
-        DevLog.log("activity", "onCreate restored=${savedInstanceState != null}")
+        AppLog.trace("activity") { "onCreate restored=${savedInstanceState != null}" }
         enableEdgeToEdge()
         // A crash on startup would otherwise leave no way to report it: the developer
         // screen is behind the UI that just died. So the course is built here, and any
         // failure -- this launch or the previous one -- opens the report screen instead.
         val startupFailure = runCatching { course }.exceptionOrNull()
         if (startupFailure != null) {
-            DevLog.error("course", "startup load failed", startupFailure)
+            AppLog.error("course", "startup load failed", startupFailure)
             showCrashReport(
                 title = "STARTUP FAILED",
                 buildLabel = buildLabel,
@@ -54,13 +54,13 @@ class MainActivity : ComponentActivity() {
             )
             return
         }
-        DevLog.pendingCrash()?.let { report ->
+        AppLog.pendingCrash()?.let { report ->
             showCrashReport(
                 title = "PREVIOUS RUN CRASHED",
                 buildLabel = buildLabel,
                 report = report,
                 onContinue = {
-                    DevLog.acknowledgeCrash()
+                    AppLog.acknowledgeCrash()
                     recreate()
                 },
             )
@@ -156,9 +156,8 @@ class MainActivity : ComponentActivity() {
         } else {
             "portrait"
         }
-        DevLog.log(
-            "activity",
-            "config $orientation ${newConfig.screenWidthDp}x${newConfig.screenHeightDp} dp",
-        )
+        AppLog.trace("activity") {
+            "config $orientation ${newConfig.screenWidthDp}x${newConfig.screenHeightDp} dp"
+        }
     }
 }

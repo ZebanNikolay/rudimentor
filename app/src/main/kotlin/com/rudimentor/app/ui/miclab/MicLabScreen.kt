@@ -58,7 +58,7 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -115,7 +115,7 @@ fun MicLabScreen(
     // stream has to be closed by hand and reopened on the way back.
     OnBackgrounded {
         if (streaming) {
-            DevLog.log("miclab", "backgrounded, input stream closed")
+            AppLog.trace("miclab") { "backgrounded, input stream closed" }
             micLab.stop()
             streaming = false
         }

@@ -37,7 +37,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import java.io.File
 
 /**
@@ -135,7 +135,7 @@ private fun copyReport(context: Context, text: String): String {
 
 /** Same route as the developer screen: export a copy, then open the share sheet. */
 private fun shareCrashLog(context: Context): String {
-    val exported = DevLog.exportTo(File(context.cacheDir, "logs"))
+    val exported = AppLog.exportTo(File(context.cacheDir, "logs"))
         ?: return "Nothing to share yet."
     val uri = runCatching {
         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", exported)

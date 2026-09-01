@@ -39,7 +39,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import java.io.File
 
 /**
@@ -60,7 +60,7 @@ fun DevScreen(
     // Bumped by every action so the tail is re-read instead of being cached.
     var revision by remember { mutableIntStateOf(0) }
     var notice by remember { mutableStateOf<String?>(null) }
-    val lines = remember(revision) { DevLog.snapshot() }
+    val lines = remember(revision) { AppLog.snapshot() }
     val listState = rememberLazyListState()
 
     BackHandler(onBack = onBack)
@@ -124,7 +124,7 @@ fun DevScreen(
                 RudiButton(
                     text = "Clear",
                     onClick = {
-                        DevLog.clear()
+                        AppLog.clear()
                         notice = null
                         revision += 1
                     },
@@ -180,12 +180,12 @@ private fun LogView(
 
 /** Copies the log into the shared cache folder and opens the system share sheet. */
 private fun shareLog(context: android.content.Context): String {
-    val exported = DevLog.exportTo(File(context.cacheDir, "logs"))
+    val exported = AppLog.exportTo(File(context.cacheDir, "logs"))
         ?: return "Nothing to share yet."
     val uri = runCatching {
         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", exported)
     }.getOrElse { error ->
-        DevLog.error("dev", "share failed", error)
+        AppLog.error("dev", "share failed", error)
         return "Could not share: ${error.message}"
     }
     val intent = Intent(Intent.ACTION_SEND).apply {

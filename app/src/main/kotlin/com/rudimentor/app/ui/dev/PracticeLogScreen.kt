@@ -42,7 +42,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import java.io.File
 
 /**
@@ -224,5 +224,5 @@ private fun shareAttempt(context: Context, entry: PracticeLogStore.Entry): Strin
 private fun uriFor(context: Context, file: File): Uri? = runCatching {
     FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 }.onFailure { error ->
-    DevLog.error("telemetry", "share failed", error)
+    AppLog.error("telemetry", "share failed", error)
 }.getOrNull()

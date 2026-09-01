@@ -59,7 +59,7 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
 import com.rudimentor.app.ui.util.formatElapsed
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import com.rudimentor.app.util.StallWatch
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -133,7 +133,10 @@ fun PracticeScreen(
     }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-    ) { granted -> micGranted = granted }
+    ) { granted ->
+        micGranted = granted
+        if (!granted) AppLog.event("mic", "permission denied, nothing can be heard")
+    }
 
     val session = remember { PracticeSession() }
     // The tempo comes from the level card, but the engine has its own range: clamp
@@ -221,7 +224,7 @@ fun PracticeScreen(
     // pause the attempt is simply dropped, exactly like back (decision 106).
     OnBackgrounded {
         if (running) {
-            DevLog.log("practice", "backgrounded at ${positionMs.roundToInt()} ms, dropped")
+            AppLog.trace("practice") { "backgrounded at ${positionMs.roundToInt()} ms, dropped" }
             closeTelemetry(context, telemetry, session, attempt, positionMs, aborted = true)
             session.stop()
             running = false
@@ -236,11 +239,10 @@ fun PracticeScreen(
     }
 
     LaunchedEffect(level.id, rank, tempo) {
-        DevLog.log(
-            "practice",
+        AppLog.trace("practice") {
             "open ${level.id} rank=${rank.name} bpm=$tempo notes=${notes.size} " +
-                "mic=$micGranted",
-        )
+                "mic=$micGranted"
+        }
     }
 
     LaunchedEffect(running, attempt) {
@@ -269,14 +271,14 @@ fun PracticeScreen(
             val poll = session.poll()
             stalls.tick(atMs = positionMs, intervalMs = PracticeSession.POLL_INTERVAL_MS)
                 ?.let { line ->
-                    DevLog.log("practice", line)
+                    AppLog.event("practice", line)
                     telemetry.value?.audioEvent(positionMs, "stall", line)
                 }
             // Clock diagnostic (decision 188): one line a second, whether the note grid and
             // the stroke grid tick at the same real rate. Never corrects anything.
             poll.clockDrift?.let { clock ->
                 telemetry.value?.clock(poll.positionMs, clock)
-                DevLog.log("practice", clock.text())
+                AppLog.trace("practice") { clock.text() }
             }
             if (!clickStopped && lastNoteMs > 0f && poll.positionMs >= lastNoteMs) {
                 clickStopped = true
@@ -287,7 +289,7 @@ fun PracticeScreen(
             if (poll.anchored) {
                 if (!skewLogged) {
                     skewLogged = true
-                    DevLog.log(
+                    AppLog.event(
                         "practice",
                         "anchored, input-output clock skew ${poll.clockSkewMs.roundToInt()} ms, " +
                             "latency slider ${latencyMs.roundToInt()} ms, " +
@@ -305,7 +307,7 @@ fun PracticeScreen(
                 }
                 if (abs(poll.outputLatencyMs - loggedLatencyMs) > LATENCY_LOG_STEP_MS) {
                     loggedLatencyMs = poll.outputLatencyMs
-                    DevLog.log(
+                    AppLog.event(
                         "practice",
                         "output latency ${poll.outputLatencyMs.roundToInt()} ms " +
                             "at ${poll.positionMs.roundToInt()} ms",
@@ -552,7 +554,7 @@ fun PracticeScreen(
                         micThresholdLevel = micThresholdLevel,
                         tempoPlan = tempoPlan,
                     )
-                    if (!started) DevLog.error("practice", "audio engine refused to start")
+                    if (!started) AppLog.error("practice", "audio engine refused to start")
                     audioFailed = !started
                     running = started
                     if (started) {

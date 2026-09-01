@@ -38,7 +38,7 @@ import com.rudimentor.app.ui.theme.RudiTextStyles
 import com.rudimentor.app.ui.util.KeepScreenOn
 import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.formatElapsed
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 
 /**
  * The metronome screen.
@@ -68,7 +68,7 @@ fun MetronomeScreen(
     // so the honest behaviour is to stop.
     OnBackgrounded {
         if (snapshot.running) {
-            DevLog.log("metronome", "backgrounded while running, stopped")
+            AppLog.trace("metronome") { "backgrounded while running, stopped" }
             playback.stop()
         }
     }

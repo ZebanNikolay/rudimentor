@@ -1,7 +1,7 @@
 package com.rudimentor.app.telemetry
 
 import android.content.Context
-import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.AppLog
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -76,7 +76,7 @@ object PracticeLogStore {
                 File(directory, base + JSON_SUFFIX)
                     .writeText(body.joinToString(separator = "\n", postfix = "\n"))
                 prune(directory)
-            }.onFailure { error -> DevLog.error("telemetry", "could not write log", error) }
+            }.onFailure { error -> AppLog.error("telemetry", "could not write log", error) }
         }
     }
 
@@ -126,7 +126,7 @@ object PracticeLogStore {
         return runCatching {
             File(target, name).apply { writeText(combinedText(entry)) }
         }
-            .onFailure { error -> DevLog.error("telemetry", "export failed", error) }
+            .onFailure { error -> AppLog.error("telemetry", "export failed", error) }
             .getOrNull()
     }
 

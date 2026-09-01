@@ -41,7 +41,7 @@ const val FLOW_SOUND_CHECK = "sound check"
  * Collects one calibration round into the same two texts an attempt produces: a JSONL body
  * with every stroke the microphone heard, and a short human summary.
  *
- * A round used to leave nothing behind but two `DevLog` lines, so a learner who came back
+ * A round used to leave nothing behind but two `AppLog` lines, so a learner who came back
  * saying "I am not sure it worked" could not be answered from the log (decision 157). Now a
  * round is a log entry beside the attempts, and Share sends it the same way.
  *

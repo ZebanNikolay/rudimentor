@@ -5,7 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import androidx.core.content.FileProvider
 import com.rudimentor.app.BuildInfo
+import com.rudimentor.app.util.AppLog
+import java.io.File
 import java.net.URLEncoder
 import java.util.Locale
 
@@ -74,6 +77,47 @@ object FeedbackMail {
         } catch (_: ActivityNotFoundException) {
             false
         }
+
+    /**
+     * The same letter with the diagnostic log attached.
+     *
+     * A `mailto:` URI cannot carry a file, and a long log does not survive one either
+     * -- Gmail truncates the body. So this is `ACTION_SEND`, which does carry an
+     * attachment, with its selector set to `mailto:`: the chooser then lists mail apps
+     * only, and the messengers and file managers that `ACTION_SEND` would otherwise
+     * offer stay out of a channel one person answers by hand.
+     */
+    fun intentWithLog(buildInfo: BuildInfo, prompt: String, log: Uri): Intent =
+        Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            selector = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
+            putExtra(Intent.EXTRA_EMAIL, arrayOf(ADDRESS))
+            putExtra(Intent.EXTRA_SUBJECT, subject(buildInfo))
+            putExtra(Intent.EXTRA_TEXT, body(buildInfo, prompt))
+            putExtra(Intent.EXTRA_STREAM, log)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+    /**
+     * Writes the log to a file the mail app may read and opens the draft with it
+     * attached. Returns false when there is no log, no mail app, or the copy failed --
+     * the caller falls back to [send], because a report without its log still helps.
+     */
+    fun sendWithLog(context: Context, buildInfo: BuildInfo, prompt: String): Boolean {
+        val exported = AppLog.exportDiagnostics(File(context.cacheDir, "logs")) ?: return false
+        val uri = runCatching {
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", exported)
+        }.getOrElse { error ->
+            AppLog.error("feedback", "could not share the log", error)
+            return false
+        }
+        return try {
+            context.startActivity(intentWithLog(buildInfo, prompt, uri))
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        }
+    }
 }
 
 /** Opens a URL in a browser. Same contract as [FeedbackMail.send]. */
