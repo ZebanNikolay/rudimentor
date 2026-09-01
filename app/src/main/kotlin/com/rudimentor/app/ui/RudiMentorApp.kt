@@ -129,6 +129,9 @@ fun RudiMentorApp(
     // Which step the sound check opens on. A pair of headphones nobody has measured needs
     // only its own step; everything else walks the whole thing.
     var soundCheckStartStep by remember { mutableStateOf(SoundCheckStep.Pad) }
+    // The output the map has already offered the headphones step for: the offer is made once
+    // per output and never again in this process (decision 193).
+    var promptedOutputKey by rememberSaveable { mutableStateOf<String?>(null) }
     val practiceRank = PracticeRank.entries.firstOrNull { it.name == practiceRankName }
         ?: PracticeRank.Practice
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
@@ -143,11 +146,24 @@ fun RudiMentorApp(
     // attempt afterwards, so the map offers its own step instead of waiting for the player to
     // notice a bad score. Only from the map, and only once the check has been walked before:
     // pulling somebody out of an attempt would be worse than the wrong number (decision 169).
+    //
+    // Two things make it a single offer and not a trap (decision 193). The output is bound to
+    // a profile before the walk starts, so finishing the walk leaves it known and the map
+    // stops offering; and the key it was offered for is remembered, so an output that cannot
+    // be bound at all -- the profile list is full -- is still offered exactly once. Without
+    // either of them the map sent the player straight back into the check after every Back
+    // and every Finish, with no way out of the app but killing it.
     LaunchedEffect(screen, unknownOutput, headphonesConnected) {
         if (screen != Screen.Levels) return@LaunchedEffect
+        val device = currentOutput ?: return@LaunchedEffect
         if (!unknownOutput || !headphonesConnected || !settings.soundCheckDone) {
             return@LaunchedEffect
         }
+        if (promptedOutputKey == device.key) return@LaunchedEffect
+        promptedOutputKey = device.key
+        onApplyDraft(
+            SettingsDraft.from(settings).withAddedProfile(device, System.currentTimeMillis()),
+        )
         soundCheckStartStep = SoundCheckStep.Headphones
         screenName = Screen.SoundCheck.name
     }

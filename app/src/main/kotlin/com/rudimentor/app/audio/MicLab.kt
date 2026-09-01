@@ -119,6 +119,20 @@ class MicLab(
     private var restarts = 0
     private var restartAtNanos = 0L
 
+    /**
+     * Whether the screen wants the streams open at all.
+     *
+     * The stream-restart loop of decision 190 reopens streams the device closed under us, and
+     * it runs inside the poll job. [stop] cancels that job, but a poll already suspended in
+     * an event emit finishes its pass first -- and by then the streams are closed, so the
+     * restart read that as the device closing them and started the engine again. The click
+     * then went on sounding with nobody polling it, which is how the ticks survived Back and
+     * kept playing in the background (decision 193). This flag is the intent, and no restart
+     * happens against it.
+     */
+    @Volatile
+    private var wantRunning = false
+
     private val pendingTicks = ArrayDeque<NativeMicLab.TickEvent>()
     private val recentOffsets = LinkedList<Float>()
     private val hitScratch = ArrayList<NativeMicLab.HitEvent>(32)
@@ -141,8 +155,10 @@ class MicLab(
         clockDrift.reset()
         restarts = 0
         restartAtNanos = 0L
+        wantRunning = true
         val ok = native.start()
         if (!ok) {
+            wantRunning = false
             _status.value = _status.value.copy(running = false)
             return false
         }
@@ -156,6 +172,7 @@ class MicLab(
     }
 
     fun stop() {
+        wantRunning = false
         pollJob?.cancel()
         pollJob = null
         native.stop()
@@ -231,7 +248,7 @@ class MicLab(
         trimPendingTicks()
 
         val snapshot = native.snapshot()
-        if (!snapshot.running) reopenStreams()
+        if (!snapshot.running && wantRunning) reopenStreams()
         val framesPerMs = snapshot.sampleRate / 1000f
         val clockReading = clockDrift.sample(native.clockProbe(), snapshot.sampleRate)
         val bpm = _status.value.bpm
@@ -302,12 +319,17 @@ class MicLab(
      * become usable (decision 190).
      */
     private fun reopenStreams() {
+        if (!wantRunning) return
         val now = System.nanoTime()
         if (restarts >= MAX_RESTARTS) return
         if (restartAtNanos != 0L && now - restartAtNanos < RESTART_INTERVAL_MS * 1_000_000L) return
         restartAtNanos = now
         native.stop()
-        if (!native.start()) return
+        if (!wantRunning || !native.start()) return
+        if (!wantRunning) {
+            native.stop()
+            return
+        }
         restarts += 1
         clockDrift.reset()
         pendingTicks.clear()
