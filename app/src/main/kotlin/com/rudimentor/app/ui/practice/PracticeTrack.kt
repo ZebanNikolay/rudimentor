@@ -88,6 +88,9 @@ fun PracticeTrack(
             pxPerMs = pxPerMs,
             lineX = lineX,
             height = height,
+            // Bars stop at the finish: the click stops there too, so a lane that kept
+            // ruling out beats past the end was keeping time to nothing (decision 203).
+            untilMs = finishMs,
         )
         drawLane(laneY = laneY, width = width)
         drawHitLine(lineX = lineX, height = height)
@@ -318,8 +321,8 @@ internal fun windowColor(window: HitWindow): Color = when (window) {
 /**
  * Bar lines every four beats, plus a quieter line on every beat. The beats come from the
  * grid of the attempt rather than from one beat length, so the bars of a tempo ramp stay
- * on its clicks (decision 148); beats past the end of the grid keep the last beat length,
- * which is what draws the tail after the final note.
+ * on its clicks (decision 148); beats past the end of the grid keep the last beat length.
+ * Nothing is drawn past [untilMs] -- the finish -- because the click is silent by then.
  */
 private fun DrawScope.drawBarLines(
     positionMs: Float,
@@ -327,6 +330,7 @@ private fun DrawScope.drawBarLines(
     pxPerMs: Float,
     lineX: Float,
     height: Float,
+    untilMs: Float,
 ) {
     if (beatTimesMs.isEmpty()) return
     // Widths in dp, not raw pixels: a 1 px line on a ~3x density panel is a third
@@ -350,6 +354,7 @@ private fun DrawScope.drawBarLines(
             beatTimesMs.last() + (beat - beatTimesMs.size + 1) * tailBeatMs
         }
         if (timeMs > toMs) return
+        if (untilMs > 0f && timeMs > untilMs) return
         if (timeMs < fromMs) {
             beat += 1
             continue

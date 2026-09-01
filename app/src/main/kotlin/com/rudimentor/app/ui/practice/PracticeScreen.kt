@@ -210,7 +210,9 @@ fun PracticeScreen(
     // Headphones can be plugged in or pulled out mid-attempt: the engine follows the
     // new click state without restarting the run (decision 114).
     LaunchedEffect(clickAudible, running) {
-        if (running) session.setClickAudible(clickAudible)
+        if (running && (lastNoteMs <= 0f || positionMs < lastNoteMs)) {
+            session.setClickAudible(clickAudible)
+        }
     }
 
     // Leaving the app does not dispose the screen, so the engine has to be stopped
@@ -258,6 +260,11 @@ fun PracticeScreen(
         // more than its own interval is the block itself, measured (decision 200).
         val stalls = StallWatch()
         stalls.start()
+        // The click has nothing left to count once the last note is played: it kept
+        // ticking through the tail, and the hand answered it with a stroke the run had
+        // no note for (decision 203). The lane stops drawing bars at the finish for the
+        // same reason -- past the finish there is nothing to keep time with.
+        var clickStopped = false
         while (true) {
             val poll = session.poll()
             stalls.tick(atMs = positionMs, intervalMs = PracticeSession.POLL_INTERVAL_MS)
@@ -270,6 +277,10 @@ fun PracticeScreen(
             poll.clockDrift?.let { clock ->
                 telemetry.value?.clock(poll.positionMs, clock)
                 DevLog.log("practice", clock.text())
+            }
+            if (!clickStopped && lastNoteMs > 0f && poll.positionMs >= lastNoteMs) {
+                clickStopped = true
+                session.setClickAudible(false)
             }
             envelope = poll.envelope
             threshold = poll.threshold
