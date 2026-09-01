@@ -13,7 +13,11 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 
 private val Context.levelProgressDataStore by preferencesDataStore(
@@ -50,6 +54,9 @@ class DataStoreLevelProgressRepository(
     course: LevelCourse,
 ) : LevelProgressRepository {
     private val levelIds = course.levelIds
+    private val mapVersions = course.catalogs.mapValues { (_, catalog) -> catalog.mapVersion }
+    private val migrationMutex = Mutex()
+    private var migrationsApplied = false
 
     // Every tab of the curriculum, not only the ones with a package: a planned tab can be
     // opened on the map to read what it will contain, and that choice is worth remembering.
@@ -79,10 +86,38 @@ class DataStoreLevelProgressRepository(
         }
     }
 
-    private fun preferences(): Flow<Preferences> = context.levelProgressDataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences()) else throw exception
+    private fun preferences(): Flow<Preferences> = flow {
+        ensureMapMigrations()
+        emitAll(
+            context.levelProgressDataStore.data.catch { exception ->
+                if (exception is IOException) emit(emptyPreferences()) else throw exception
+            },
+        )
+    }
+
+    private suspend fun ensureMapMigrations() {
+        migrationMutex.withLock {
+            if (migrationsApplied) return
+            context.levelProgressDataStore.edit { preferences ->
+                mapVersions.forEach { (familyId, currentVersion) ->
+                    val versionKey = Keys.mapVersion(familyId)
+                    val appliedVersion = preferences[versionKey]
+                        ?: CourseMapMigrations.INITIAL_MAP_VERSION
+                    CourseMapMigrations.completionResets(
+                        familyId = familyId,
+                        fromVersion = appliedVersion,
+                        toVersion = currentVersion,
+                    ).forEach { reset ->
+                        preferences[Keys.completed(reset.levelId, reset.rank)] = false
+                        preferences[Keys.stars(reset.levelId, reset.rank)] = 0
+                        preferences[Keys.crown(reset.levelId, reset.rank)] = false
+                    }
+                    preferences[versionKey] = maxOf(appliedVersion, currentVersion)
+                }
+            }
+            migrationsApplied = true
         }
+    }
 
     private fun toLearningProgress(preferences: Preferences): LearningProgress = LearningProgress(
         streakDays = preferences[Keys.StreakDays] ?: 0,
@@ -119,6 +154,8 @@ class DataStoreLevelProgressRepository(
         val StreakDays = intPreferencesKey("streak_days")
         val ActiveFamily = stringPreferencesKey("levels.active_family")
         val ActiveRank = stringPreferencesKey("levels.active_rank")
+
+        fun mapVersion(familyId: String) = intPreferencesKey("map.$familyId.applied_version")
 
         fun completed(levelId: String, rank: PracticeRank) =
             booleanPreferencesKey("level.$levelId.${rank.storageName}.completed")

@@ -20,23 +20,24 @@ class AssetLevelCatalogLoader(
         var schemaVersion = 0
         var family: Family? = null
         var lessons = emptyList<Lesson>()
-        var nodes = emptyList<MapNode>()
+        var map = MapPackage()
         reader.beginObject()
         while (reader.hasNext()) {
             when (reader.nextName()) {
                 "schemaVersion" -> schemaVersion = reader.nextInt()
                 "family" -> family = readFamily(reader)
                 "lessons" -> lessons = reader.readArray(::readLesson)
-                "map" -> nodes = readMap(reader)
+                "map" -> map = readMap(reader)
                 else -> reader.skipValue()
             }
         }
         reader.endObject()
         return LevelCatalog.build(
             schemaVersion = schemaVersion,
+            mapVersion = map.version,
             family = requireNotNull(family) { "The family package must declare a family" },
             lessons = lessons,
-            nodes = nodes,
+            nodes = map.nodes,
         )
     }
 
@@ -327,17 +328,19 @@ class AssetLevelCatalogLoader(
         return TempoRampPhase(bpm = bpm, beatCount = beatCount)
     }
 
-    private fun readMap(reader: JsonReader): List<MapNode> {
+    private fun readMap(reader: JsonReader): MapPackage {
+        var version = 0
         var nodes = emptyList<MapNode>()
         reader.beginObject()
         while (reader.hasNext()) {
             when (reader.nextName()) {
+                "version" -> version = reader.nextInt()
                 "nodes" -> nodes = reader.readArray(::readMapNode)
                 else -> reader.skipValue()
             }
         }
         reader.endObject()
-        return nodes
+        return MapPackage(version = version, nodes = nodes)
     }
 
     private fun readMapNode(reader: JsonReader): MapNode {
@@ -368,4 +371,9 @@ class AssetLevelCatalogLoader(
 
         private fun assetName(familyId: String) = "families/$familyId.json"
     }
+
+    private data class MapPackage(
+        val version: Int = 0,
+        val nodes: List<MapNode> = emptyList(),
+    )
 }

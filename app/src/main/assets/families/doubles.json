@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "family": {
     "id": "doubles",
     "name": "Double Strokes",
@@ -3066,6 +3066,7 @@
     }
   ],
   "map": {
+    "version": 1,
     "nodes": [
       {
         "lessonId": "doubles.ST-01",

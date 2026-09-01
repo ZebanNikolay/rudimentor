@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "family": {
     "id": "singles",
     "name": "Single Strokes",
@@ -2299,10 +2299,7 @@
       },
       "rankTargets": {
         "practice": {
-          "densityException": {
-            "reason": "Triplets enter at a halved pulse, so each hand keeps its load even though notes per minute rise."
-          },
-          "bpm": 60,
+          "bpm": 40,
           "hitsPerBeat": 3
         },
         "groove": {
@@ -2347,7 +2344,7 @@
       },
       "rankTargets": {
         "practice": {
-          "bpm": 60,
+          "bpm": 40,
           "subdivisionPlan": {
             "blockBeats": 8,
             "hitsPerBeat": [
@@ -2383,6 +2380,7 @@
     }
   ],
   "map": {
+    "version": 2,
     "nodes": [
       {
         "lessonId": "singles.ST-01",
@@ -2533,7 +2531,8 @@
         "lessonId": "singles.TR-02",
         "column": "right",
         "prerequisites": [
-          "singles.IS-02"
+          "singles.IS-02",
+          "singles.TR-01"
         ]
       },
       {

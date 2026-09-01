@@ -472,6 +472,7 @@ class LevelCatalogTest {
 
     private fun catalog(lessons: List<Lesson>, nodes: List<MapNode>): LevelCatalog = LevelCatalog.build(
         schemaVersion = LevelCatalog.CURRENT_SCHEMA_VERSION,
+        mapVersion = 1,
         family = Family(id = "f", name = "Family", description = "Description."),
         lessons = lessons,
         nodes = nodes,

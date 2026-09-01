@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "family": {
     "id": "paradiddles",
     "name": "Paradiddles",
@@ -4849,21 +4849,18 @@
           "hitsPerBeat": 3
         },
         "groove": {
-          "bpm": 75,
-          "hitsPerBeat": 3
+          "bpm": 60,
+          "hitsPerBeat": 6
         },
         "stage": {
-          "bpm": 90,
-          "hitsPerBeat": 3
+          "bpm": 84,
+          "hitsPerBeat": 6
         }
       }
     },
     {
       "id": "paradiddles.SS-04",
       "type": "subdivision_switch",
-      "intentionalRollback": {
-        "reason": "Triplet switching restarts the switch line at a slower tempo: the 2-3-2 block is new ground even though SS-03 already ran faster."
-      },
       "modifiers": [],
       "pattern": {
         "mode": "repeat",
@@ -4931,24 +4928,24 @@
           }
         },
         "groove": {
-          "bpm": 75,
+          "bpm": 60,
           "subdivisionPlan": {
             "blockBeats": 8,
             "hitsPerBeat": [
-              2,
-              3,
-              2
+              4,
+              6,
+              4
             ]
           }
         },
         "stage": {
-          "bpm": 90,
+          "bpm": 84,
           "subdivisionPlan": {
             "blockBeats": 8,
             "hitsPerBeat": [
-              2,
-              3,
-              2
+              4,
+              6,
+              4
             ]
           }
         }
@@ -4956,6 +4953,7 @@
     }
   ],
   "map": {
+    "version": 2,
     "nodes": [
       {
         "lessonId": "paradiddles.SP-01",
@@ -5061,22 +5059,22 @@
         ]
       },
       {
-        "lessonId": "paradiddles.DP-01",
+        "lessonId": "paradiddles.TS-01",
         "column": "center",
         "prerequisites": [
           "paradiddles.PIM-01"
         ]
       },
       {
-        "lessonId": "paradiddles.TS-01",
-        "column": "center",
+        "lessonId": "paradiddles.SS-04",
+        "column": "right",
         "prerequisites": [
-          "paradiddles.DP-01"
+          "paradiddles.TS-01"
         ]
       },
       {
-        "lessonId": "paradiddles.SS-04",
-        "column": "right",
+        "lessonId": "paradiddles.DP-01",
+        "column": "center",
         "prerequisites": [
           "paradiddles.TS-01"
         ]
@@ -5092,7 +5090,7 @@
         "lessonId": "paradiddles.SP-08",
         "column": "center",
         "prerequisites": [
-          "paradiddles.TS-01"
+          "paradiddles.DP-01"
         ]
       },
       {
@@ -5316,7 +5314,8 @@
         "lessonId": "paradiddles.TR-02",
         "column": "right",
         "prerequisites": [
-          "paradiddles.PDD-05"
+          "paradiddles.PDD-05",
+          "paradiddles.TP-04"
         ]
       }
     ]

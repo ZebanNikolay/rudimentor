@@ -2,7 +2,7 @@ package com.rudimentor.app.data.levels
 
 /**
  * Runtime model of a generated family package
- * (`learning/course/data/generated/families/<family-id>.json`, schema 7).
+ * (`learning/course/data/generated/families/<family-id>.json`, schema 9).
  *
  * The course data is the source of truth: the app never adds fields the package
  * does not define. Everything the UI needs beyond the package — the position of a
@@ -460,6 +460,7 @@ enum class LevelNodeState {
 
 data class LevelCatalog(
     val schemaVersion: Int,
+    val mapVersion: Int,
     val family: Family,
     val levels: List<Level>,
 ) {
@@ -476,7 +477,7 @@ data class LevelCatalog(
     fun level(id: String): Level? = levelsById[id]
 
     companion object {
-        const val CURRENT_SCHEMA_VERSION = 8
+        const val CURRENT_SCHEMA_VERSION = 9
         const val MIN_BPM = 40
         const val MAX_BPM = 250
 
@@ -486,6 +487,7 @@ data class LevelCatalog(
          */
         fun build(
             schemaVersion: Int,
+            mapVersion: Int,
             family: Family,
             lessons: List<Lesson>,
             nodes: List<MapNode>,
@@ -493,6 +495,7 @@ data class LevelCatalog(
             require(schemaVersion == CURRENT_SCHEMA_VERSION) {
                 "Unsupported family package schema: $schemaVersion"
             }
+            require(mapVersion > 0) { "The map version must be positive" }
             require(family.id.isNotBlank()) { "The family must have an id" }
             require(lessons.isNotEmpty()) { "The family package must contain at least one lesson" }
             require(lessons.map(Lesson::id).distinct().size == lessons.size) { "Lesson IDs must be unique" }
@@ -521,7 +524,12 @@ data class LevelCatalog(
                     row = rows.getValue(node.lessonId),
                 )
             }
-            return LevelCatalog(schemaVersion = schemaVersion, family = family, levels = levels)
+            return LevelCatalog(
+                schemaVersion = schemaVersion,
+                mapVersion = mapVersion,
+                family = family,
+                levels = levels,
+            )
         }
 
         private fun validateLesson(family: Family, lesson: Lesson) {
