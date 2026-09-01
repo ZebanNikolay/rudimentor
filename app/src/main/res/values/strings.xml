@@ -282,6 +282,11 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="sound_check_title">SOUND CHECK</string>
     <string name="help_open">What %1$s does</string>
     <string name="help_close">Got it</string>
+    <!-- Asked on the level map when an output nobody has measured is connected (decision 194). -->
+    <string name="new_output_title">New headphones</string>
+    <string name="new_output_body">%1$s is connected for the first time. Every pair delays the click by its own amount, and levels are scored against that delay, so the app has to measure this one before it can judge your strokes on it. About half a minute: hold an earcup to the microphone and play eight strokes. Loudness on the pad stays as it was measured.</string>
+    <string name="new_output_measure">Measure now</string>
+    <string name="new_output_later">Later</string>
     <string name="sound_check_step_of">STEP %1$d OF %2$d \u00b7 %3$s</string>
     <string name="sound_check_pad_short">PAD AND PHONE</string>
     <string name="sound_check_headphones_short">HEADPHONES</string>

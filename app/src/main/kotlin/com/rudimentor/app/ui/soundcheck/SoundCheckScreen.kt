@@ -134,6 +134,15 @@ fun SoundCheckScreen(
     /** Start on this step: a freshly connected pair of headphones needs only its own step. */
     startStep: SoundCheckStep = SoundCheckStep.Pad,
     /**
+     * Walk only the click half: a pair of headphones connected for the first time needs its
+     * own delay measured, and the loudness of the strokes on the pad was measured long ago and
+     * has nothing to do with the headphones.
+     *
+     * It also keeps the walk honest about itself: entering the three-step list on its second
+     * step said "STEP 2 OF 3" and left a first step nobody asked for behind it (decision 194).
+     */
+    headphonesOnly: Boolean = false,
+    /**
      * Round trip and the skew it was measured under (both null when nothing was measured),
      * gate, and the microphone half of the path the input stream reported (null when it
      * reported nothing). The round trip alone does not say where the correction goes, so the
@@ -161,15 +170,22 @@ fun SoundCheckScreen(
     // Said out loud on the headphones step: no pair to hold, walk the silent branch instead
     // of standing on a step whose only button measures something impossible (decision 186).
     var noHeadphones by remember { mutableStateOf(false) }
-    val steps = remember(clickSounds, noHeadphones) {
-        if (clickSounds && !noHeadphones) {
-            listOf(SoundCheckStep.Pad, SoundCheckStep.Headphones, SoundCheckStep.FirstClick)
-        } else {
-            listOf(SoundCheckStep.Pad, SoundCheckStep.Silent)
+    // Starts as the caller asked, and drops as soon as the walk needs the pad step after all:
+    // strokes the microphone never heard are a loudness problem, and its step has to be in the
+    // list before it can be walked to (decision 194).
+    var clickOnly by remember { mutableStateOf(headphonesOnly) }
+    val steps = remember(clickSounds, noHeadphones, clickOnly) {
+        when {
+            !clickSounds || noHeadphones -> listOf(SoundCheckStep.Pad, SoundCheckStep.Silent)
+            clickOnly ->
+                listOf(SoundCheckStep.Headphones, SoundCheckStep.FirstClick)
+
+            else ->
+                listOf(SoundCheckStep.Pad, SoundCheckStep.Headphones, SoundCheckStep.FirstClick)
         }
     }
     var step by remember {
-        mutableStateOf(if (startStep in steps) startStep else SoundCheckStep.Pad)
+        mutableStateOf(if (startStep in steps) startStep else steps.first())
     }
     var stage by remember { mutableStateOf(Stage.Idle) }
     var gate by remember { mutableFloatStateOf(MicThreshold.clamp(micThresholdLevel)) }
@@ -657,6 +673,7 @@ fun SoundCheckScreen(
                     },
                     onStop = { stopEngine() },
                     onNext = { step = steps[steps.indexOf(SoundCheckStep.Pad) + 1] },
+                    // Unreachable in the headphones-only walk, which has no pad step.
                 )
             }
 
@@ -875,6 +892,7 @@ fun SoundCheckScreen(
                                 style = RudiButtonStyle.Secondary,
                                 onClick = {
                                     resetPlay()
+                                    clickOnly = false
                                     step = SoundCheckStep.Pad
                                 },
                             )

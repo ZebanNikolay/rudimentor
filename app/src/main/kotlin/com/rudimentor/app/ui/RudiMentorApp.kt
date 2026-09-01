@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,6 +32,7 @@ import com.rudimentor.app.R
 import com.rudimentor.app.audio.AudioOutputMonitor
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.OutputDevice
+import com.rudimentor.app.data.OutputProfile
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelCourse
@@ -132,6 +136,12 @@ fun RudiMentorApp(
     // The output the map has already offered the headphones step for: the offer is made once
     // per output and never again in this process (decision 193).
     var promptedOutputKey by rememberSaveable { mutableStateOf<String?>(null) }
+    // The output the dialog is open for, or null when nothing is being asked (decision 194).
+    var newOutputPrompt by remember { mutableStateOf<OutputDevice?>(null) }
+    // Set when the walk was entered for a freshly connected output: the loudness step was
+    // measured long ago and repeating it would be half a minute of holding a stick for nothing
+    // (decision 194).
+    var soundCheckHeadphonesOnly by remember { mutableStateOf(false) }
     val practiceRank = PracticeRank.entries.firstOrNull { it.name == practiceRankName }
         ?: PracticeRank.Practice
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
@@ -147,12 +157,13 @@ fun RudiMentorApp(
     // notice a bad score. Only from the map, and only once the check has been walked before:
     // pulling somebody out of an attempt would be worse than the wrong number (decision 169).
     //
-    // Two things make it a single offer and not a trap (decision 193). The output is bound to
-    // a profile before the walk starts, so finishing the walk leaves it known and the map
-    // stops offering; and the key it was offered for is remembered, so an output that cannot
-    // be bound at all -- the profile list is full -- is still offered exactly once. Without
-    // either of them the map sent the player straight back into the check after every Back
-    // and every Finish, with no way out of the app but killing it.
+    // It offers and never takes over (decision 194). Walking a player into a measuring screen
+    // without a word looked like a broken app: the check opened on its second step, said
+    // nothing about new headphones, and -- while the output stayed unbound -- every Back and
+    // every Finish landed back in it, so the only way out was killing the app. So the map asks
+    // in a dialog that names what happened and what the measurement costs, and Later is a real
+    // answer: the same output is never asked about twice, and the practice screen already warns
+    // about an unmeasured output on its own.
     LaunchedEffect(screen, unknownOutput, headphonesConnected) {
         if (screen != Screen.Levels) return@LaunchedEffect
         val device = currentOutput ?: return@LaunchedEffect
@@ -161,11 +172,7 @@ fun RudiMentorApp(
         }
         if (promptedOutputKey == device.key) return@LaunchedEffect
         promptedOutputKey = device.key
-        onApplyDraft(
-            SettingsDraft.from(settings).withAddedProfile(device, System.currentTimeMillis()),
-        )
-        soundCheckStartStep = SoundCheckStep.Headphones
-        screenName = Screen.SoundCheck.name
+        newOutputPrompt = device
     }
 
     // The navigation trail is the first thing a field report needs: every screen
@@ -199,7 +206,8 @@ fun RudiMentorApp(
                 onOpenAbout = { screenName = Screen.About.name },
                 onOpenDev = { screenName = Screen.Dev.name },
             )
-            Screen.Levels -> LevelsScreen(
+            Screen.Levels -> {
+            LevelsScreen(
                 course = course,
                 progress = learningProgress,
                 rank = rank,
@@ -218,6 +226,7 @@ fun RudiMentorApp(
                 onOpenSoundCheck = {
                     // Asked for by hand: walk the whole thing, whatever was measured before.
                     soundCheckStartStep = SoundCheckStep.Pad
+                    soundCheckHeadphonesOnly = false
                     screenName = Screen.SoundCheck.name
                 },
                 soundCheckDone = settings.soundCheckDone,
@@ -225,6 +234,28 @@ fun RudiMentorApp(
                 soundCheckPlateHidden = settings.soundCheckPlateHidden,
                 onHideSoundCheckPlate = onHideSoundCheckPlate,
             )
+            // Asked, not done to the player (decision 194).
+            newOutputPrompt?.let { device ->
+                NewOutputDialog(
+                    deviceName = OutputProfile.cleanName(device.name)
+                        .ifBlank { device.kind.fallbackName },
+                    onMeasure = {
+                        newOutputPrompt = null
+                        // Binding the output is what makes the answer stick: an output with no
+                        // profile of its own would be asked about again on the next map visit,
+                        // and the measurement would have nowhere to be written (decision 194).
+                        onApplyDraft(
+                            SettingsDraft.from(settings)
+                                .withAddedProfile(device, System.currentTimeMillis()),
+                        )
+                        soundCheckStartStep = SoundCheckStep.Headphones
+                        soundCheckHeadphonesOnly = true
+                        screenName = Screen.SoundCheck.name
+                    },
+                    onLater = { newOutputPrompt = null },
+                )
+            }
+            }
             Screen.LevelDetail -> {
                 val level = selectedLevelId?.let(course::level)
                 val family = selectedLevelId?.let(course::family)
@@ -428,6 +459,7 @@ fun RudiMentorApp(
                 clickSounds = clickAudible,
                 buildInfo = buildInfo,
                 startStep = soundCheckStartStep,
+                headphonesOnly = soundCheckHeadphonesOnly,
                 onNoHeadphones = {
                     // Said on the headphones step: no pair at all. The click stops sounding on
                     // this output, which is the same state the speaker branch starts in
@@ -532,4 +564,48 @@ private fun MainMenu(
             )
         }
     }
+}
+
+/**
+ * What the map asks when headphones nobody has measured are connected.
+ *
+ * The check used to simply open on its own, on its second step, with no line anywhere saying
+ * why -- and it read as the app breaking rather than as an offer. A dialog costs one tap and
+ * says the three things the player needs: which output is new, that its click delay is a fact
+ * about that pair alone, and what saying yes costs (decision 194).
+ */
+@Composable
+private fun NewOutputDialog(
+    deviceName: String,
+    onMeasure: () -> Unit,
+    onLater: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onLater,
+        containerColor = RudiColors.Surface,
+        title = {
+            Text(
+                text = stringResource(R.string.new_output_title),
+                style = RudiTextStyles.Rubric,
+                color = RudiColors.Text,
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(R.string.new_output_body, deviceName),
+                style = MaterialTheme.typography.bodyMedium,
+                color = RudiColors.Text,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onMeasure) {
+                Text(text = stringResource(R.string.new_output_measure))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onLater) {
+                Text(text = stringResource(R.string.new_output_later))
+            }
+        },
+    )
 }
