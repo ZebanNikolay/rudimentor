@@ -59,6 +59,7 @@ import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
 import com.rudimentor.app.ui.util.formatElapsed
 import com.rudimentor.app.util.DevLog
+import com.rudimentor.app.util.StallWatch
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -251,8 +252,18 @@ fun PracticeScreen(
         // judging actually used, not just the calibrated one it started from.
         var loggedBiasMs = Float.NaN
         var loggedCaptured = false
+        // Every run reports one long freeze, close to half a second, roughly a third of the
+        // way in. The poll loop is on the main thread, so a poll that comes back late by
+        // more than its own interval is the block itself, measured (decision 200).
+        val stalls = StallWatch()
+        stalls.start()
         while (true) {
             val poll = session.poll()
+            stalls.tick(atMs = positionMs, intervalMs = PracticeSession.POLL_INTERVAL_MS)
+                ?.let { line ->
+                    DevLog.log("practice", line)
+                    telemetry.value?.audioEvent(positionMs, "stall", line)
+                }
             // Clock diagnostic (decision 188): one line a second, whether the note grid and
             // the stroke grid tick at the same real rate. Never corrects anything.
             poll.clockDrift?.let { clock ->
