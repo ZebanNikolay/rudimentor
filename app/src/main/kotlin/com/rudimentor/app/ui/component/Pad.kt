@@ -17,8 +17,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
@@ -26,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.ui.theme.JetBrainsMono
-import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /** Pad shape encodes the hand: right is a rounded square, left is a circle. */
@@ -86,20 +83,11 @@ fun Pad(
     // A lit pad is a key with the lamp switched on: flat brick fill and an even halo
     // around the whole outline, never a directional drop shadow.
     val glow: Modifier = if (lit && !muted) {
-        val strength = if (tone == PadTone.Accent) 0.19f else 0.125f
         Modifier.drawBehind {
-            val side = this.size.minDimension
-            val radius = side * 1.25f
-            drawCircle(
-                brush = Brush.radialGradient(
-                    0f to RudiColors.BrickLit.copy(alpha = strength),
-                    0.42f to RudiColors.BrickLit.copy(alpha = strength * 0.7f),
-                    1f to Color.Transparent,
-                    center = this.center,
-                    radius = radius,
-                ),
-                radius = radius,
+            drawPadGlow(
                 center = this.center,
+                side = this.size.minDimension,
+                accent = tone == PadTone.Accent,
             )
         }
     } else {

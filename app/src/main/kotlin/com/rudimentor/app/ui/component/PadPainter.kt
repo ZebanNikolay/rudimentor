@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -175,6 +176,40 @@ internal fun DrawScope.drawPadFace(
         }
     }
 }
+
+/**
+ * The halo of a lit pad: an even radial glow around the whole outline, never a
+ * directional drop shadow. The [Pad] composable draws it as a `drawBehind` modifier and
+ * the practice track draws it inline for a note that was hit, so both read as the same
+ * "key with the lamp switched on" (decision 197).
+ */
+internal fun DrawScope.drawPadGlow(
+    center: Offset,
+    side: Float,
+    accent: Boolean,
+    alpha: Float = 1f,
+) {
+    if (side <= 0f) return
+    val strength = (if (accent) PAD_GLOW_ACCENT else PAD_GLOW_NORMAL) * alpha.coerceIn(0f, 1f)
+    if (strength <= 0f) return
+    val radius = side * PAD_GLOW_RADIUS_FRACTION
+    drawCircle(
+        brush = Brush.radialGradient(
+            0f to RudiColors.BrickLit.copy(alpha = strength),
+            0.42f to RudiColors.BrickLit.copy(alpha = strength * 0.7f),
+            1f to Color.Transparent,
+            center = center,
+            radius = radius,
+        ),
+        radius = radius,
+        center = center,
+    )
+}
+
+/** Halo intensities of a lit pad, at the levels approved in decision 25. */
+internal const val PAD_GLOW_ACCENT = 0.19f
+internal const val PAD_GLOW_NORMAL = 0.125f
+private const val PAD_GLOW_RADIUS_FRACTION = 1.25f
 
 /** Centre of the LED dot -- also the anchor the crown is centred on. */
 private fun ledCenter(side: Float, round: Boolean): Offset {

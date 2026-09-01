@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.rudimentor.app.data.levels.PatternHand
 import com.rudimentor.app.ui.component.PadTone
 import com.rudimentor.app.ui.component.drawPadFace
+import com.rudimentor.app.ui.component.drawPadGlow
 import com.rudimentor.app.ui.component.padPalette
 import com.rudimentor.app.ui.theme.JetBrainsMono
 import com.rudimentor.app.ui.theme.RudiColors
@@ -131,13 +132,9 @@ fun PracticeTrack(
         notes.forEach { note ->
             val x = lineX + (note.timeMs - positionMs) * pxPerMs
             if (x < -side || x > width + side) return@forEach
-            // A phase level changes its sticking mid-attempt and a subdivision switch changes
-            // its density: both are announced by a mark in front of the first note of the new
-            // block, so the switch is seen coming instead of being discovered on the hit line
-            // (decisions 141 and 146).
-            if ((note.phaseStart || note.densityStart) && note.index > 0) {
-                drawPhaseSwitch(x = x - side * PHASE_MARK_GAP, height = height)
-            }
+            // No mark in front of a new block: the brick hairline of decisions 141/146 was
+            // read on the device as one more grid line and only muddied the lane, and the
+            // switch is legible from the letters themselves (decision 196).
             val judgement = attempt.judgementAt(note.index)
             val missed = judgement?.window == HitWindow.Miss
             // A missed note drops out of the lane and fades instead of being crossed
@@ -150,33 +147,43 @@ fun PracticeTrack(
             }
             val fallY = fallProgress * fallProgress * side * 1.6f
             val alpha = if (missed) (1f - fallProgress * 0.85f).coerceAtLeast(0.15f) else 1f
-            // The note that is still coming is the one the eye needs: it wears the
-            // accent frame. A note already played drops back to the plain face and
-            // dims, so the lane ahead of the hit line always reads first
-            // (decision 115). Its result is on the dot below, not on the pad.
+            // Three looks, one per state of the stroke (decision 197, replaces 115): a note
+            // still coming wears the accent frame, a note that was hit *lights up* -- the same
+            // brick fill and halo a struck pad has on the metronome -- and a missed one keeps
+            // the plain dimmed face while it drops out of the lane. Lighting the hit is what
+            // says "that one landed" at a glance; the old dimmed face read as disabled.
             val played = judgement != null
+            val lit = played && !missed
             val tone = if (played) PadTone.Normal else PadTone.Accent
             val palette = padPalette(
                 round = note.hand == PatternHand.Left,
                 tone = tone,
-                lit = false,
+                lit = lit,
                 light = false,
             )
-            val fade = if (played && !missed) PLAYED_ALPHA else 1f
+            val faceAlpha = palette.alpha * alpha
+            if (lit) {
+                drawPadGlow(
+                    center = Offset(x, laneY),
+                    side = side,
+                    accent = false,
+                    alpha = faceAlpha,
+                )
+            }
             drawPadFace(
                 topLeft = Offset(x - side / 2f, laneY - side / 2f + fallY),
                 side = side,
                 round = note.hand == PatternHand.Left,
                 tone = tone,
                 palette = palette,
-                lit = false,
+                lit = lit,
                 strokeWidth = with(density) { 1.dp.toPx() },
                 light = false,
-                alpha = palette.alpha * alpha * fade,
+                alpha = faceAlpha,
             )
             val label = measurer.measure(
                 text = if (note.hand == PatternHand.Right) "R" else "L",
-                style = letterStyle.copy(color = palette.letter.copy(alpha = alpha * fade)),
+                style = letterStyle.copy(color = palette.letter.copy(alpha = alpha)),
             )
             drawText(
                 textLayoutResult = label,
@@ -298,20 +305,6 @@ private fun DrawScope.drawFinishLine(
             x - label.size.width / 2f,
             (top - label.size.height - height * FINISH_LABEL_GAP).coerceAtLeast(0f),
         ),
-    )
-}
-
-/**
- * Where a phase level swaps its sticking: one brick hairline across the lane, thinner and
- * shorter than the finish line so it reads as a switch and never as an end.
- */
-private fun DrawScope.drawPhaseSwitch(x: Float, height: Float) {
-    if (height <= 0f) return
-    drawLine(
-        color = RudiColors.BrickBright.copy(alpha = PHASE_MARK_ALPHA),
-        start = Offset(x, height * PHASE_TOP_FRACTION),
-        end = Offset(x, height * (1f - PHASE_TOP_FRACTION)),
-        strokeWidth = 2f,
     )
 }
 
@@ -479,9 +472,6 @@ private const val BAR_INSET_FRACTION = 0.08f
 
 private const val MISS_FALL_MS = 420f
 
-/** How far a played note steps back once its verdict is on the rail. */
-private const val PLAYED_ALPHA = 0.45f
-
 /** The finish line: how tall it stands, how heavy it is, where its label sits. */
 private const val FINISH_TOP_FRACTION = 0.18f
 private const val FINISH_LABEL_FRACTION = 0.26f
@@ -496,11 +486,6 @@ private val FINISH_STROKE = 4.dp
 private const val VERDICT_WORD_FRACTION = 0.40f
 private const val VERDICT_MS_FRACTION = 0.20f
 private const val VERDICT_TOP_OFFSET = 1.02f
-
-/** The phase switch mark: how far in front of the note it stands, how tall and how loud. */
-private const val PHASE_MARK_GAP = 0.66f
-private const val PHASE_TOP_FRACTION = 0.26f
-private const val PHASE_MARK_ALPHA = 0.55f
 
 /** Concept geometry, as fractions of the note side (44 px in the concept). */
 private const val HIT_DOT_OFFSET = 0.74f
