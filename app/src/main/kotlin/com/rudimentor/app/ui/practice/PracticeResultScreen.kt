@@ -8,13 +8,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -116,124 +117,133 @@ private fun ResultBody(
             .stageSafePadding()
             .padding(horizontal = 14.dp, vertical = 10.dp),
     ) {
-        Text(
-            text = stringResource(
-                if (result.passed) {
-                    R.string.practice_result_passed
-                } else {
-                    R.string.practice_result_failed
-                }
-            ),
-            style = RudiTextStyles.Rubric,
-            color = if (result.passed) RudiColors.BrickLit else RudiColors.Muted,
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "${family.name} · ${level.displayNumber}",
-                style = MaterialTheme.typography.titleLarge,
-                color = RudiColors.Text,
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            RudiChip(text = rank.name.uppercase(), accent = true)
-            Spacer(modifier = Modifier.width(6.dp))
-            RudiChip(text = stringResource(R.string.practice_bpm, bpm))
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            StarRow(stars = result.stars)
-            // The badges name the two top states the stars already encode, so the screen
-            // says out loud what the node will carry (decision 126).
-            if (result.fullCombo) {
-                Spacer(modifier = Modifier.width(12.dp))
-                RudiChip(text = stringResource(R.string.practice_result_full_combo), accent = true)
-            }
-            if (result.crown) {
-                Spacer(modifier = Modifier.width(6.dp))
-                RudiChip(text = stringResource(R.string.practice_result_crown), accent = true)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+        // The row of actions is laid out first and at its full height, and everything the
+        // screen reports scrolls in what is left (decision 199). Before this the whole
+        // screen was one rigid column: on a short landscape window -- and always with the
+        // advice opened -- the readings ate the height and the buttons at the bottom were
+        // squeezed to a sliver. Nothing here is allowed to squeeze the way out of the run.
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
         ) {
-            // Accuracy is the result now: one number, and under it what it was spent on
-            // (decision 125). Score and max combo are gone.
-            Metric(
-                label = stringResource(R.string.practice_result_accuracy),
-                value = stringResource(
-                    R.string.practice_result_accuracy_value,
-                    (result.accuracy * 100f).roundToInt(),
+            Text(
+                text = stringResource(
+                    if (result.passed) {
+                        R.string.practice_result_passed
+                    } else {
+                        R.string.practice_result_failed
+                    }
                 ),
-                strong = true,
+                style = RudiTextStyles.Rubric,
+                color = if (result.passed) RudiColors.BrickLit else RudiColors.Muted,
             )
-            Metric(
-                label = stringResource(R.string.practice_result_perfect),
-                value = stringResource(
-                    R.string.practice_result_count_value,
-                    result.perfect,
-                    result.noteCount,
-                ),
-            )
-            Metric(
-                label = stringResource(R.string.practice_result_good),
-                value = result.good.toString(),
-            )
-            Metric(
-                label = stringResource(R.string.practice_result_ok),
-                value = result.ok.toString(),
-            )
-            Metric(
-                label = stringResource(R.string.practice_result_misses),
-                value = result.misses.toString(),
-            )
-            Metric(
-                label = stringResource(R.string.practice_result_extras),
-                value = result.extras.toString(),
-            )
-            Metric(
-                label = stringResource(R.string.practice_result_mean),
-                value = PracticeScoring.verdictLabel(result.meanOffsetMs),
-            )
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-        Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            // A third of the width is enough for the shape of the run: the bars come out
-            // three times thinner and read the same, and the length they gave up is where
-            // the advice lives (decision 185).
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(HISTOGRAM_WIDTH_FRACTION)
-                    .fillMaxHeight(),
-            ) {
-                OffsetHistogram(
-                    offsets = result.offsets,
-                    windows = result.windows,
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "${family.name} · ${level.displayNumber}",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = RudiColors.Text,
                 )
-                HistogramScale()
+                Spacer(modifier = Modifier.width(10.dp))
+                RudiChip(text = rank.name.uppercase(), accent = true)
+                Spacer(modifier = Modifier.width(6.dp))
+                RudiChip(text = stringResource(R.string.practice_bpm, bpm))
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                if (expanded) {
-                    // Opened on purpose: the numbers behind the advice, for the run where
-                    // the one line is not believed.
-                    AdviceDetails(
-                        metrics = metrics,
-                        advice = advice,
-                        onCollapse = { expanded = false },
+
+            Spacer(modifier = Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StarRow(stars = result.stars)
+                // The badges name the two top states the stars already encode, so the screen
+                // says out loud what the node will carry (decision 126).
+                if (result.fullCombo) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    RudiChip(text = stringResource(R.string.practice_result_full_combo), accent = true)
+                }
+                if (result.crown) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    RudiChip(text = stringResource(R.string.practice_result_crown), accent = true)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                // Accuracy is the result now: one number, and under it what it was spent on
+                // (decision 125). Score and max combo are gone.
+                Metric(
+                    label = stringResource(R.string.practice_result_accuracy),
+                    value = stringResource(
+                        R.string.practice_result_accuracy_value,
+                        (result.accuracy * 100f).roundToInt(),
+                    ),
+                    strong = true,
+                )
+                Metric(
+                    label = stringResource(R.string.practice_result_perfect),
+                    value = stringResource(
+                        R.string.practice_result_count_value,
+                        result.perfect,
+                        result.noteCount,
+                    ),
+                )
+                Metric(
+                    label = stringResource(R.string.practice_result_good),
+                    value = result.good.toString(),
+                )
+                Metric(
+                    label = stringResource(R.string.practice_result_ok),
+                    value = result.ok.toString(),
+                )
+                Metric(
+                    label = stringResource(R.string.practice_result_misses),
+                    value = result.misses.toString(),
+                )
+                Metric(
+                    label = stringResource(R.string.practice_result_extras),
+                    value = result.extras.toString(),
+                )
+                Metric(
+                    label = stringResource(R.string.practice_result_mean),
+                    value = PracticeScoring.verdictLabel(result.meanOffsetMs),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                // A third of the width is enough for the shape of the run: the bars come out
+                // three times thinner and read the same, and the length they gave up is where
+                // the advice lives (decision 185). The plot has a height of its own now that
+                // the block scrolls -- there is no leftover height to fill.
+                Column(modifier = Modifier.fillMaxWidth(HISTOGRAM_WIDTH_FRACTION)) {
+                    OffsetHistogram(
+                        offsets = result.offsets,
+                        windows = result.windows,
+                        modifier = Modifier.fillMaxWidth().height(HISTOGRAM_HEIGHT),
                     )
-                } else {
-                    AdviceCard(
-                        advice = advice,
-                        metrics = metrics,
-                        onExpand = { expanded = true },
-                        onSoundCheck = onSoundCheck,
-                    )
+                    HistogramScale()
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    if (expanded) {
+                        // Opened on purpose: the numbers behind the advice, for the run where
+                        // the one line is not believed.
+                        AdviceDetails(
+                            metrics = metrics,
+                            advice = advice,
+                            onCollapse = { expanded = false },
+                        )
+                    } else {
+                        AdviceCard(
+                            advice = advice,
+                            metrics = metrics,
+                            onExpand = { expanded = true },
+                            onSoundCheck = onSoundCheck,
+                        )
+                    }
                 }
             }
         }
@@ -592,7 +602,9 @@ private fun DetailRow(label: String, value: Measured, proven: Boolean) {
     }
 }
 
-/** Height of the collapsed plot: enough to read its shape, small enough to leave room. */
+/** Height of the plot: enough to read its shape, small enough to leave room. */
+private val HISTOGRAM_HEIGHT = 116.dp
+
 /** Share of the width the plot takes, the rest going to the advice (decision 185). */
 private const val HISTOGRAM_WIDTH_FRACTION = 0.34f
 
