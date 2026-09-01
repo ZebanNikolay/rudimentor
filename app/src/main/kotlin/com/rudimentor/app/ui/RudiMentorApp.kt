@@ -185,13 +185,15 @@ fun RudiMentorApp(
     // hand the orientation back and forth between themselves.
     LandscapeStage(
         landscape = screen == Screen.Practice || screen == Screen.PracticeResult,
-        // Any round that is half a minute of playing without touching the phone: the screen
-        // timing out takes the audio streams with it (decision 158). The sound check runs the
-        // same round and was missing from this list, so the display lock killed step 2 for
-        // anybody with a short lock timeout (decision 175).
+        // Any round that is playing without touching the phone: the screen timing out takes
+        // the audio streams with it (decision 158). The sound check runs the same round and
+        // was missing from this list, so the display lock killed step 2 for anybody with a
+        // short lock timeout (decision 175). The mic lab is a round too -- it just lives on
+        // the developer screen.
         keepScreenOn = screen == Screen.Practice ||
             screen == Screen.Calibration ||
-            screen == Screen.SoundCheck,
+            screen == Screen.SoundCheck ||
+            screen == Screen.MicLab,
     )
 
     AnimatedContent(targetState = screen, label = "screen") { currentScreen ->

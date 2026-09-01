@@ -1,7 +1,6 @@
 package com.rudimentor.app.ui
 
 import android.content.pm.ActivityInfo
-import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
@@ -15,6 +14,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.rudimentor.app.ui.util.KeepScreenOn
 import com.rudimentor.app.ui.util.OnForegrounded
 
 /**
@@ -53,13 +53,7 @@ fun LandscapeStage(landscape: Boolean, keepScreenOn: Boolean) {
             .hide(WindowInsetsCompat.Type.systemBars())
     }
 
-    DisposableEffect(activity, keepScreenOn) {
-        val window = activity?.window
-        if (keepScreenOn) window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        onDispose {
-            if (keepScreenOn) window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-    }
+    KeepScreenOn(active = keepScreenOn)
 }
 
 /**
