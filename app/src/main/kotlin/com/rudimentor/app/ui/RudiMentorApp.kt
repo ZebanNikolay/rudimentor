@@ -125,6 +125,8 @@ fun RudiMentorApp(
     // The result lives for as long as the result screen does: an attempt is never
     // restored across process death, it is replayed instead.
     var practiceResult by remember { mutableStateOf<PracticeResult?>(null) }
+    /** The accuracy record as it stood before the attempt that is being judged. */
+    var practiceBestBefore by remember { mutableStateOf<Float?>(null) }
     var practiceRunId by rememberSaveable { mutableIntStateOf(0) }
     // The settings the learner is editing. It lives here and not on the settings screen
     // so that walking into the calibration screen and back does not throw it away
@@ -324,6 +326,11 @@ fun RudiMentorApp(
                                         "accuracy=${(result.accuracy * 100f).roundToInt()}% " +
                                         "stars=${result.stars} passed=${result.passed}",
                                 )
+                                // Read the record before the attempt is stored: the store
+                                // keeps the better of the two, so after the write there is
+                                // nothing left to compare against (decision 202).
+                                practiceBestBefore = learningProgress
+                                    .forLevel(level.id, practiceRank).bestAccuracy
                                 onAttemptFinished(level, practiceRank, result)
                                 // The attempt measured the round trip of this very run while
                                 // it was judging; that number goes back into the output
@@ -370,6 +377,7 @@ fun RudiMentorApp(
                         rank = practiceRank,
                         bpm = practiceBpm,
                         result = result,
+                        previousBest = practiceBestBefore,
                         onRetry = {
                             practiceRunId += 1
                             screenName = Screen.Practice.name

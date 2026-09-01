@@ -214,6 +214,11 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="practice_result_extras">Extra hits</string>
     <string name="practice_result_mean">Mean offset</string>
     <string name="practice_result_accuracy_value">%1$d%%</string>
+    <!-- The accuracy record: what it was before this run, and by how much it moved. -->
+    <string name="practice_result_best_new">NEW BEST +%1$d</string>
+    <string name="practice_result_best_was">was %1$d%%</string>
+    <string name="practice_result_best_first">FIRST RUN</string>
+    <string name="practice_result_best_kept">BEST %1$d%%</string>
     <string name="practice_result_mean_value">%1$s</string>
     <string name="practice_result_histogram_cd">Timing spread from −120 to +120 milliseconds</string>
     <string name="practice_result_next">Next level</string>

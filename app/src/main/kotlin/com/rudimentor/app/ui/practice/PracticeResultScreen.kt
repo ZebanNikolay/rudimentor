@@ -70,6 +70,8 @@ fun PracticeResultScreen(
     rank: PracticeRank,
     bpm: Int,
     result: PracticeResult,
+    /** The accuracy record of this level and rank *before* this run, if there was one. */
+    previousBest: Float?,
     onRetry: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
@@ -86,6 +88,7 @@ fun PracticeResultScreen(
         rank = rank,
         bpm = bpm,
         result = result,
+        previousBest = previousBest,
         onRetry = onRetry,
         onNextLevel = onNextLevel,
         onToMap = onToMap,
@@ -100,6 +103,7 @@ private fun ResultBody(
     rank: PracticeRank,
     bpm: Int,
     result: PracticeResult,
+    previousBest: Float?,
     onRetry: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
@@ -179,13 +183,25 @@ private fun ResultBody(
             ) {
                 // Accuracy is the result now: one number, and under it what it was spent on
                 // (decision 125). Score and max combo are gone.
+                // The record lives under the accuracy, in one line: whether the run beat
+                // it, by how much, and what it beat (decision 202). Nothing else on the
+                // screen said whether the attempt was an improvement at all.
+                val nowPercent = (result.accuracy * 100f).roundToInt()
+                val bestPercent = previousBest?.let { (it * 100f).roundToInt() }
+                val beaten = bestPercent != null && nowPercent > bestPercent
                 Metric(
                     label = stringResource(R.string.practice_result_accuracy),
-                    value = stringResource(
-                        R.string.practice_result_accuracy_value,
-                        (result.accuracy * 100f).roundToInt(),
-                    ),
+                    value = stringResource(R.string.practice_result_accuracy_value, nowPercent),
                     strong = true,
+                    note = when {
+                        bestPercent == null -> stringResource(R.string.practice_result_best_first)
+                        beaten -> stringResource(
+                            R.string.practice_result_best_new,
+                            nowPercent - bestPercent,
+                        ) + " · " + stringResource(R.string.practice_result_best_was, bestPercent)
+                        else -> stringResource(R.string.practice_result_best_kept, bestPercent)
+                    },
+                    noteAccent = beaten,
                 )
                 Metric(
                     label = stringResource(R.string.practice_result_perfect),
@@ -287,7 +303,14 @@ private fun ResultBody(
 }
 
 @Composable
-private fun Metric(label: String, value: String, strong: Boolean = false) {
+private fun Metric(
+    label: String,
+    value: String,
+    strong: Boolean = false,
+    /** One small line under the value, e.g. the record the accuracy just moved. */
+    note: String? = null,
+    noteAccent: Boolean = false,
+) {
     Column {
         Text(
             text = label,
@@ -304,6 +327,14 @@ private fun Metric(label: String, value: String, strong: Boolean = false) {
             },
             color = RudiColors.Text,
         )
+        if (note != null) {
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = note,
+                style = RudiTextStyles.Rubric,
+                color = if (noteAccent) RudiColors.BrickLit else RudiColors.Muted,
+            )
+        }
     }
 }
 
