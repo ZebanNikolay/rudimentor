@@ -173,7 +173,7 @@ private const val STICKING_GROUP = 4
 
 /**
  * A one- or two-step pattern printed as itself turns the card into `R ×64`, which nobody counts
- * that way: a drummer reads sticking in words of four, then counts the words (decision 204). So
+ * that way: a drummer reads sticking in words of four, then counts the words (decision 205). So
  * the pattern is doubled until it fills a word, which lands a single on `RRRR` and an alternating
  * pair on `RLRL`, while a triplet grows to `RLR RLL` instead of being cut across the beat.
  */

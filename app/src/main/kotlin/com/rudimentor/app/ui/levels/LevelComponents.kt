@@ -121,7 +121,7 @@ private fun StickingBlockCard(
             )
             // The multiplier sits on the pattern rather than in the line below it: it counts
             // the words just written, and a block that plays its group once states nothing
-            // at all instead of a bare `×1` (decision 204).
+            // at all instead of a bare `×1` (decision 205).
             block.repeats?.takeIf { it > 1 }?.let { repeats ->
                 Spacer(Modifier.width(10.dp))
                 Text(
@@ -146,7 +146,7 @@ private fun StickingBlockCard(
 /**
  * `128 hits · 2 per beat`, counted the way the drummer counts it. Note names (`eighth notes`)
  * said the same thing in a vocabulary that has to be translated back into hits per click, and a
- * block whose density moves reads it as the switch it is: `1→2→1 per beat` (decision 204).
+ * block whose density moves reads it as the switch it is: `1→2→1 per beat` (decision 205).
  */
 @Composable
 private fun blockSize(block: StickingBlock): String {
