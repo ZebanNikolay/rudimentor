@@ -511,8 +511,8 @@ data class LevelCatalog(
                 require(node.prerequisites.all(lessonsById::containsKey)) {
                     "${node.lessonId}: prerequisites must point at lessons of this family"
                 }
-                require(node.column == LevelColumn.Center || node.prerequisites.isNotEmpty()) {
-                    "${node.lessonId}: an optional lesson needs an entry"
+                require(node.column == LevelColumn.Center || node.prerequisites.size == 1) {
+                    "${node.lessonId}: an optional lesson has exactly one entry"
                 }
             }
 
@@ -655,21 +655,11 @@ data class LevelCatalog(
             nodes.filter { it.column != LevelColumn.Center }
                 .sortedWith(compareBy({ depths.getValue(it.lessonId) }, MapNode::lessonId))
                 .forEach { node ->
-                    // An optional lesson may wait on more than one lesson -- `TR-02` opens only
-                    // once both `TR-01` and the isolation node before it are done (decision 206).
-                    // Only one of them can be the cell it hangs off: the deepest entry that sits
-                    // on the required path or in this very column, so the connector stays short
-                    // and never crosses to the other side of the map.
-                    val anchorId = node.prerequisites
-                        .filter { id ->
-                            val entry = byId.getValue(id)
-                            entry.column == LevelColumn.Center || entry.column == node.column
-                        }
-                        .maxByOrNull { depths.getValue(it) }
-                    requireNotNull(anchorId) {
+                    val anchorId = node.prerequisites.single()
+                    val anchor = byId.getValue(anchorId)
+                    require(anchor.column == LevelColumn.Center || anchor.column == node.column) {
                         "${node.lessonId}: an optional chain must stay in its own column"
                     }
-                    val anchor = byId.getValue(anchorId)
                     val base = rows.getValue(anchorId) +
                         if (anchor.column == LevelColumn.Center) 0 else 1
                     val row = requireNotNull(freeRow(base, node.column, taken)) {

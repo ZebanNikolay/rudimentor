@@ -5314,8 +5314,7 @@
         "lessonId": "paradiddles.TR-02",
         "column": "right",
         "prerequisites": [
-          "paradiddles.PDD-05",
-          "paradiddles.TP-04"
+          "paradiddles.PDD-05"
         ]
       }
     ]

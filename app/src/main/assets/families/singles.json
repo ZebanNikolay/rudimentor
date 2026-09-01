@@ -2531,7 +2531,6 @@
         "lessonId": "singles.TR-02",
         "column": "right",
         "prerequisites": [
-          "singles.IS-02",
           "singles.TR-01"
         ]
       },

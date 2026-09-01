@@ -59,24 +59,23 @@ class LevelCatalogTest {
     }
 
     @Test
-    fun `an optional lesson may wait on several levels and hangs off the deepest one`() {
-        val catalog = catalog(
-            lessons = listOf(lesson("f.ST-01"), lesson("f.ST-02"), lesson("f.TR-01"), lesson("f.TR-02")),
-            nodes = listOf(
-                node("f.ST-01"),
-                node("f.ST-02", prerequisites = setOf("f.ST-01")),
-                node("f.TR-01", column = LevelColumn.Right, prerequisites = setOf("f.ST-01")),
-                node(
-                    "f.TR-02",
-                    column = LevelColumn.Right,
-                    prerequisites = setOf("f.ST-02", "f.TR-01"),
+    fun `an optional lesson enters the map through exactly one level`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            catalog(
+                lessons = listOf(lesson("f.ST-01"), lesson("f.ST-02"), lesson("f.EN-01")),
+                nodes = listOf(
+                    node("f.ST-01"),
+                    node("f.ST-02", prerequisites = setOf("f.ST-01")),
+                    node(
+                        "f.EN-01",
+                        column = LevelColumn.Right,
+                        prerequisites = setOf("f.ST-01", "f.ST-02"),
+                    ),
                 ),
-            ),
-        )
+            )
+        }
 
-        // `TR-01` sits beside row 0 and `ST-02` is row 1, so the deeper entry carries the cell.
-        assertEquals(0, catalog.level("f.TR-01")!!.row)
-        assertEquals(1, catalog.level("f.TR-02")!!.row)
+        assertTrue(error.message!!.contains("exactly one entry"))
     }
 
     @Test
