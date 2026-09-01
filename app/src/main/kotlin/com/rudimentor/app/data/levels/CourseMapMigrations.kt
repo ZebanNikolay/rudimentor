@@ -23,5 +23,7 @@ internal object CourseMapMigrations {
                 add(RankCompletionReset(levelId, PracticeRank.Stage))
             }
         }
+        // `Single entry v3` only drops a redundant second entry from two optional `TR-02`
+        // nodes, so nothing a player has already passed became harder: no reset.
     }
 }

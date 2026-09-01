@@ -45,4 +45,17 @@ class CourseMapMigrationsTest {
             ).isEmpty(),
         )
     }
+
+    @Test
+    fun `v3 keeps completion in both families`() {
+        listOf("singles", "paradiddles").forEach { familyId ->
+            assertTrue(
+                CourseMapMigrations.completionResets(
+                    familyId = familyId,
+                    fromVersion = 2,
+                    toVersion = 3,
+                ).isEmpty(),
+            )
+        }
+    }
 }
