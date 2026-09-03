@@ -106,8 +106,11 @@ class PracticeTelemetryTest {
         val summary = telemetry.summary()
         val lines = summary.lines()
         // The clock diagnostic adds its own line, and says so when nothing was sampled.
-        assertEquals(12, lines.size)
+        assertEquals(13, lines.size)
         assertTrue(summary.contains("clocks not sampled"))
+        // A run nobody watched the frames of says so, rather than reading as smooth
+        // (decision 206).
+        assertTrue(summary.contains("picture not reported"))
         assertTrue(lines.none { it.isBlank() })
         assertTrue(summary.contains("48000 Hz"))
         assertTrue(summary.contains("xruns 0/2"))
@@ -122,6 +125,26 @@ class PracticeTelemetryTest {
         assertTrue(summary.contains("raw no strokes"))
         assertTrue(summary.contains("self-tune not engaged"))
         assertTrue(summary.contains("refused 0 none"))
+    }
+
+    @Test
+    fun `the summary counts the frames of the run and the stalls beside them`() {
+        val telemetry = PracticeTelemetry(header = header())
+        telemetry.audioEvent(500f, "stall", "main thread blocked 180 ms")
+        telemetry.audioEvent(1_200f, "frame", "frame hitch #1: picture froze 420 ms")
+        telemetry.audioEvent(3_000f, "frames", "frames 300 · hitches 1 (over 64 ms) · worst 420 ms")
+        telemetry.finish(
+            atMs = 3_000f,
+            result = result(),
+            debouncedTotal = 0,
+            audio = audio(),
+            aborted = false,
+        )
+        val summary = telemetry.summary()
+        // The freeze the player sees and the block the loop feels are two different
+        // things, so the line carries both (decision 206).
+        assertTrue(summary.contains("picture frames 300 · hitches 1"))
+        assertTrue(summary.contains("main-thread stalls 1"))
     }
 
     @Test

@@ -145,6 +145,17 @@ class PracticeTelemetry(
     private var biasCapturedMs = Float.NaN
     private var biasSamples = 0
 
+    /**
+     * What the run looked like, as opposed to what it measured: the closing frame tally and
+     * how many main-thread stalls were caught alongside it.
+     *
+     * Six dev.55 logs carried no stall line at all while the freeze was still being
+     * reported, which only proves the poll loop kept its schedule -- so the frame counters
+     * belong in the summary a human reads first, including on a clean run (decision 206).
+     */
+    private var frameSummary: String? = null
+    private var stalls = 0
+
     private var result: PracticeResult? = null
     private var finalAudio: TelemetryAudio? = null
     private var aborted = false
@@ -301,6 +312,10 @@ class PracticeTelemetry(
      * headphones going in or out mid-attempt.
      */
     fun audioEvent(atMs: Float, kind: String, detail: String) {
+        when (kind) {
+            "frames" -> frameSummary = detail
+            "stall" -> stalls += 1
+        }
         add(
             TelemetryJson("audio")
                 .num("atMs", atMs)
@@ -538,6 +553,10 @@ class PracticeTelemetry(
             "gate ${decimal(header.micThresholdLevel, ACCURACY_DIGITS)} · " +
                 "hits ${envelopeRange(hitEnvelopes)} · " +
                 "refused $quiet ${envelopeRange(quietEnvelopes)}",
+        )
+        lines.add(
+            frameSummary?.let { "picture $it · main-thread stalls $stalls" }
+                ?: "picture not reported",
         )
         if (aborted) lines.add("ABORTED at ${ms(abortedAtMs)}")
         lines.add(clockLine())

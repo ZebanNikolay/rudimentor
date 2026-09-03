@@ -60,6 +60,7 @@ import com.rudimentor.app.ui.util.OnBackgrounded
 import com.rudimentor.app.ui.util.OnForegrounded
 import com.rudimentor.app.ui.util.formatElapsed
 import com.rudimentor.app.util.AppLog
+import com.rudimentor.app.util.FrameWatch
 import com.rudimentor.app.util.StallWatch
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -139,6 +140,9 @@ fun PracticeScreen(
     }
 
     val session = remember { PracticeSession() }
+    // One watcher per screen: every way out of an attempt reads its counters, so it
+    // cannot live inside the poll loop that only one of those ways goes through.
+    val frameWatch = remember { FrameWatch() }
     // The tempo comes from the level card, but the engine has its own range: clamp
     // once here so the track, the click and the scoring all use the same number.
     val tempo = bpm.coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
@@ -225,7 +229,10 @@ fun PracticeScreen(
     OnBackgrounded {
         if (running) {
             AppLog.trace("practice") { "backgrounded at ${positionMs.roundToInt()} ms, dropped" }
-            closeTelemetry(context, telemetry, session, attempt, positionMs, aborted = true)
+            closeTelemetry(
+                context, telemetry, session, attempt, positionMs,
+                aborted = true, frames = frameWatch.stop(),
+            )
             session.stop()
             running = false
             onExit()
@@ -262,6 +269,13 @@ fun PracticeScreen(
         // more than its own interval is the block itself, measured (decision 200).
         val stalls = StallWatch()
         stalls.start()
+        // The poll loop keeping its schedule does not mean the picture kept up: six dev.55
+        // attempt logs came back with no stall at all while the freeze was still reported,
+        // so the frames themselves are watched too (decision 206).
+        frameWatch.start(positionMs = { positionMs }) { line ->
+            AppLog.event("practice", line)
+            telemetry.value?.audioEvent(positionMs, "frame", line)
+        }
         // The click has nothing left to count once the last note is played: it kept
         // ticking through the tail, and the hand answered it with a stroke the run had
         // no note for (decision 203). The lane stops drawing bars at the finish for the
@@ -394,6 +408,7 @@ fun PracticeScreen(
                         positionMs = now,
                         aborted = false,
                         result = result,
+                        frames = frameWatch.stop(),
                     )
                     session.stop()
                     running = false
@@ -410,7 +425,10 @@ fun PracticeScreen(
     // Leaving mid-attempt drops it without a question (decision 106): the score is
     // only worth keeping once the attempt reaches the result screen.
     fun leave() {
-        closeTelemetry(context, telemetry, session, attempt, positionMs, aborted = true)
+        closeTelemetry(
+            context, telemetry, session, attempt, positionMs,
+            aborted = true, frames = frameWatch.stop(),
+        )
         session.stop()
         running = false
         onExit()
@@ -539,6 +557,7 @@ fun PracticeScreen(
                         positionMs = positionMs,
                         aborted = false,
                         result = result,
+                        frames = frameWatch.stop(),
                     )
                     session.stop()
                     running = false
@@ -641,9 +660,13 @@ private fun closeTelemetry(
     positionMs: Float,
     aborted: Boolean,
     result: PracticeResult? = null,
+    frames: String? = null,
 ) {
     val log = telemetry.value ?: return
     telemetry.value = null
+    // Written even when nothing hitched: a clean run has to be provable, otherwise the
+    // next freeze report is guesswork again (decision 206).
+    frames?.let { log.audioEvent(positionMs, "frames", it) }
     val audio = runCatching { session.streamInfo().toTelemetry() }.getOrNull()
     log.finish(
         atMs = positionMs,
