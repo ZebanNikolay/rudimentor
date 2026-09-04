@@ -416,7 +416,7 @@ class LevelCatalogTest {
     }
 
     @Test
-    fun `unison is one unsupported BeatGrid position with both hands`() {
+    fun `unison is one playable note that BeatGrid cannot hold`() {
         val unison = catalog(
             lessons = listOf(
                 lesson(
@@ -429,7 +429,7 @@ class LevelCatalogTest {
         ).levels.single()
 
         assertFalse(unison.supportsBeatGrid)
-        assertFalse(unison.playable)
+        assertTrue(unison.playable)
         assertEquals("RL", unison.pattern.single().label)
         assertThrows(IllegalArgumentException::class.java) { unison.toPracticeGrid() }
     }
@@ -457,7 +457,7 @@ class LevelCatalogTest {
         assertEquals("RL", level.pattern.first().label)
         assertEquals(PatternStep.REST_LABEL, level.pattern.last().label)
         assertFalse(level.supportsBeatGrid)
-        assertFalse(level.playable)
+        assertTrue(level.playable)
     }
 
     @Test

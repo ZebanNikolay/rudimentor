@@ -402,6 +402,8 @@ class PracticeSession(
 
         /** Range the native hit compensation accepts, in milliseconds. */
         private const val LATENCY_TRIM_MIN_MS = -100f
-        private const val LATENCY_TRIM_MAX_MS = 400f
+        // Same ceiling as the settings (AppSettings.LATENCY_MAX_MS): a lower one here
+        // silently cut a saved 500 ms Bluetooth profile down to 400 in the level.
+        private const val LATENCY_TRIM_MAX_MS = 600f
     }
 }

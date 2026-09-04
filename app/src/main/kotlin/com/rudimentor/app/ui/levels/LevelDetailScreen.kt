@@ -65,8 +65,15 @@ fun LevelDetailScreen(
     progress: LevelProgress,
     onBack: () -> Unit,
     onStartPractice: (Level, PracticeRank, Int) -> Unit,
+    /**
+     * True while a prerequisite of the level is still open at [rank]. The map disables such
+     * nodes, but the card is reached from the result screen too, so it guards the start
+     * itself instead of trusting every path in (decision 212).
+     */
+    locked: Boolean = false,
 ) {
     val target = level.target(rank)
+    val startable = level.playable && !locked
     val rankProgress = progress.forRank(rank)
     // Debug builds can read the course data behind the level they are standing on: the
     // screen itself hides the fields that explain unexpected behaviour (decision 145).
@@ -128,6 +135,9 @@ fun LevelDetailScreen(
                     if (!level.playable) {
                         Spacer(modifier = Modifier.width(8.dp))
                         LevelTag(stringResource(R.string.level_detail_preview_tag))
+                    } else if (locked) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        LevelTag(stringResource(R.string.levels_tab_locked_badge))
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
@@ -201,7 +211,7 @@ fun LevelDetailScreen(
                 }
 
                 LevelPlan(level = level, target = target)
-                LevelNotes(level = level, target = target, rankProgress = rankProgress)
+                LevelNotes(level = level, target = target, rankProgress = rankProgress, locked = locked)
 
                 if (BuildConfig.DEBUG) {
                     RudiButton(
@@ -237,13 +247,13 @@ fun LevelDetailScreen(
                 LevelPlayButton(
                     onClick = { onStartPractice(level, rank, target.bpm) },
                     contentDescription = stringResource(
-                        if (level.playable) {
-                            R.string.level_detail_start
-                        } else {
-                            R.string.level_detail_preview_only
+                        when {
+                            !level.playable -> R.string.level_detail_preview_only
+                            locked -> R.string.level_detail_locked_only
+                            else -> R.string.level_detail_start
                         },
                     ),
-                    active = level.playable,
+                    active = startable,
                 )
             }
         }
@@ -412,10 +422,12 @@ private fun LevelNotes(
     level: Level,
     target: RankTarget,
     rankProgress: RankProgress,
+    locked: Boolean,
 ) {
     val weakFocus = level.lesson.weakFocus
     val notes = buildList {
         if (!level.playable) add(stringResource(R.string.level_detail_preview_body))
+        if (locked) add(stringResource(R.string.level_detail_locked_body))
         if (weakFocus != null) {
             val hand = weakFocus.authoredWeakHand.storageName
             add(

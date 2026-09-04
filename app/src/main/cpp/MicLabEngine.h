@@ -204,12 +204,19 @@ private:
     std::atomic<int> tempoPlanSize_{0};
     // Off by default: without headphones, an audible click leaks from the
     // speaker back into the mic and the detector scores that echo as a hit
-    // (usually landing in the "red"/off bucket, since `inputLatencyFrames_`
+    // (usually landing in the "red"/off bucket, since `inputLatencyCompMillis_`
     // is uncompensated by default). There is no self-echo exclusion yet, so
     // keep this off for real scoring runs unless the tester is on headphones.
     std::atomic<bool> clickAudible_{false};
     std::atomic<bool> running_{false};
-    std::atomic<float> inputLatencyFrames_{0.0f};
+    // User-facing input compensation, kept in milliseconds and converted with the
+    // sample rate of the open stream at drain time: converting when it is set used
+    // the rate of the previous run, which on a device that reopens at another rate
+    // shifted every hit by the ratio (decision 212).
+    std::atomic<float> inputLatencyCompMillis_{0.0f};
+    // Detector sensitivity as the UI last set it; applied to the detector when the
+    // streams open, so a value pushed before start() is not lost to the default.
+    std::atomic<float> sensitivity01_{0.35f};
     // Smoothed output latency, sampled from the stream timestamps in the output
     // callback. Read by the UI thread through snapshot().
     std::atomic<float> outputLatencyMillis_{0.0f};

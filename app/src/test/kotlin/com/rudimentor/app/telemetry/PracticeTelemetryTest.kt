@@ -94,6 +94,21 @@ class PracticeTelemetryTest {
     }
 
     @Test
+    fun `the result line survives the event cap`() {
+        val telemetry = PracticeTelemetry(header = header(), maxEvents = 2)
+        repeat(5) { index -> telemetry.miss(atMs = index * 10f, noteIndex = index) }
+        telemetry.finish(
+            atMs = 3_000f,
+            result = result(),
+            debouncedTotal = 0,
+            audio = audio(),
+            aborted = false,
+        )
+        val lines = telemetry.jsonLines()
+        assertTrue(lines.any { it.contains("\"type\":\"result\"") })
+    }
+
+    @Test
     fun `the summary is a short block of readable lines`() {
         val telemetry = PracticeTelemetry(header = header())
         telemetry.finish(

@@ -1,5 +1,7 @@
 package com.rudimentor.app.ui.levels
 
+import androidx.annotation.StringRes
+import com.rudimentor.app.R
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelModifier
@@ -156,12 +158,15 @@ internal val PracticeRank.displayName: String
         PracticeRank.Stage -> "Stage"
     }
 
-/** The approved rank model: the same map is walked at one, two and four hits per beat. */
-internal val PracticeRank.hitsPerBeat: Int
-    get() = when (this) {
-        PracticeRank.Practice -> 1
-        PracticeRank.Groove -> 2
-        PracticeRank.Stage -> 4
+/**
+ * What a rank asks of the player, in words. Tempo and hits per beat are set per level in the
+ * course package and differ between lessons, so no number is quoted here (decision 212).
+ */
+internal val PracticeRank.description: Int
+    @StringRes get() = when (this) {
+        PracticeRank.Practice -> R.string.levels_rank_practice_body
+        PracticeRank.Groove -> R.string.levels_rank_groove_body
+        PracticeRank.Stage -> R.string.levels_rank_stage_body
     }
 
 private fun String.humanized(): String = replace('_', ' ')

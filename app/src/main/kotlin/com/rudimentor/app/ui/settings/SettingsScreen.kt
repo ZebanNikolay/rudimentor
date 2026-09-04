@@ -145,6 +145,9 @@ private fun OutputProfileCard(
     onCalibrate: () -> Unit,
 ) {
     var renaming by remember { mutableStateOf<OutputProfile?>(null) }
+    // Deleting throws away a measured latency that took a minute to get; one tap next to
+    // Rename should not be enough (decision 212).
+    var deleting by remember { mutableStateOf<OutputProfile?>(null) }
     val selected = draft.selectedProfile
 
     SettingsCard(title = stringResource(R.string.settings_output_card_title, selected.name)) {
@@ -166,7 +169,7 @@ private fun OutputProfileCard(
             )
             RudiButton(
                 text = stringResource(R.string.settings_output_delete),
-                onClick = { onDraftChange(draft.withoutProfile(selected.id)) },
+                onClick = { deleting = selected },
                 style = RudiButtonStyle.Secondary,
                 enabled = selected.removable,
                 modifier = Modifier.weight(1f),
@@ -284,6 +287,30 @@ private fun OutputProfileCard(
             onConfirm = { name ->
                 onDraftChange(draft.withRenamedProfile(profile.id, name))
                 renaming = null
+            },
+        )
+    }
+
+    deleting?.let { profile ->
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            containerColor = RudiColors.Surface,
+            title = { Text(text = stringResource(R.string.settings_output_delete_title)) },
+            text = { Text(text = stringResource(R.string.settings_output_delete_body, profile.name)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDraftChange(draft.withoutProfile(profile.id))
+                        deleting = null
+                    },
+                ) {
+                    Text(text = stringResource(R.string.settings_output_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleting = null }) {
+                    Text(text = stringResource(R.string.settings_cancel))
+                }
             },
         )
     }

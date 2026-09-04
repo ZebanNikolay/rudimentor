@@ -4,8 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -59,7 +57,10 @@ import com.rudimentor.app.ui.component.SettingsSliderRow
 import com.rudimentor.app.ui.component.SettingsValueRow
 import com.rudimentor.app.ui.component.SettingsWarning
 import com.rudimentor.app.ui.theme.RudiColors
+import com.rudimentor.app.ui.util.MicPermissionRequest
 import com.rudimentor.app.ui.util.OnBackgrounded
+import com.rudimentor.app.ui.util.OnForegrounded
+import com.rudimentor.app.ui.util.rememberMicPermissionRequest
 import com.rudimentor.app.util.AppLog
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -193,9 +194,12 @@ fun CalibrationScreen(
                 PackageManager.PERMISSION_GRANTED,
         )
     }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted -> micGranted = granted }
+    val micPermission = rememberMicPermissionRequest { granted -> micGranted = granted }
+    // Granted on the app's settings page while we were away: the gate has to notice.
+    OnForegrounded {
+        micGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+    }
 
     fun startEngine(clickAudible: Boolean): Boolean {
         micLab.setBpm(LatencyCalibration.CLICK_BPM)
@@ -423,9 +427,7 @@ fun CalibrationScreen(
     ) {
 
         if (!micGranted) {
-            PermissionGate(
-                onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
-            )
+            PermissionGate(request = micPermission)
             return@ToolbarScreen
         }
 
@@ -742,7 +744,7 @@ private fun CalibrationHint(
 }
 
 @Composable
-private fun PermissionGate(onRequest: () -> Unit) {
+private fun PermissionGate(request: MicPermissionRequest) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -757,8 +759,8 @@ private fun PermissionGate(onRequest: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(14.dp))
         RudiButton(
-            text = stringResource(R.string.practice_permission_button),
-            onClick = onRequest,
+            text = stringResource(request.buttonRes),
+            onClick = request.request,
         )
     }
 }

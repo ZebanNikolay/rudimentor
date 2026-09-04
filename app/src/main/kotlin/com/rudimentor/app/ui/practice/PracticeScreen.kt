@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,7 +55,9 @@ import com.rudimentor.app.ui.levels.title
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
+import com.rudimentor.app.ui.util.MicPermissionRequest
 import com.rudimentor.app.ui.util.OnForegrounded
+import com.rudimentor.app.ui.util.rememberMicPermissionRequest
 import com.rudimentor.app.ui.util.formatElapsed
 import com.rudimentor.app.util.AppLog
 import com.rudimentor.app.util.FrameWatch
@@ -132,9 +132,7 @@ fun PracticeScreen(
                 PackageManager.PERMISSION_GRANTED
         )
     }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted ->
+    val micPermission = rememberMicPermissionRequest { granted ->
         micGranted = granted
         if (!granted) AppLog.event("mic", "permission denied, nothing can be heard")
     }
@@ -202,6 +200,10 @@ fun PracticeScreen(
     var envelope by remember { mutableFloatStateOf(0f) }
     var threshold by remember { mutableFloatStateOf(0f) }
     var audioFailed by remember { mutableStateOf(false) }
+    // The stream closed under a running attempt (device change, another app taking the
+    // microphone). The engine reports it through poll().running; before decision 212 the
+    // screen never read that flag and kept drawing a run whose notes nobody could play.
+    var audioLost by remember(attempt) { mutableStateOf(false) }
 
     DisposableEffect(session) {
         onDispose { session.stop() }
@@ -286,6 +288,18 @@ fun PracticeScreen(
         var clickStopped = false
         while (true) {
             val poll = session.poll()
+            if (!poll.running) {
+                AppLog.error("practice", "audio stream closed at ${positionMs.roundToInt()} ms")
+                telemetry.value?.audioEvent(positionMs, "stream", "closed")
+                closeTelemetry(
+                    context, telemetry, session, attempt, positionMs,
+                    aborted = true, frames = frameWatch.stop(),
+                )
+                session.stop()
+                running = false
+                audioLost = true
+                return@LaunchedEffect
+            }
             stalls.tick(atMs = positionMs, intervalMs = PracticeSession.POLL_INTERVAL_MS)
                 ?.let { line ->
                     AppLog.event("practice", line)
@@ -442,7 +456,7 @@ fun PracticeScreen(
     Box(modifier = Modifier.fillMaxSize().background(RudiColors.Bg).stageSafePadding()) {
         if (!micGranted) {
             PermissionGate(
-                onRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+            request = micPermission,
                 onBack = onExit,
             )
             return@Box
@@ -530,9 +544,11 @@ fun PracticeScreen(
             )
         }
 
-        if (audioFailed) {
+        if (audioFailed || audioLost) {
             Text(
-                text = stringResource(R.string.practice_audio_failed),
+                text = stringResource(
+                    if (audioLost) R.string.practice_audio_lost else R.string.practice_audio_failed,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = RudiColors.WindowGood,
                 textAlign = TextAlign.Center,
@@ -549,7 +565,11 @@ fun PracticeScreen(
             // and a grey Play read as disabled on the device.
             accentIdle = true,
             onClick = {
-                if (running) {
+                if (running && attempt.nothingJudged) {
+                    // Stopped before the first note was judged: there is no run to review,
+                    // and a 0% result would have been written into the level's history.
+                    leave()
+                } else if (running) {
                     // Stop closes the attempt: the result screen is where the run is
                     // reviewed and the settings are tuned (decision 106).
                     val result = attempt.result()
@@ -579,6 +599,7 @@ fun PracticeScreen(
                     )
                     if (!started) AppLog.error("practice", "audio engine refused to start")
                     audioFailed = !started
+                    audioLost = false
                     running = started
                     if (started) {
                         telemetry.value = PracticeTelemetry(
@@ -621,7 +642,7 @@ fun PracticeScreen(
 }
 
 @Composable
-private fun PermissionGate(onRequest: () -> Unit, onBack: () -> Unit) {
+private fun PermissionGate(request: MicPermissionRequest, onBack: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(36.dp),
         verticalArrangement = Arrangement.Center,
@@ -636,8 +657,8 @@ private fun PermissionGate(onRequest: () -> Unit, onBack: () -> Unit) {
         Spacer(modifier = Modifier.height(18.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             RudiButton(
-                text = stringResource(R.string.practice_permission_button),
-                onClick = onRequest,
+                text = stringResource(request.buttonRes),
+                onClick = request.request,
             )
             RudiButton(
                 text = stringResource(R.string.practice_result_map),

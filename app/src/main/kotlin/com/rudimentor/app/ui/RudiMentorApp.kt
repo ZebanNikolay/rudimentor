@@ -36,6 +36,7 @@ import com.rudimentor.app.data.OutputProfile
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.LevelCourse
+import com.rudimentor.app.data.levels.LevelNodeState
 import com.rudimentor.app.data.levels.LearningProgress
 import com.rudimentor.app.data.levels.LevelsUiState
 import com.rudimentor.app.data.levels.PracticeRank
@@ -89,7 +90,7 @@ fun RudiMentorApp(
     onSelectTab: (String) -> Unit,
     onSelectRank: (PracticeRank) -> Unit,
     onApplyDraft: (SettingsDraft) -> Unit,
-    onOutputChanged: (OutputDevice) -> Unit,
+    onOutputChanged: (OutputDevice?) -> Unit,
     onAttemptFinished: (Level, PracticeRank, PracticeResult) -> Unit,
     /** Marks the sound-check node as walked, so the map stops asking for it. */
     onSoundCheckDone: () -> Unit,
@@ -113,7 +114,7 @@ fun RudiMentorApp(
         initialValue = AudioOutputMonitor.currentDevice(context),
     )
     LaunchedEffect(currentOutput) {
-        currentOutput?.let(onOutputChanged)
+        onOutputChanged(currentOutput)
     }
     val unknownOutput = currentOutput != null && settings.profileFor(currentOutput!!) == null
 
@@ -132,6 +133,13 @@ fun RudiMentorApp(
     // so that walking into the calibration screen and back does not throw it away
     // (decision 154). Null means nobody is editing anything.
     var settingsDraft by remember { mutableStateOf<SettingsDraft?>(null) }
+    // The settings screen applies every change at once (decision 166), so the draft is a
+    // mirror of the stored settings while it is open. Anything else that writes them --
+    // the output following the hardware, an attempt tuning the latency -- has to show up
+    // in that mirror too, or the screen keeps showing a profile no longer in force.
+    LaunchedEffect(settings) {
+        if (settingsDraft != null) settingsDraft = SettingsDraft.from(settings)
+    }
     // Which step the sound check opens on. A pair of headphones nobody has measured needs
     // only its own step; everything else walks the whole thing.
     var soundCheckStartStep by remember { mutableStateOf(SoundCheckStep.Pad) }
@@ -285,6 +293,9 @@ fun RudiMentorApp(
                         family = family,
                         rank = rank,
                         progress = learningProgress.forLevel(level.id),
+                        locked = course.catalog(family.id)?.let { catalog ->
+                            learningProgress.stateOf(level, catalog, rank) == LevelNodeState.Locked
+                        } ?: false,
                         onBack = { screenName = Screen.Levels.name },
                         // The level owns tempo and rank of the attempt only: the
                         // metronome grid is the user's own and is never overwritten
@@ -376,10 +387,12 @@ fun RudiMentorApp(
                         screenName = Screen.Levels.name
                     }
                 } else {
-                    // The next level is the next required one on the same map.
-                    val nextLevel = course.catalog(family.id)?.levels
-                        ?.filter { it.row > level.row && it.column.required }
-                        ?.minByOrNull(Level::row)
+                    // The next level is where the required axis of this map stands now: the
+                    // first open required level whose prerequisites are passed. Picking by row
+                    // alone offered locked levels after an optional detour (decision 212).
+                    val nextLevel = course.catalog(family.id)
+                        ?.let { learningProgress.currentLevel(it, practiceRank) }
+                        ?.takeIf { it.id != level.id }
                     PracticeResultScreen(
                         level = level,
                         family = family,
@@ -398,7 +411,14 @@ fun RudiMentorApp(
                             }
                         },
                         onToMap = { screenName = Screen.Levels.name },
-                        onSoundCheck = { screenName = Screen.SoundCheck.name },
+                        onSoundCheck = {
+                            // The full walk, whatever the headphones dialog last set: the
+                            // advice comes from a run that went wrong, and a headphones-only
+                            // walk would skip the pad step the advice is about.
+                            soundCheckStartStep = SoundCheckStep.Pad
+                            soundCheckHeadphonesOnly = false
+                            screenName = Screen.SoundCheck.name
+                        },
                     )
                 }
             }
@@ -409,31 +429,31 @@ fun RudiMentorApp(
                 onBack = { screenName = metronomeBackTargetName },
             )
             Screen.Settings -> {
-                val draft = settingsDraft
-                if (draft == null) {
-                    LaunchedEffect(Unit) {
-                        if (screen != Screen.Settings) return@LaunchedEffect
-                        AppLog.error("nav", "settings without a draft, back to the menu")
-                        screenName = Screen.Menu.name
+                // The draft does not survive process death while the screen name does: open
+                // a fresh mirror of the settings rather than bounce back to the menu.
+                val draft = settingsDraft ?: SettingsDraft.from(settings)
+                LaunchedEffect(Unit) {
+                    if (settingsDraft == null) {
+                        AppLog.event("nav", "settings without a draft, opened from settings")
+                        settingsDraft = draft
                     }
-                } else {
-                    SettingsScreen(
-                        draft = draft,
-                        currentOutput = currentOutput,
-                        buildInfo = buildInfo,
-                        // Instant apply: a switch flipped here is a switch changed, with no
-                        // Save to remember and nothing to lose on the way out (decision 166).
-                        onDraftChange = {
-                            settingsDraft = it
-                            onApplyDraft(it)
-                        },
-                        onCalibrate = { screenName = Screen.Calibration.name },
-                        onClose = {
-                            settingsDraft = null
-                            screenName = Screen.Levels.name
-                        },
-                    )
                 }
+                SettingsScreen(
+                    draft = draft,
+                    currentOutput = currentOutput,
+                    buildInfo = buildInfo,
+                    // Instant apply: a switch flipped here is a switch changed, with no
+                    // Save to remember and nothing to lose on the way out (decision 166).
+                    onDraftChange = {
+                        settingsDraft = it
+                        onApplyDraft(it)
+                    },
+                    onCalibrate = { screenName = Screen.Calibration.name },
+                    onClose = {
+                        settingsDraft = null
+                        screenName = Screen.Levels.name
+                    },
+                )
             }
             Screen.Calibration -> CalibrationScreen(
                 latencyMs = settingsDraft?.latencyMs ?: settings.inputLatencyMs,
@@ -484,6 +504,9 @@ fun RudiMentorApp(
                     // this output, which is the same state the speaker branch starts in
                     // (decision 186).
                     onApplyDraft(SettingsDraft.from(settings).withClickAudible(false))
+                },
+                onMeasureHeadphones = {
+                    onApplyDraft(SettingsDraft.from(settings).withClickAudible(true))
                 },
                 onApply = { measuredMs, measuredSkewMs, micThreshold, measuredMicMs ->
                     val applied = SettingsDraft.from(settings)

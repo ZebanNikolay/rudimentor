@@ -439,13 +439,14 @@ private fun LockedBanner(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun RankButton(rank: PracticeRank, onClick: () -> Unit) {
+    val difficultyDescription = stringResource(R.string.levels_rank_button_cd, rank.displayName)
     Text(
-        text = stringResource(R.string.levels_rank_button, rank.displayName.uppercase(), rank.hitsPerBeat),
+        text = rank.displayName.uppercase(),
         modifier = Modifier
             .border(1.dp, RudiColors.Line, RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 6.dp)
-            .semantics { contentDescription = "Difficulty: ${rank.displayName}" },
+            .semantics { contentDescription = difficultyDescription },
         style = RudiTextStyles.RowNumber,
         color = RudiColors.Muted,
         letterSpacing = 1.2.sp,
@@ -526,7 +527,9 @@ private fun RankDialog(
                             color = if (selected) RudiColors.Text else RudiColors.Muted,
                         )
                         Text(
-                            text = stringResource(R.string.levels_rank_hits, option.hitsPerBeat),
+                            // Tempo and density belong to the level, not the rank: the
+                            // card describes the step, the level card gives the numbers.
+                            text = stringResource(option.description),
                             style = RudiTextStyles.RowNumber,
                             color = RudiColors.Muted,
                         )

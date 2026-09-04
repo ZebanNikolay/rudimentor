@@ -358,6 +358,7 @@ class PracticeTelemetry(
                 .num("spreadMs", spreadMs(result.offsets))
                 .num("latencyBiasMs", result.latencyBiasMs)
                 .done(),
+            closing = true,
         )
     }
 
@@ -570,8 +571,12 @@ class PracticeTelemetry(
         return "${header.levelLabel} · ${header.rank} · ${header.bpm} bpm · $accuracy$suffix"
     }
 
-    private fun add(line: String) {
-        if (events.size >= maxEvents) {
+    /**
+     * [closing] lines are the result or abort record: they are kept even after the cap,
+     * otherwise a long run past [maxEvents] lost the one line the whole log is read for.
+     */
+    private fun add(line: String, closing: Boolean = false) {
+        if (!closing && events.size >= maxEvents) {
             dropped += 1
             return
         }

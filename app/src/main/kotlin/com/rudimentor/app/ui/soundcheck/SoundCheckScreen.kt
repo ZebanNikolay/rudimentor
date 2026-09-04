@@ -4,8 +4,6 @@ import android.Manifest
 import android.os.Build
 import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +55,8 @@ import com.rudimentor.app.ui.component.SettingsPanel
 import com.rudimentor.app.ui.component.ToolbarScreen
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.util.OnBackgrounded
+import com.rudimentor.app.ui.util.OnForegrounded
+import com.rudimentor.app.ui.util.rememberMicPermissionRequest
 import com.rudimentor.app.util.AppLog
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -154,6 +154,8 @@ fun SoundCheckScreen(
      * through a speaker the microphone hears it and counts it as a stroke (decision 186).
      */
     onNoHeadphones: () -> Unit,
+    /** The opposite answer, given later on the silent step: the click sounds on this output again. */
+    onMeasureHeadphones: () -> Unit,
     /** Called once the last step is walked, so the map can mark the node as done. */
     onFinished: () -> Unit,
     onBack: () -> Unit,
@@ -174,9 +176,16 @@ fun SoundCheckScreen(
     // strokes the microphone never heard are a loudness problem, and its step has to be in the
     // list before it can be walked to (decision 194).
     var clickOnly by remember { mutableStateOf(headphonesOnly) }
-    val steps = remember(clickSounds, noHeadphones, clickOnly) {
+    // Set on the silent step by "Measure the headphones": the click was switched off for
+    // this output by "I have no headphones", so the headphones step has to be put back into
+    // the walk here, before the setting it asks the caller to restore comes round again.
+    // Without it the step jumped to a card the list did not hold: "Step 0 of 2", no engine,
+    // a dead end (decision 212).
+    var measureHeadphones by remember { mutableStateOf(false) }
+    val clickWanted = clickSounds || measureHeadphones
+    val steps = remember(clickWanted, noHeadphones, clickOnly) {
         when {
-            !clickSounds || noHeadphones -> listOf(SoundCheckStep.Pad, SoundCheckStep.Silent)
+            !clickWanted || noHeadphones -> listOf(SoundCheckStep.Pad, SoundCheckStep.Silent)
             clickOnly ->
                 listOf(SoundCheckStep.Headphones, SoundCheckStep.FirstClick)
 
@@ -186,6 +195,12 @@ fun SoundCheckScreen(
     }
     var step by remember {
         mutableStateOf(if (startStep in steps) startStep else steps.first())
+    }
+    // The list can change under the current step (the click switched off elsewhere while
+    // the headphones card is open): fall back to the first step instead of a card the header
+    // cannot count.
+    LaunchedEffect(steps) {
+        if (step !in steps) step = steps.first()
     }
     var stage by remember { mutableStateOf(Stage.Idle) }
     var gate by remember { mutableFloatStateOf(MicThreshold.clamp(micThresholdLevel)) }
@@ -254,9 +269,12 @@ fun SoundCheckScreen(
                 PackageManager.PERMISSION_GRANTED,
         )
     }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted -> micGranted = granted }
+    val micPermission = rememberMicPermissionRequest { granted -> micGranted = granted }
+    // Granted on the app's settings page while we were away: the gate has to notice.
+    OnForegrounded {
+        micGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+    }
 
     /**
      * [compensationMs] is what the engine should take off the strokes it hears. The two
@@ -411,8 +429,8 @@ fun SoundCheckScreen(
     // earcup is being placed. The click stays silent until Start: clicks before the round were
     // read as the round itself, and the round that followed sounded like a second, unexplained
     // one (decision 190 refines 187).
-    LaunchedEffect(step, stage, micGranted, clickSounds, headphonesDone) {
-        val wanted = step == SoundCheckStep.Headphones && micGranted && clickSounds &&
+    LaunchedEffect(step, stage, micGranted, clickWanted, headphonesDone) {
+        val wanted = step == SoundCheckStep.Headphones && micGranted && clickWanted &&
             !headphonesDone && !audioFailed
         if (wanted && stage == Stage.Idle) {
             if (startEngine(clickAudible = false, aiming = true)) stage = Stage.Aim
@@ -600,8 +618,14 @@ fun SoundCheckScreen(
                 SettingsNote(text = stringResource(R.string.sound_check_permission_body))
                 SettingsGap()
                 RudiButton(
-                    text = stringResource(R.string.sound_check_permission_grant),
-                    onClick = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+                    text = stringResource(
+                        if (micPermission.settingsNeeded) {
+                            R.string.mic_permission_open_settings
+                        } else {
+                            R.string.sound_check_permission_grant
+                        },
+                    ),
+                    onClick = micPermission.request,
                 )
             }
             return@ToolbarScreen
@@ -610,7 +634,7 @@ fun SoundCheckScreen(
         Text(
             text = stringResource(
                 R.string.sound_check_step_of,
-                steps.indexOf(step) + 1,
+                (steps.indexOf(step) + 1).coerceAtLeast(1),
                 steps.size,
                 stringResource(step.titleRes),
             ),
@@ -789,6 +813,7 @@ fun SoundCheckScreen(
                         onClick = {
                             stopEngine()
                             onNoHeadphones()
+                            measureHeadphones = false
                             noHeadphones = true
                             step = SoundCheckStep.Silent
                         },
@@ -811,6 +836,8 @@ fun SoundCheckScreen(
                         text = stringResource(R.string.check_measure_headphones),
                         onClick = {
                             noHeadphones = false
+                            measureHeadphones = true
+                            onMeasureHeadphones()
                             step = SoundCheckStep.Headphones
                         },
                     )
@@ -893,6 +920,11 @@ fun SoundCheckScreen(
                                 onClick = {
                                     resetPlay()
                                     clickOnly = false
+                                    // The pad step is walked again for real: in the
+                                    // headphones-only walk it was marked done on entry and
+                                    // offered Next without a single stroke.
+                                    padDone = false
+                                    probeSeparated = true
                                     step = SoundCheckStep.Pad
                                 },
                             )

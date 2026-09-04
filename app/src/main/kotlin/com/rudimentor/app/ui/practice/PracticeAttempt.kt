@@ -25,6 +25,8 @@ data class PracticeNote(
     val phaseStart: Boolean = false,
     /** True on the first note played at a new density, so the track can mark that switch too. */
     val densityStart: Boolean = false,
+    /** True when both hands strike this note together: one sound, judged as one stroke. */
+    val unison: Boolean = false,
 )
 
 /**
@@ -76,10 +78,15 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
                 val noteMs = beatMs / hitsPerBeat
                 for (hit in 0 until hitsPerBeat) {
                     val step = steps[position % steps.size]
+                    position += 1
+                    // A rest takes its position in the sticking and its share of the beat,
+                    // but puts no note on the track: nothing to hit, nothing to judge.
+                    if (step.rest) continue
                     notes.add(
                         PracticeNote(
                             index = notes.size,
-                            // Multi-hand steps (unison) are drawn as the lead hand: one pad, one hit.
+                            // A unison step is one note struck by both hands: one pad on the
+                            // track, one sound expected, drawn on the lead hand's shape.
                             hand = if (step.hands.contains(PatternHand.Right)) {
                                 PatternHand.Right
                             } else {
@@ -91,9 +98,9 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
                             densityStart = hit == 0 &&
                                 previousHitsPerBeat != 0 &&
                                 hitsPerBeat != previousHitsPerBeat,
+                            unison = step.hands.size > 1,
                         ),
                     )
-                    position += 1
                 }
                 previousHitsPerBeat = hitsPerBeat
                 beat += 1
@@ -306,6 +313,9 @@ class PracticeAttempt(
 
     /** Index of the first note that has not been judged yet. */
     private var cursor: Int = 0
+
+    /** True until the first note has been judged: a run stopped before that has no score. */
+    val nothingJudged: Boolean get() = cursor == 0 && extrasInternal.isEmpty()
 
     /** The last judged note, so the HUD can show its verdict. */
     var lastJudged: NoteJudgement? = null

@@ -62,25 +62,27 @@ fun AboutScreen(
 ) {
     val licensesTitle = stringResource(R.string.about_licenses_title)
     var showLicenses by remember { mutableStateOf(false) }
+    var showLog by remember { mutableStateOf(false) }
+    // Off on every visit, deliberately: attaching a log is a decision about this one
+    // report, not a setting that quietly keeps sending logs from then on.
+    var attachLog by remember { mutableStateOf(false) }
+    val scroll = rememberScrollState()
+    var notice by remember { mutableStateOf<String?>(null) }
+    // Every remember above sits before the early returns: a remember that is skipped
+    // while a sub-screen is shown is forgotten by Compose, so the switch, the scroll
+    // position and the notice used to reset on the way back from the licenses.
+
     if (showLicenses) {
         LicenseTextScreen(title = licensesTitle, onBack = { showLicenses = false })
         return
     }
-
-    var showLog by remember { mutableStateOf(false) }
     if (showLog) {
         DiagnosticLogScreen(onBack = { showLog = false })
         return
     }
 
-    // Off on every visit, deliberately: attaching a log is a decision about this one
-    // report, not a setting that quietly keeps sending logs from then on.
-    var attachLog by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
-    val scroll = rememberScrollState()
-    var notice by remember { mutableStateOf<String?>(null) }
 
     val feedbackPrompt = stringResource(R.string.about_feedback_prompt)
     val noMailApp = stringResource(R.string.about_no_mail_app)

@@ -10,9 +10,11 @@
 
     <!-- Levels map -->
     <string name="levels_title">LEVELS</string>
-    <string name="levels_rank_button">%1$s ×%2$d</string>
+    <string name="levels_rank_button_cd">Difficulty: %1$s</string>
     <string name="levels_rank_dialog_title">Difficulty</string>
-    <string name="levels_rank_hits">%1$d hits per beat</string>
+    <string name="levels_rank_practice_body">Entry tempo and density</string>
+    <string name="levels_rank_groove_body">More notes on the beat</string>
+    <string name="levels_rank_stage_body">Target tempo and density</string>
     <string name="levels_rank_confirm">Choose</string>
     <string name="levels_rank_cancel">Cancel</string>
     <string name="levels_rank_art_cd">%1$s difficulty illustration</string>
@@ -59,7 +61,9 @@
     <string name="level_detail_start">Start level practice</string>
     <string name="level_detail_preview_tag">Preview</string>
     <string name="level_detail_preview_only">Practice for this level is not available yet</string>
-    <string name="level_detail_preview_body">Preview only for now: this level needs two hands on one position. Practice unlocks when the engine supports it.</string>
+    <string name="level_detail_preview_body">Preview only for now: the engine cannot play this level yet.</string>
+    <string name="level_detail_locked_only">Pass the level before this one first</string>
+    <string name="level_detail_locked_body">Locked: pass the level before this one first.</string>
     <string name="level_detail_plan">Plan</string>
     <string name="level_detail_kind_steady">Steady tempo</string>
     <string name="level_detail_kind_isolation">Weak-hand isolation</string>
@@ -128,7 +132,9 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="practice_mic_cd">Microphone level</string>
     <string name="practice_permission_body">Practice needs the microphone to hear your strokes.</string>
     <string name="practice_permission_button">Allow microphone</string>
+    <string name="mic_permission_open_settings">Open app settings</string>
     <string name="practice_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
+    <string name="practice_audio_lost">Audio stopped mid-run: the output changed or another app took the microphone. Press play to start again.</string>
 
     <!-- Settings screen -->
     <string name="settings_title">SETTINGS</string>
@@ -153,6 +159,8 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="settings_output_rename">Rename</string>
     <string name="settings_output_rename_title">Name these headphones</string>
     <string name="settings_output_delete">Delete</string>
+    <string name="settings_output_delete_title">Delete this output?</string>
+    <string name="settings_output_delete_body">%1$s and its measured latency will be removed. The next sound check on these headphones starts from scratch.</string>
     <string name="settings_output_add">Save \u201c%1$s\u201d as an output</string>
     <string name="settings_output_add_none">Connect headphones to save them as an output</string>
     <string name="settings_output_full">%1$d outputs are all there is room for. Delete one to save another.</string>
@@ -171,12 +179,12 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="calibration_spread_value">±%1$d ms</string>
     <string name="calibration_pending">—</string>
     <string name="calibration_need_more">%1$d more strokes needed.</string>
-    <string name="calibration_ready">Steady enough \u2014 apply it, or keep playing.</string>
+    <string name="calibration_ready">Steady enough \u2014 press Stop to keep it, or keep playing.</string>
     <string name="calibration_wide_spread">The strokes scatter a lot. Play more evenly, or reset and try again.</string>
     <string name="calibration_skipped">%1$d warm-up strokes ignored.</string>
     <string name="calibration_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>
     <string name="calibration_permission_body">Calibration needs the microphone to hear your strokes.</string>
-    <string name="calibration_complete">Enough strokes \u2014 apply the value, or reset.</string>
+    <string name="calibration_complete">Enough strokes \u2014 the value is stored. Reset to measure again.</string>
 
     <string name="calibration_step1_title">STEP 1 · STROKE LOUDNESS</string>
     

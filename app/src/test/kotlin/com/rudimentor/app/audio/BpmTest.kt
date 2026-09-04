@@ -26,6 +26,6 @@ class BpmTest {
     fun `the default tempo is a practice pad tempo inside the range`() {
         assertEquals(100, Bpm.DEFAULT)
         assertEquals(40, Bpm.MIN)
-        assertEquals(250, Bpm.MAX)
+        assertEquals(240, Bpm.MAX)
     }
 }

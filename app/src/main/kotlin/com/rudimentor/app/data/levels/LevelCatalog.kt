@@ -357,8 +357,8 @@ data class Level(
 
     /**
      * A beat row holds one hand per beat, so a unison step and a rest both fall outside
-     * it: such a level is previewed until the engine can play them. Every phase counts —
-     * a level is only played when all of its blocks fit one hand per note.
+     * it. Only the metronome-style [toPracticeGrid] conversion needs this; the practice
+     * track itself plays unison and rests (see [playable]).
      */
     val supportsBeatGrid: Boolean = phases.isNotEmpty() &&
         phases.all { phase -> phase.steps.isNotEmpty() && phase.steps.all { it.hands.size == 1 } }
@@ -366,9 +366,13 @@ data class Level(
     /**
      * Whether the practice engine can run this level today. Phase levels are played since
      * decision 141 and timed lessons since decision 154, which turns a duration into beats.
-     * A unison lesson still needs two hands on one position, so it stays a preview.
+     * A unison step is one note struck by both hands and a rest is a position without a
+     * note, so both fit the track (decision 212); a level only needs a stroke to judge —
+     * every block has to carry at least one — and a length in beats or minutes.
      */
-    val playable: Boolean = supportsBeatGrid && (beatCount > 0 || (durationSeconds ?: 0) > 0)
+    val playable: Boolean = phases.isNotEmpty() &&
+        phases.all { phase -> phase.steps.any { !it.rest } } &&
+        (beatCount > 0 || (durationSeconds ?: 0) > 0)
 
     fun target(rank: PracticeRank): RankTarget = rankTargets.single { it.rank == rank }
 
@@ -479,7 +483,7 @@ data class LevelCatalog(
     companion object {
         const val CURRENT_SCHEMA_VERSION = 9
         const val MIN_BPM = 40
-        const val MAX_BPM = 250
+        const val MAX_BPM = 240
 
         /**
          * Validates the package the same way `tools/validate_family.py` does, then derives

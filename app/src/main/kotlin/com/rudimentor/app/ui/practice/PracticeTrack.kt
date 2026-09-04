@@ -187,7 +187,12 @@ fun PracticeTrack(
                 alpha = faceAlpha,
             )
             val label = measurer.measure(
-                text = if (note.hand == PatternHand.Right) "R" else "L",
+                // A unison note carries both letters: both hands land on it together.
+                text = when {
+                    note.unison -> "RL"
+                    note.hand == PatternHand.Right -> "R"
+                    else -> "L"
+                },
                 style = letterStyle.copy(color = palette.letter.copy(alpha = alpha)),
             )
             drawText(

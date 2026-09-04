@@ -8,6 +8,7 @@ import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.OutputDevice
+import com.rudimentor.app.data.OutputProfile
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.SettingsRepository
 import com.rudimentor.app.data.levels.LearningProgress
@@ -133,8 +134,14 @@ class AppViewModel(
      * changes nothing -- the latency in force stays in force, and the screens say it may be
      * the wrong one.
      */
-    fun selectProfileForOutput(device: OutputDevice) = update {
-        val match = profileFor(device) ?: return@update this
+    fun selectProfileForOutput(device: OutputDevice?) = update {
+        // No private output routed means the built-in speaker: pulling the headphones out
+        // used to leave their latency in force on the speaker path (decision 212).
+        val match = if (device == null) {
+            outputProfiles.firstOrNull { it.id == OutputProfile.DEFAULT_ID }
+        } else {
+            profileFor(device)
+        } ?: return@update this
         if (match.id == selectedProfileId) this else withSelectedProfile(match.id, System.currentTimeMillis())
     }
 

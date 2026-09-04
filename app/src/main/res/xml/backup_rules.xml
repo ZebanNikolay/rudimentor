@@ -5,8 +5,10 @@
   Progress and settings are worth restoring on a new phone; the diagnostic log is not.
   It is written for the person's own report, it can name their audio hardware, and it
   has no business leaving the device on its own, so it is excluded here and in
-  data_extraction_rules.xml, and it only ever travels in a mail the person sent.
+  data_extraction_rules.xml, and it only ever travels in a mail the person sent. The
+  per-attempt practice logs under telemetry/ are the same kind of thing and stay too.
 -->
 <full-backup-content>
     <exclude domain="file" path="rudimentor-log.txt" />
+    <exclude domain="file" path="telemetry/" />
 </full-backup-content>

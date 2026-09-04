@@ -2,7 +2,9 @@ package com.rudimentor.app.audio
 
 object Bpm {
     const val MIN = 40
-    const val MAX = 250
+    // The same ceiling as the native engines (kMaxBpm): a higher value here was clamped
+    // out of sight on start, so the display and the click disagreed above 240.
+    const val MAX = 240
     const val DEFAULT = 100
 
     /** The ± buttons move in tens; a practice pad does not need finer steps. */

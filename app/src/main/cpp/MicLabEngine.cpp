@@ -126,6 +126,7 @@ void MicLabEngine::setSensitivity(float sensitivity01) {
     // sensitivity01 in [0..1]: 0 = permissive (low factor, low floor),
     // 1 = strict. Values chosen empirically for a stick on a mesh pad.
     const float clamped = std::clamp(sensitivity01, 0.0f, 1.0f);
+    sensitivity01_.store(clamped, std::memory_order_release);
     OnsetDetector::Params params = detector_.params();
     params.thresholdFactor = 1.6f + clamped * 3.5f;    // 1.6 .. 5.1
     params.thresholdFloor = 0.004f + clamped * 0.020f; // 0.004 .. 0.024
@@ -133,17 +134,19 @@ void MicLabEngine::setSensitivity(float sensitivity01) {
 }
 
 void MicLabEngine::setInputLatencyMillis(float millis) {
-    // Positive number = subtract this many frames from the reported hit
-    // frame, i.e. compensate for the microphone path. Applied at drain time.
-    const float frames = (millis / 1000.0f) * static_cast<float>(sampleRate_);
-    inputLatencyFrames_.store(frames, std::memory_order_release);
+    // Positive number = subtract this many milliseconds from the reported hit
+    // frame, i.e. compensate for the microphone path. Applied at drain time, in
+    // frames of the stream that is open then.
+    inputLatencyCompMillis_.store(millis, std::memory_order_release);
 }
 
 int MicLabEngine::drainHits(HitEvent *outHits, int maxHits) {
     if (outHits == nullptr || maxHits <= 0) {
         return 0;
     }
-    const float latencyFrames = inputLatencyFrames_.load(std::memory_order_acquire);
+    const float latencyFrames =
+            (inputLatencyCompMillis_.load(std::memory_order_acquire) / 1000.0f) *
+            static_cast<float>(sampleRate_);
     const int64_t frameZero = inputFrameZero_.load(std::memory_order_acquire);
     int copied = 0;
     uint32_t read = hitsRead_.load(std::memory_order_relaxed);
@@ -487,8 +490,9 @@ bool MicLabEngine::openStreams() {
     }
     inputStream_->setBufferSizeInFrames(inputStream_->getFramesPerBurst() * 2);
 
-    // Set a modest starting sensitivity; the UI can override.
-    setSensitivity(0.35f);
+    // Re-apply the sensitivity the UI asked for (0.35 until it did): the detector
+    // is rebuilt with the streams, and the UI sets it before start().
+    setSensitivity(sensitivity01_.load(std::memory_order_acquire));
     return true;
 }
 

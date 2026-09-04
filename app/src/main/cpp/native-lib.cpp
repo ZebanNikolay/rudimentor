@@ -178,11 +178,12 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeClockProbe(
 extern "C" JNIEXPORT void JNICALL
 Java_com_rudimentor_app_audio_NativeMicLab_nativeStreamInfo(
         JNIEnv *env, jobject, jintArray out) {
-    if (out == nullptr || env->GetArrayLength(out) < 15) {
+    constexpr jsize kStreamInfoSize = 14;
+    if (out == nullptr || env->GetArrayLength(out) < kStreamInfoSize) {
         return;
     }
     const MicLabEngine::StreamInfo s = micLab.streamInfo();
-    jint values[15];
+    jint values[kStreamInfoSize];
     values[0] = s.sampleRate;
     values[1] = s.outputBurstFrames;
     values[2] = s.outputBufferFrames;
@@ -197,7 +198,7 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeStreamInfo(
     values[11] = s.errorCount;
     values[12] = s.lastErrorCode;
     values[13] = s.running ? 1 : 0;
-    env->SetIntArrayRegion(out, 0, 14, values);
+    env->SetIntArrayRegion(out, 0, kStreamInfoSize, values);
 }
 
 // Hit / tick event layouts, packed as long triples / doubles to keep the
