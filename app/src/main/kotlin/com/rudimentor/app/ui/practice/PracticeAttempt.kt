@@ -56,6 +56,7 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
     if (bpm <= 0) return emptyList()
     val beatBpms = attemptBeatBpms(level, rank, bpm)
     val beatTimes = buildBeatTimesMs(level, rank, bpm)
+    val countIn = attemptCountInBeats(level, rank, bpm)
     val attemptPhases = level.attemptPhases(target, bpm)
     val notes = ArrayList<PracticeNote>()
     // Beats since the start of the attempt: it places the note in time and it is what the
@@ -70,7 +71,7 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
             repeat(phase.beatCount) { beatInPhase ->
                 val hitsPerBeat = target.hitsPerBeatAtBeat(beat)
                 val beatMs = 60_000f / (beatBpms.getOrNull(beat) ?: bpm)
-                val beatStartMs = beatTimes.getOrNull(PracticeScoring.COUNT_IN_BEATS + beat)
+                val beatStartMs = beatTimes.getOrNull(countIn + beat)
                     ?: return notes
                 val noteMs = beatMs / hitsPerBeat
                 for (hit in 0 until hitsPerBeat) {
@@ -132,7 +133,7 @@ fun attemptBeatBpms(level: Level, rank: PracticeRank, bpm: Int): IntArray {
 fun buildBeatTimesMs(level: Level, rank: PracticeRank, bpm: Int): FloatArray {
     val beatBpms = attemptBeatBpms(level, rank, bpm)
     if (beatBpms.isEmpty()) return FloatArray(0)
-    val countIn = PracticeScoring.COUNT_IN_BEATS
+    val countIn = PracticeScoring.countInBeats(beatBpms.first())
     val times = FloatArray(countIn + beatBpms.size)
     var timeMs = 0f
     val entryBeatMs = 60_000f / beatBpms.first()
@@ -148,6 +149,18 @@ fun buildBeatTimesMs(level: Level, rank: PracticeRank, bpm: Int): FloatArray {
 }
 
 /**
+ * How many beats this attempt counts in.
+ *
+ * The entry tempo decides it, not the level's nominal one: under a tempo ramp the run
+ * starts slower than it ends, and the count-in has to belong to the beat the first note
+ * actually sits on (decision 211).
+ */
+fun attemptCountInBeats(level: Level, rank: PracticeRank, bpm: Int): Int {
+    val entryBpm = attemptBeatBpms(level, rank, bpm).firstOrNull() ?: bpm
+    return PracticeScoring.countInBeats(entryBpm)
+}
+
+/**
  * The tempo plan the audio engine is started with: the count-in beats at the entry tempo
  * of the attempt, then every beat of the attempt. Empty for a level that plays at one
  * tempo, which the engine reads as "keep the fixed tempo".
@@ -157,7 +170,7 @@ fun buildTempoPlan(level: Level, rank: PracticeRank, bpm: Int): IntArray {
     if (target.tempoRampPlan == null) return IntArray(0)
     val beats = attemptBeatBpms(level, rank, bpm)
     if (beats.isEmpty()) return IntArray(0)
-    val countIn = IntArray(PracticeScoring.COUNT_IN_BEATS) { beats.first() }
+    val countIn = IntArray(PracticeScoring.countInBeats(beats.first())) { beats.first() }
     return countIn + beats
 }
 

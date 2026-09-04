@@ -150,6 +150,9 @@ fun PracticeScreen(
     // The beat grid of the attempt and the tempo the engine plays it at: a tempo ramp
     // changes tempo between phases, so both are per beat (decision 148).
     val beatTimesMs = remember(level.id, rank, tempo) { buildBeatTimesMs(level, rank, tempo) }
+    // How long the run counts in depends on how fast it starts (decision 211), so nothing
+    // downstream may assume four beats.
+    val countInBeats = remember(level.id, rank, tempo) { attemptCountInBeats(level, rank, tempo) }
     val tempoPlan = remember(level.id, rank, tempo) { buildTempoPlan(level, rank, tempo) }
     // Windows are a property of the note list, not of a hit: computed once, then used by
     // the attempt, the expiry check and the deviation scale alike (decision 125). Each note
@@ -180,7 +183,7 @@ fun PracticeScreen(
     // sticking cycle that floor lands in, so the HUD counts down to it and then says what it
     // is waiting for (decision 154).
     val timedFloorMs = level.durationSeconds?.let { seconds ->
-        val startMs = beatTimesMs.getOrNull(PracticeScoring.COUNT_IN_BEATS) ?: return@let null
+        val startMs = beatTimesMs.getOrNull(countInBeats) ?: return@let null
         startMs + seconds * 1000f
     }
     // The attempt cannot end before the finish line has arrived and held its glow.
@@ -481,6 +484,7 @@ fun PracticeScreen(
                 attempt = attempt,
                 positionMs = positionMs,
                 beatTimesMs = beatTimesMs,
+                countInBeats = countInBeats,
                 frame = frame,
                 finishMs = finishMs,
                 showOffsetMs = showOffsetMs,

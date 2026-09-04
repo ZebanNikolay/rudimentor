@@ -31,6 +31,27 @@ import kotlin.math.abs
  */
 class PracticeNotesTest {
     @Test
+    fun `the count-in keeps its length in seconds by changing how many beats it takes`() {
+        // The whole tempo range of the app lands between two and four seconds, so the
+        // count-in is neither a wait nor a jump scare (decision 211).
+        listOf(40, 59, 60, 119, 120, 240).forEach { bpm ->
+            val beats = PracticeScoring.countInBeats(bpm)
+            val seconds = beats * 60f / bpm
+            assertTrue("$bpm bpm counts in for $seconds s", seconds in 2f..4f)
+        }
+        // Slow counts half a bar, ordinary one bar, fast two bars.
+        assertEquals(2, PracticeScoring.countInBeats(40))
+        assertEquals(4, PracticeScoring.countInBeats(60))
+        assertEquals(8, PracticeScoring.countInBeats(120))
+
+        // And the grid the notes sit on follows: a fast level counts in for longer.
+        val level = level(lesson(hands = "RL", beatCount = 8))
+        assertEquals(8, attemptCountInBeats(level, PracticeRank.Practice, bpm = 200))
+        val notes = buildPracticeNotes(level, PracticeRank.Practice, bpm = 200)
+        assertEquals(8 * 60_000f / 200f, notes.first().timeMs, 0.01f)
+    }
+
+    @Test
     fun `a one-pattern level repeats its sticking over the whole attempt`() {
         val level = level(lesson(hands = "RL", beatCount = 8))
         val notes = buildPracticeNotes(level, PracticeRank.Practice, bpm = 60)
@@ -41,7 +62,7 @@ class PracticeNotesTest {
         assertTrue(notes.none(PracticeNote::phaseStart))
         assertTrue(notes.all { it.phaseIndex == 0 })
         // Count-in first, then an even grid of whole beats at 60 BPM.
-        assertEquals(PracticeScoring.COUNT_IN_BEATS * 1000f, notes.first().timeMs, 0.01f)
+        assertEquals(PracticeScoring.COUNT_IN_BEATS_DEFAULT * 1000f, notes.first().timeMs, 0.01f)
         assertEquals(1000f, notes[1].timeMs - notes[0].timeMs, 0.01f)
     }
 
@@ -124,7 +145,7 @@ class PracticeNotesTest {
         // The sticking runs through a switch instead of restarting on it.
         assertEquals("RRLL".repeat(notes.size / 4), notes.hands())
         // Every beat of the attempt still lands on the click, switch or not.
-        val countInMs = PracticeScoring.COUNT_IN_BEATS * 1000f
+        val countInMs = PracticeScoring.COUNT_IN_BEATS_DEFAULT * 1000f
         (0..48).forEach { beat ->
             val onBeat = notes.firstOrNull { abs(it.timeMs - (countInMs + beat * 1000f)) < 0.01f }
             assertTrue("beat $beat is not on the grid", beat == 48 || onBeat != null)
@@ -155,7 +176,7 @@ class PracticeNotesTest {
         val notes = buildPracticeNotes(level, PracticeRank.Practice, bpm = 60)
 
         assertEquals(32, notes.size)
-        val countInMs = PracticeScoring.COUNT_IN_BEATS * 1000f
+        val countInMs = PracticeScoring.COUNT_IN_BEATS_DEFAULT * 1000f
         // The first phase runs at 60 BPM: whole-second beats after the count-in.
         assertEquals(countInMs, notes[0].timeMs, 0.01f)
         assertEquals(1000f, notes[1].timeMs - notes[0].timeMs, 0.01f)
@@ -173,14 +194,14 @@ class PracticeNotesTest {
         val plan = buildTempoPlan(level, PracticeRank.Practice, bpm = 60)
 
         // Four count-in beats at the entry tempo, then a beat per beat of the attempt.
-        assertEquals(PracticeScoring.COUNT_IN_BEATS + 32, plan.size)
+        assertEquals(PracticeScoring.COUNT_IN_BEATS_DEFAULT + 32, plan.size)
         assertEquals(listOf(60, 60, 60, 60), plan.take(4))
-        assertEquals(60, plan[PracticeScoring.COUNT_IN_BEATS])
-        assertEquals(120, plan[PracticeScoring.COUNT_IN_BEATS + 8])
+        assertEquals(60, plan[PracticeScoring.COUNT_IN_BEATS_DEFAULT])
+        assertEquals(120, plan[PracticeScoring.COUNT_IN_BEATS_DEFAULT + 8])
         // Picking a faster tempo moves the whole authored shape, keeping its ratio.
         val faster = buildTempoPlan(level, PracticeRank.Practice, bpm = 90)
-        assertEquals(90, faster[PracticeScoring.COUNT_IN_BEATS])
-        assertEquals(180, faster[PracticeScoring.COUNT_IN_BEATS + 8])
+        assertEquals(90, faster[PracticeScoring.COUNT_IN_BEATS_DEFAULT])
+        assertEquals(180, faster[PracticeScoring.COUNT_IN_BEATS_DEFAULT + 8])
         // A level without a ramp needs no plan: the engine keeps its fixed tempo.
         assertEquals(0, buildTempoPlan(level(lesson(hands = "RL", beatCount = 8)), PracticeRank.Practice, bpm = 60).size)
     }
@@ -204,7 +225,7 @@ class PracticeNotesTest {
         assertEquals(notes.size, level.noteCount(level.target(PracticeRank.Practice), bpm = 60))
         assertEquals("RL".repeat(60), notes.hands())
         // The grid starts after the count-in and the last note lands on the last beat.
-        val countInMs = PracticeScoring.COUNT_IN_BEATS * 1000f
+        val countInMs = PracticeScoring.COUNT_IN_BEATS_DEFAULT * 1000f
         assertEquals(countInMs, notes.first().timeMs, 0.01f)
         assertEquals(countInMs + 119_000f, notes.last().timeMs, 0.01f)
         // A tempo that does not divide the duration evenly plays on to the end of the

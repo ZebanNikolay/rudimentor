@@ -170,7 +170,38 @@ object PracticeScoring {
      */
     const val EXTRA_CAP_SHARE = 0.02f
 
-    const val COUNT_IN_BEATS = 4
+    /**
+     * How many beats the attempt counts in before note 0, at the entry tempo of the run.
+     *
+     * A fixed four beats made the count-in six seconds long at 40 bpm and one second at
+     * 240 -- the same screen was either a wait or a jump scare (decision 211). What cannot
+     * change is the *length of the beat*: the count-in exists to hand over the pulse, so a
+     * beat that does not match the level's own would drop the player in on a grid the notes
+     * are not on. So the beat stays and their number moves, exactly the way a count-in is
+     * given live: two beats under a slow tempo, two bars under a fast one.
+     *
+     * Over the whole 40..240 bpm range this keeps the count-in between 2.0 and 4.0 seconds.
+     */
+    fun countInBeats(entryBpm: Int): Int = when {
+        entryBpm <= 0 -> COUNT_IN_BEATS_DEFAULT
+        entryBpm < COUNT_IN_SLOW_BPM -> COUNT_IN_BEATS_SLOW
+        entryBpm >= COUNT_IN_FAST_BPM -> COUNT_IN_BEATS_FAST
+        else -> COUNT_IN_BEATS_DEFAULT
+    }
+
+    /** One bar, and the fallback whenever the entry tempo is not known yet. */
+    const val COUNT_IN_BEATS_DEFAULT = 4
+
+    /** Half a bar: below this tempo four beats run past four seconds. */
+    const val COUNT_IN_BEATS_SLOW = 2
+    const val COUNT_IN_SLOW_BPM = 60
+
+    /** Two bars: from this tempo four beats are gone in under two seconds. */
+    const val COUNT_IN_BEATS_FAST = 8
+    const val COUNT_IN_FAST_BPM = 120
+
+    /** Beats per bar the count-in digits restart on: `1 2 3 4 1 2 3 4` over two bars. */
+    const val COUNT_IN_BAR = 4
 
     /**
      * Deviation scale and result histogram share one fixed range: the plots always

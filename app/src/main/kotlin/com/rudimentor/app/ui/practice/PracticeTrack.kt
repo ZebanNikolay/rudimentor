@@ -55,6 +55,7 @@ fun PracticeTrack(
     attempt: PracticeAttempt,
     positionMs: Float,
     beatTimesMs: FloatArray,
+    countInBeats: Int,
     frame: Int,
     finishMs: Float,
     modifier: Modifier = Modifier,
@@ -105,6 +106,7 @@ fun PracticeTrack(
         drawCountIn(
             positionMs = positionMs,
             beatTimesMs = beatTimesMs,
+            countInBeats = countInBeats,
             pxPerMs = pxPerMs,
             lineX = lineX,
             laneY = laneY,
@@ -423,6 +425,7 @@ private fun DrawScope.drawLane(laneY: Float, width: Float) {
 private fun DrawScope.drawCountIn(
     positionMs: Float,
     beatTimesMs: FloatArray,
+    countInBeats: Int,
     pxPerMs: Float,
     lineX: Float,
     laneY: Float,
@@ -430,14 +433,16 @@ private fun DrawScope.drawCountIn(
     measurer: TextMeasurer,
     style: TextStyle,
 ) {
-    for (beat in 0 until minOf(PracticeScoring.COUNT_IN_BEATS, beatTimesMs.size)) {
+    for (beat in 0 until minOf(countInBeats, beatTimesMs.size)) {
         val timeMs = beatTimesMs[beat]
         val x = lineX + (timeMs - positionMs) * pxPerMs
         if (x < -side || x > size.width + side) continue
         val passed = positionMs >= timeMs
         val color = if (passed) RudiColors.PadLedLit else RudiColors.Muted
         val digit = measurer.measure(
-            text = (beat + 1).toString(),
+            // Two bars of count-in are counted as two bars, not up to eight: the digit
+            // says where in the bar the beat is, and "7" says nothing (decision 211).
+            text = (beat % PracticeScoring.COUNT_IN_BAR + 1).toString(),
             style = style.copy(color = color),
         )
         val digitCenterY = laneY - side * 0.49f
