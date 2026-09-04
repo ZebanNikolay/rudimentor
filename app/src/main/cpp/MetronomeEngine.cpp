@@ -132,6 +132,10 @@ oboe::DataCallbackResult MetronomeEngine::onAudioReady(
             : oboe::DataCallbackResult::Stop;
 }
 
+bool MetronomeEngine::isRunning() const {
+    return running_.load(std::memory_order_acquire);
+}
+
 void MetronomeEngine::onErrorAfterClose(oboe::AudioStream *, oboe::Result error) {
     running_.store(false, std::memory_order_release);
     __android_log_print(ANDROID_LOG_ERROR, kLogTag, "Audio stream closed: %s",

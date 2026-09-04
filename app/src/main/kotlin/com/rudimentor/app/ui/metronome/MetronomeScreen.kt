@@ -98,6 +98,7 @@ fun MetronomeScreen(
     }
 
     val missingAudioError = stringResource(R.string.metronome_no_audio_output)
+    val lostAudioError = stringResource(R.string.metronome_audio_lost)
 
     Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
         Column(
@@ -203,6 +204,7 @@ fun MetronomeScreen(
                             bpm = settings.bpm,
                             grid = grid,
                             missingAudioError = missingAudioError,
+                            lostAudioError = lostAudioError,
                         )
                     }
                 },

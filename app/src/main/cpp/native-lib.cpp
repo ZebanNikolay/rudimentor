@@ -16,6 +16,11 @@ Java_com_rudimentor_app_audio_NativeMetronome_nativeStart(JNIEnv *, jobject) {
     return engine.start();
 }
 
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_rudimentor_app_audio_NativeMetronome_nativeIsRunning(JNIEnv *, jobject) {
+    return engine.isRunning() ? JNI_TRUE : JNI_FALSE;
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_rudimentor_app_audio_NativeMetronome_nativeStop(JNIEnv *, jobject) {
     engine.stop();

@@ -25,6 +25,8 @@ public:
     void setBpm(int bpm);
     void setSequence(const int *steps, int count);
     int64_t tickCount() const;
+    /** False once the stream is closed by an error; the UI polls it to catch a silent stop. */
+    bool isRunning() const;
 
     oboe::DataCallbackResult onAudioReady(
             oboe::AudioStream *audioStream,

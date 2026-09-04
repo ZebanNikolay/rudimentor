@@ -14,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.rudimentor.app.audio.BeatGrid
 import com.rudimentor.app.audio.Metronome
+import com.rudimentor.app.util.AppLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -71,7 +72,7 @@ class MetronomePlaybackState internal constructor(
      * The elapsed timer runs off a monotonic clock so a paused foreground or
      * a dropped delay tick cannot bleed off seconds.
      */
-    fun start(bpm: Int, grid: BeatGrid, missingAudioError: String) {
+    fun start(bpm: Int, grid: BeatGrid, missingAudioError: String, lostAudioError: String) {
         metronome.setBpm(bpm)
         metronome.setGrid(grid)
         val started = metronome.start()
@@ -87,6 +88,16 @@ class MetronomePlaybackState internal constructor(
         elapsedJob = scope.launch {
             while (true) {
                 delay(200L)
+                // The engine drops its stream when the output changes (headphones
+                // unplugged, another app grabbing audio) and cannot call back into
+                // Kotlin; without this poll the screen kept showing a playing metronome
+                // that made no sound until Stop and Start were pressed by hand.
+                if (!metronome.isRunning()) {
+                    AppLog.error("metronome", "audio stream lost mid-run")
+                    stop()
+                    errorMessage = lostAudioError
+                    return@launch
+                }
                 elapsedSeconds = ((elapsedClock() - startElapsedMillis) / 1_000L).toInt()
             }
         }

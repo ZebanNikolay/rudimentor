@@ -40,6 +40,9 @@ class Metronome(
         NativeMetronome.stop()
     }
 
+    /** Whether the engine is still clicking; false once Oboe closed the stream on an error. */
+    fun isRunning(): Boolean = NativeMetronome.isRunning()
+
     fun setBpm(bpm: Int) {
         NativeMetronome.setBpm(bpm)
     }
