@@ -147,7 +147,7 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="settings_latency_split_note">The microphone part moves your strokes back to where you played them; the rest moves the notes and the click together, so what you see and what you hear reach the line at the same moment.</string>
     <string name="settings_latency_measured">Measured by the sound check.</string>
     <string name="settings_latency_guessed">Not measured yet \u2014 run the sound check.</string>
-    <string name="settings_calibrate">Sound check…</string>
+    <string name="settings_calibrate">Calibration…</string>
     <string name="settings_output_card_title">Output: \u201c%1$s\u201d</string>
     <string name="settings_output_measured_for">MEASURED FOR THIS OUTPUT</string>
     <string name="settings_practice_title">Practice</string>
