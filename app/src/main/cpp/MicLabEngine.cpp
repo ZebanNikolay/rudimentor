@@ -16,6 +16,8 @@ constexpr double kTwoPi = 6.283185307179586;
 // matter for the mic lab; the click just needs to be short and loud.
 constexpr double kClickFrequency = 1320.0;
 constexpr double kClickAccentFrequency = 1760.0;
+// The accent marks bar starts; the course is written in four (decision 211).
+constexpr int64_t kBeatsPerBar = 4;
 }  // namespace
 
 MicLabEngine::MicLabEngine() {
@@ -116,6 +118,10 @@ void MicLabEngine::setTempoPlan(const int *bpmPerBeat, int count) {
     // The size is published last: the callback reads it first and then only
     // touches entries below it, so it never reads a half-written plan.
     tempoPlanSize_.store(size, std::memory_order_release);
+}
+
+void MicLabEngine::setCountInBeats(int beats) {
+    countInBeats_.store(std::max(beats, 0), std::memory_order_release);
 }
 
 void MicLabEngine::setClickAudible(bool audible) {
@@ -346,6 +352,14 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
     const bool audible = clickAudible_.load(std::memory_order_acquire);
     const int fixedBpm = bpm_.load(std::memory_order_acquire);
     const int planSize = tempoPlanSize_.load(std::memory_order_acquire);
+    const int64_t countIn = countInBeats_.load(std::memory_order_acquire);
+    // The accent falls on the first beat of the count-in and then on every bar
+    // start counted from the first beat after it; a count-in shorter than a bar
+    // would otherwise drag the accent off the "one" for the whole attempt.
+    const auto isAccented = [&](int64_t tick) {
+        const int64_t inBar = tick < countIn ? tick : tick - countIn;
+        return inBar % kBeatsPerBar == 0;
+    };
     // The length of a beat is decided when that beat starts, so a tempo ramp
     // switches tempo on the exact frame of the switch instead of a buffer later
     // (decision 148). Without a plan every beat is the fixed tempo.
@@ -369,7 +383,7 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
 
         float sample = 0.0f;
         if (clickFrame_ < kClickFrames && audible) {
-            const double frequency = (step_ % 4 == 1)
+            const double frequency = isAccented(step_ - 1)
                     ? kClickAccentFrequency
                     : kClickFrequency;
             const float envelope = std::exp(-7.0f * static_cast<float>(clickFrame_) /

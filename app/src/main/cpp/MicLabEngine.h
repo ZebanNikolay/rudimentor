@@ -136,6 +136,14 @@ public:
      */
     void setTempoPlan(const int *bpmPerBeat, int count);
 
+    /**
+     * How many beats at the top of the plan are count-in. The accented click
+     * marks bar starts, and the bar starts on the first beat *after* the
+     * count-in: a two-beat count-in (slow tempo, decision 211) must not shift
+     * the accent onto the third beat of every bar. Call it before start().
+     */
+    void setCountInBeats(int beats);
+
     void setClickAudible(bool audible);
     void setSensitivity(float sensitivity01);
     void setInputLatencyMillis(float millis);
@@ -202,6 +210,7 @@ private:
     // is installed while the engine is stopped.
     std::array<int, kMaxPlanBeats> tempoPlan_{};
     std::atomic<int> tempoPlanSize_{0};
+    std::atomic<int> countInBeats_{0};
     // Off by default: without headphones, an audible click leaks from the
     // speaker back into the mic and the detector scores that echo as a hit
     // (usually landing in the "red"/off bucket, since `inputLatencyCompMillis_`

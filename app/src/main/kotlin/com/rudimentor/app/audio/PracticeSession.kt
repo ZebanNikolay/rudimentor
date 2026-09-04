@@ -179,6 +179,7 @@ class PracticeSession(
         sensitivity: Float = MicLab.DEFAULT_SENSITIVITY,
         micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
         tempoPlan: IntArray = IntArray(0),
+        countInBeats: Int = 0,
     ): Boolean {
         if (running) return true
         this.bpm = bpm.coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
@@ -197,6 +198,7 @@ class PracticeSession(
         tickScratch.clear()
         native.setBpm(this.bpm)
         native.setTempoPlan(this.tempoPlan)
+        native.setCountInBeats(countInBeats.coerceAtLeast(0))
         native.setClickAudible(clickAudible)
         native.setSensitivity(sensitivity.coerceIn(0f, 1f))
         baseLatencyMs = inputLatencyMs

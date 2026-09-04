@@ -71,6 +71,11 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeSetBpm(JNIEnv *, jobject, jint 
 }
 
 extern "C" JNIEXPORT void JNICALL
+Java_com_rudimentor_app_audio_NativeMicLab_nativeSetCountInBeats(JNIEnv *, jobject, jint beats) {
+    micLab.setCountInBeats(static_cast<int>(beats));
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_com_rudimentor_app_audio_NativeMicLab_nativeSetTempoPlan(
         JNIEnv *env, jobject, jintArray bpmPerBeat) {
     if (bpmPerBeat == nullptr) {

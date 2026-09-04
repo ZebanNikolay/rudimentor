@@ -148,6 +148,9 @@ class NativeMicLab {
      */
     fun setTempoPlan(bpmPerBeat: IntArray) = nativeSetTempoPlan(bpmPerBeat)
 
+    /** Beats at the top of the plan that are count-in; the bar accent counts from after them. */
+    fun setCountInBeats(beats: Int) = nativeSetCountInBeats(beats)
+
     fun setClickAudible(audible: Boolean) = nativeSetClickAudible(audible)
     fun setSensitivity(sensitivity01: Float) = nativeSetSensitivity(sensitivity01)
     fun setInputLatencyMillis(millis: Float) = nativeSetInputLatencyMillis(millis)
@@ -237,6 +240,7 @@ class NativeMicLab {
     private external fun nativeStop()
     private external fun nativeSetBpm(bpm: Int)
     private external fun nativeSetTempoPlan(bpmPerBeat: IntArray)
+    private external fun nativeSetCountInBeats(beats: Int)
     private external fun nativeSetClickAudible(audible: Boolean)
     private external fun nativeSetSensitivity(sensitivity: Float)
     private external fun nativeSetInputLatencyMillis(millis: Float)

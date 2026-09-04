@@ -596,6 +596,7 @@ fun PracticeScreen(
                         storedMicLatencyMs = micLatencyMs,
                         micThresholdLevel = micThresholdLevel,
                         tempoPlan = tempoPlan,
+                        countInBeats = countInBeats,
                     )
                     if (!started) AppLog.error("practice", "audio engine refused to start")
                     audioFailed = !started

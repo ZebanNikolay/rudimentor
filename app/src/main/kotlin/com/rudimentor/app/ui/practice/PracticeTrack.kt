@@ -92,6 +92,7 @@ fun PracticeTrack(
             // Bars stop at the finish: the click stops there too, so a lane that kept
             // ruling out beats past the end was keeping time to nothing (decision 203).
             untilMs = finishMs,
+            countInBeats = countInBeats,
         )
         drawLane(laneY = laneY, width = width)
         drawHitLine(lineX = lineX, height = height)
@@ -338,6 +339,7 @@ private fun DrawScope.drawBarLines(
     lineX: Float,
     height: Float,
     untilMs: Float,
+    countInBeats: Int,
 ) {
     if (beatTimesMs.isEmpty()) return
     // Widths in dp, not raw pixels: a 1 px line on a ~3x density panel is a third
@@ -370,10 +372,12 @@ private fun DrawScope.drawBarLines(
         val barBeat = beat
         beat += 1
         if (x < 0f || x > size.width) continue
-        // Every fourth beat is the accented click the engine plays, so it is the
-        // one that gets the full-height, brighter bar; the plain beats stay inset
-        // so the lane still reads as a lane and not as a grid of equals.
-        val strong = barBeat % 4 == 0
+        // The accented click the engine plays gets the full-height, brighter bar;
+        // the plain beats stay inset so the lane still reads as a lane and not as
+        // a grid of equals. Bars are counted from the first beat after the
+        // count-in, the same way the engine places its accent (decision 211).
+        val inBar = if (barBeat < countInBeats) barBeat else barBeat - countInBeats
+        val strong = inBar % PracticeScoring.COUNT_IN_BAR == 0
         val inset = if (strong) 0f else height * BAR_INSET_FRACTION
         drawLine(
             color = if (strong) RudiColors.TrackBarStrong else RudiColors.TrackBar,
