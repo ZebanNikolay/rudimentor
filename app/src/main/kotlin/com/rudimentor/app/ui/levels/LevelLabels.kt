@@ -101,6 +101,16 @@ internal data class StickingBlock(
     val beats: Int,
     /** The reading group of the block, grouped for reading: `RLRL RLRL`. */
     val sticking: String,
+    /**
+     * The same reading group as steps rather than letters: `[[R, L, R, L], [R, L, R, L]]`,
+     * one entry per stroke, a rest as [PatternStep.REST_LABEL], and both hands of a unison
+     * stroke as one two-letter entry.
+     *
+     * [sticking] cannot say that: a unison step and two single steps are both `RL` there,
+     * so every unison lesson read exactly like the singles lesson next to it (decision 216).
+     * The map renders from this instead.
+     */
+    val groups: List<List<String>>,
     val notes: Int,
     /** How many times the reading group runs inside the block; null when it does not divide evenly. */
     val repeats: Int?,
@@ -126,12 +136,12 @@ internal fun Level.stickingBlocks(target: RankTarget): List<StickingBlock> {
         }
         val hitsPerBeat = densities.singleOrNull()
         val group = readingGroup(phase.steps.map { it.label })
+        val chunks = group.chunked(readingStride(group.size, hitsPerBeat))
         blocks += StickingBlock(
             index = phase.index,
             beats = phase.beatCount,
-            sticking = group
-                .chunked(readingStride(group.size, hitsPerBeat))
-                .joinToString(" ") { chunk -> chunk.joinToString("") },
+            sticking = chunks.joinToString(" ") { chunk -> chunk.joinToString("") },
+            groups = chunks,
             notes = notes,
             repeats = notes.takeIf { it > 0 && it % group.size == 0 }?.div(group.size),
             hitsPerBeat = hitsPerBeat,

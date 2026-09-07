@@ -98,6 +98,27 @@ class LevelLabelsTest {
     }
 
     @Test
+    fun `a unison step stays one step of the reading group`() {
+        val lesson = lesson("singles.ST-01").copy(
+            pattern = Pattern(
+                mode = PatternMode.Repeat,
+                steps = listOf(
+                    PatternStep(hands = setOf(PatternHand.Right, PatternHand.Left)),
+                    PatternStep(hands = setOf(PatternHand.Right, PatternHand.Left)),
+                    PatternStep(hands = emptySet()),
+                    PatternStep(hands = emptySet()),
+                ),
+            ),
+        )
+
+        val block = level(lesson).stickingBlocks(level(lesson).target(PracticeRank.Practice)).single()
+
+        // Four steps, not six letters: the map has to be able to draw both hands of a
+        // unison stroke as one stroke (decision 216).
+        assertEquals(listOf(listOf("RL", "RL", "\u2013", "\u2013")), block.groups)
+    }
+
+    @Test
     fun `a one-pattern level is one sticking block sized at the rank`() {
         val level = level(lesson("singles.ST-01"))
 
