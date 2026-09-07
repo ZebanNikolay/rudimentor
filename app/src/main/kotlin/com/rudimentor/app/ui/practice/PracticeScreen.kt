@@ -382,6 +382,7 @@ fun PracticeScreen(
                         envelope = hit.envelope,
                         threshold = hit.threshold,
                         peak = poll.peak,
+                        diagnostics = hit.diagnostics,
                         // An extra stroke carries no note of its own, so its distance to
                         // the nearest one is computed here (decision 154).
                         extraOffsetMs = if (outcome is HitOutcome.Extra) {
@@ -417,6 +418,7 @@ fun PracticeScreen(
                         envelope = hit.envelope,
                         threshold = hit.threshold,
                         gate = micThresholdLevel,
+                        diagnostics = hit.diagnostics,
                     )
                 }
                 attempt.expireMissedNotes(judgeNowMs).forEach { index ->
@@ -789,4 +791,3 @@ private const val FINISH_HOLD_MS = 450f
 
 /** Corner kept free for the floating transport button: its size plus its margin. */
 private val TRANSPORT_RESERVE = 82.dp
-

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstring>
 
-void OnsetDetector::reset(int32_t /*sampleRate*/) {
+void OnsetDetector::reset(int32_t sampleRate) {
     hpPrevIn_ = 0.0f;
     hpPrevOut_ = 0.0f;
     envelope_ = 0.0f;
@@ -17,6 +17,12 @@ void OnsetDetector::reset(int32_t /*sampleRate*/) {
     settled_ = true;
     settleThreshold_ = 0.0f;
     postHitFloor_ = 0.0f;
+    candidateDiagnostics_ = {};
+    diagnosticSampleRate_ = sampleRate;
+    committedSequence_ = 0;
+    previousCommittedPeakFrame_ = 0;
+    previousCommittedPeakEnvelope_ = -1.0f;
+    minimumEnvelopeBeforeArm_ = 0.0f;
     medianHead_ = 0;
     medianSize_ = 0;
     std::memset(medianRing_, 0, sizeof(medianRing_));
@@ -98,6 +104,13 @@ int OnsetDetector::process(const float *samples, int32_t numFrames, int64_t star
 
         const int64_t frame = startFrame + i;
 
+        if (rising_) {
+            candidateDiagnostics_.candidateSignalPeak =
+                    std::max(candidateDiagnostics_.candidateSignalPeak, rectified);
+        } else {
+            minimumEnvelopeBeforeArm_ = std::min(minimumEnvelopeBeforeArm_, prevEnvelope_);
+        }
+
         if (refractory_ > 0) {
             --refractory_;
             prevEnvelope_ = envelope_;
@@ -133,15 +146,42 @@ int OnsetDetector::process(const float *samples, int32_t numFrames, int64_t star
                 peakEnvelope_ = envelope_;
                 peakThreshold_ = effectiveThreshold;
                 peakFrame_ = frame;
+                candidateDiagnostics_ = {};
+                candidateDiagnostics_.sampleRate = diagnosticSampleRate_;
+                candidateDiagnostics_.armFrame = frame;
+                candidateDiagnostics_.preArmEnvelope = prevEnvelope_;
+                candidateDiagnostics_.armEnvelope = envelope_;
+                candidateDiagnostics_.minimumEnvelopeBeforeArm = minimumEnvelopeBeforeArm_;
+                candidateDiagnostics_.candidateSignalPeak = rectified;
+                candidateDiagnostics_.adaptiveThresholdAtArm = threshold;
+                candidateDiagnostics_.postHitFloorAtArm = postHitFloor_;
+                candidateDiagnostics_.effectiveThresholdAtPeak = effectiveThreshold;
+                candidateDiagnostics_.thresholdFactorAtArm = params_.thresholdFactor;
+                candidateDiagnostics_.thresholdFloorAtArm = params_.thresholdFloor;
+                candidateDiagnostics_.medianWindowAtArm = params_.medianWindow;
+                candidateDiagnostics_.refractoryFramesAtArm = params_.refractoryFrames;
             }
         } else {
             if (envelope_ >= peakEnvelope_) {
                 peakEnvelope_ = envelope_;
                 peakFrame_ = frame;
+                candidateDiagnostics_.effectiveThresholdAtPeak = effectiveThreshold;
             } else if (envelope_ < peakEnvelope_ * 0.85f) {
                 // Envelope decayed enough to call the peak done.
+                candidateDiagnostics_.peakFrame = peakFrame_;
+                candidateDiagnostics_.commitFrame = frame;
+                candidateDiagnostics_.commitEnvelope = envelope_;
+                candidateDiagnostics_.effectiveThresholdAtCommit = effectiveThreshold;
+                candidateDiagnostics_.previousPeakGapFrames = committedSequence_ == 0
+                        ? -1 : peakFrame_ - previousCommittedPeakFrame_;
+                candidateDiagnostics_.previousPeakEnvelope = previousCommittedPeakEnvelope_;
+                candidateDiagnostics_.sequence = ++committedSequence_;
+                previousCommittedPeakFrame_ = peakFrame_;
+                previousCommittedPeakEnvelope_ = peakEnvelope_;
+                minimumEnvelopeBeforeArm_ = envelope_;
                 if (emitted < outCapacity) {
-                    out[emitted++] = Onset{peakFrame_, peakEnvelope_, peakThreshold_};
+                    out[emitted++] = Onset{
+                            peakFrame_, peakEnvelope_, peakThreshold_, candidateDiagnostics_};
                 }
                 rising_ = false;
                 refractory_ = params_.refractoryFrames;

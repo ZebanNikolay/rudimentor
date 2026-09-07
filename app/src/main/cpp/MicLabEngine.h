@@ -32,6 +32,7 @@ public:
         int64_t frame;
         float envelope;
         float threshold;
+        OnsetDetector::Diagnostics diagnostics{};
     };
 
     struct TickEvent {

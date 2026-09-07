@@ -5,6 +5,7 @@
 
 #include "MetronomeEngine.h"
 #include "MicLabEngine.h"
+#include "OnsetWire.h"
 
 namespace {
 MetronomeEngine engine;
@@ -211,9 +212,8 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeStreamInfo(
     env->SetIntArrayRegion(out, 0, kStreamInfoSize, values);
 }
 
-// Hit / tick event layouts, packed as long triples / doubles to keep the
-// number of JNI round-trips tiny. Each hit needs (frame, envelope*1e6,
-// threshold*1e6); each tick needs (frame, index).
+// Hit layout is versioned in OnsetWire.h: corrected frame, envelope*1e6,
+// ARM threshold*1e6, then raw candidate evidence. Ticks stay (frame, index).
 extern "C" JNIEXPORT jint JNICALL
 Java_com_rudimentor_app_audio_NativeMicLab_nativeDrainHits(
         JNIEnv *env, jobject, jlongArray out) {
@@ -221,21 +221,21 @@ Java_com_rudimentor_app_audio_NativeMicLab_nativeDrainHits(
         return 0;
     }
     const jsize capacity = env->GetArrayLength(out);
-    const int slots = capacity / 3;
+    const int slots = capacity / OnsetWire::kStride;
     if (slots <= 0) {
         return 0;
     }
     MicLabEngine::HitEvent buffer[MicLabEngine::kEventCapacity];
     const int copied = micLab.drainHits(buffer,
                                         std::min(slots, MicLabEngine::kEventCapacity));
-    std::vector<jlong> packed(static_cast<size_t>(copied) * 3);
+    std::vector<jlong> packed(static_cast<size_t>(copied) * OnsetWire::kStride);
     for (int i = 0; i < copied; ++i) {
-        packed[i * 3 + 0] = buffer[i].frame;
-        packed[i * 3 + 1] = static_cast<jlong>(buffer[i].envelope * 1.0e6f);
-        packed[i * 3 + 2] = static_cast<jlong>(buffer[i].threshold * 1.0e6f);
+        OnsetWire::pack(packed.data() + i * OnsetWire::kStride,
+                       buffer[i].frame, buffer[i].envelope, buffer[i].threshold,
+                       buffer[i].diagnostics);
     }
     if (copied > 0) {
-        env->SetLongArrayRegion(out, 0, copied * 3, packed.data());
+        env->SetLongArrayRegion(out, 0, copied * OnsetWire::kStride, packed.data());
     }
     return copied;
 }

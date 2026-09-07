@@ -106,6 +106,7 @@ class NativeMicLab {
         val frame: Long,
         val envelope: Float,
         val threshold: Float,
+        val diagnostics: OnsetDiagnostics? = null,
     )
 
     /** Tick event drained from the native ring buffer. */
@@ -132,7 +133,7 @@ class NativeMicLab {
     private val snapshotBuffer = IntArray(15)
     private val clockBuffer = LongArray(6)
     private val streamInfoBuffer = IntArray(14)
-    private val hitBuffer = LongArray(HIT_DRAIN_CAPACITY * 3)
+    private val hitBuffer = LongArray(HIT_DRAIN_CAPACITY * OnsetHitWire.STRIDE)
     private val tickBuffer = LongArray(TICK_DRAIN_CAPACITY * 2)
 
     fun start(): Boolean = nativeStart()
@@ -214,13 +215,7 @@ class NativeMicLab {
     fun drainHits(out: MutableList<HitEvent>) {
         val copied = nativeDrainHits(hitBuffer)
         for (i in 0 until copied) {
-            out.add(
-                HitEvent(
-                    frame = hitBuffer[i * 3],
-                    envelope = hitBuffer[i * 3 + 1] / 1_000_000f,
-                    threshold = hitBuffer[i * 3 + 2] / 1_000_000f,
-                )
-            )
+            out.add(OnsetHitWire.decode(hitBuffer, i * OnsetHitWire.STRIDE))
         }
     }
 

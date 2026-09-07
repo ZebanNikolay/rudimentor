@@ -42,6 +42,12 @@ internal class TelemetryJson(type: String) {
         return this
     }
 
+    fun long(key: String, value: Long?): TelemetryJson {
+        key(key)
+        out.append(value?.toString() ?: "null")
+        return this
+    }
+
     fun bool(key: String, value: Boolean): TelemetryJson {
         key(key)
         out.append(value)

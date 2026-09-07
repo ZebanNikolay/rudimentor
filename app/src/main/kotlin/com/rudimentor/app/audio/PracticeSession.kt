@@ -27,6 +27,7 @@ class PracticeSession(
         val positionMs: Float,
         val envelope: Float,
         val threshold: Float,
+        val diagnostics: OnsetDiagnostics? = null,
     )
 
     /** Everything one poll produced. */
@@ -45,7 +46,7 @@ class PracticeSession(
         val quietHits: List<Hit> = emptyList(),
         val envelope: Float,
         val threshold: Float,
-        /** Loudest envelope value the detector has seen since the last reset. */
+        /** Max abs(highpass) in the latest input callback, not the peak of any hit. */
         val peak: Float,
         val running: Boolean,
         /**
@@ -348,6 +349,7 @@ class PracticeSession(
                 positionMs = (hit.frame - anchor) / framesPerMs,
                 envelope = hit.envelope,
                 threshold = hit.threshold,
+                diagnostics = hit.diagnostics,
             )
             if (MicThreshold.passes(hit.envelope, micThresholdLevel)) {
                 hitPositions.add(entry)

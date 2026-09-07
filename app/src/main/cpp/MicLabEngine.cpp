@@ -258,7 +258,8 @@ MicLabEngine::StreamInfo MicLabEngine::streamInfo() const {
 
 void MicLabEngine::publishHit(const OnsetDetector::Onset &onset) {
     const uint32_t write = hitsWrite_.load(std::memory_order_relaxed);
-    hits_[write % kEventCapacity] = HitEvent{onset.frame, onset.envelope, onset.threshold};
+    hits_[write % kEventCapacity] = HitEvent{
+            onset.frame, onset.envelope, onset.threshold, onset.diagnostics};
     hitsWrite_.store(write + 1, std::memory_order_release);
 }
 

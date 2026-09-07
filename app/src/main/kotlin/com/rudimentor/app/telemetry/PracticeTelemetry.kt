@@ -1,5 +1,6 @@
 package com.rudimentor.app.telemetry
 
+import com.rudimentor.app.audio.OnsetDiagnostics
 import com.rudimentor.app.audio.StreamClockDrift
 import com.rudimentor.app.ui.practice.HitOutcome
 import com.rudimentor.app.ui.practice.PracticeResult
@@ -175,6 +176,7 @@ class PracticeTelemetry(
          * (decision 154). NaN when there was no note to compare against.
          */
         extraOffsetMs: Float = Float.NaN,
+        diagnostics: OnsetDiagnostics? = null,
     ) {
         hitEnvelopes.add(envelope)
         val json = TelemetryJson("hit")
@@ -182,6 +184,8 @@ class PracticeTelemetry(
             .num("env", envelope, ENVELOPE_DIGITS)
             .num("thr", threshold, ENVELOPE_DIGITS)
             .num("peak", peak, ENVELOPE_DIGITS)
+            .num("pollPeak", peak, ENVELOPE_DIGITS)
+            .onset(diagnostics)
         when (outcome) {
             is HitOutcome.Judged -> {
                 judged += 1
@@ -283,7 +287,13 @@ class PracticeTelemetry(
      * The dev.37 log had no such line, so room noise at envelope 0.012 was
      * indistinguishable from playing and was scored as it (decision 158).
      */
-    fun quiet(atMs: Float, envelope: Float, threshold: Float, gate: Float) {
+    fun quiet(
+        atMs: Float,
+        envelope: Float,
+        threshold: Float,
+        gate: Float,
+        diagnostics: OnsetDiagnostics? = null,
+    ) {
         quiet += 1
         quietEnvelopes.add(envelope)
         add(
@@ -292,6 +302,7 @@ class PracticeTelemetry(
                 .num("env", envelope, LEVEL_DIGITS)
                 .num("thr", threshold, LEVEL_DIGITS)
                 .num("gate", gate, LEVEL_DIGITS)
+                .onset(diagnostics)
                 .done(),
         )
     }
@@ -585,6 +596,8 @@ class PracticeTelemetry(
 
     private fun sessionLine(): String {
         val json = TelemetryJson("session")
+            .int("onsetDiagnosticsVersion", OnsetDiagnostics.VERSION)
+            .text("onsetDetector", OnsetDiagnostics.DETECTOR)
             .text("startedAt", header.startedAt)
             .text("device", header.device)
             .text("android", header.androidVersion)
@@ -608,6 +621,7 @@ class PracticeTelemetry(
     }
 
     private fun attemptLine(): String = TelemetryJson("attempt")
+        .int("onsetDiagnosticsVersion", OnsetDiagnostics.VERSION)
         .text("level", header.levelId)
         .text("levelLabel", header.levelLabel)
         .text("family", header.family)

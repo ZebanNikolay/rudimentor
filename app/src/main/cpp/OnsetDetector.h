@@ -14,7 +14,7 @@
  * Pipeline (Bello onset-tutorial recipe for percussive signals):
  *   1. One-pole high-pass to remove DC / low-frequency rumble.
  *   2. Fast attack, slow release envelope follower.
- *   3. Peak pick against `median * factor + floor`, with a refractory window
+ *   3. Peak pick against `max(median * factor, floor, postHitFloor)`, with a refractory window
  *      that stops a single transient from producing multiple onsets.
  *
  * All parameters are compile-time constants for now; the mic-lab UI exposes
@@ -66,10 +66,37 @@ public:
         float highpassCoeff = 0.997f;    // ~25 Hz @ 48 kHz
     };
 
+    // Observations only: never read by the detector's decision path. Frames are
+    // raw input frames, unaffected by stream re-anchoring or latency compensation.
+    struct Diagnostics {
+        static constexpr int kVersion = 1;
+        int64_t sequence = 0; // commits since reset, including output-capacity drops
+        int64_t armFrame = 0;
+        int64_t peakFrame = 0;
+        int64_t commitFrame = 0;
+        int64_t previousPeakGapFrames = -1; // no previous commit after reset
+        float previousPeakEnvelope = -1.0f;
+        float preArmEnvelope = 0.0f;
+        float armEnvelope = 0.0f;
+        float minimumEnvelopeBeforeArm = 0.0f; // since preceding commit/reset, excludes ARM
+        float commitEnvelope = 0.0f;
+        float candidateSignalPeak = 0.0f; // max abs(highpass), ARM..COMMIT inclusive
+        float adaptiveThresholdAtArm = 0.0f;
+        float postHitFloorAtArm = 0.0f;
+        float effectiveThresholdAtPeak = 0.0f;
+        float effectiveThresholdAtCommit = 0.0f;
+        float thresholdFactorAtArm = 0.0f;
+        float thresholdFloorAtArm = 0.0f;
+        int32_t medianWindowAtArm = 0;
+        int32_t refractoryFramesAtArm = 0;
+        int32_t sampleRate = 0;
+    };
+
     struct Onset {
         int64_t frame;    // absolute input frame index
         float envelope;   // envelope value at the peak
-        float threshold;  // adaptive threshold at the peak
+        float threshold;  // effective threshold latched at ARM (not at the peak)
+        Diagnostics diagnostics{};
     };
 
     void reset(int32_t sampleRate);
@@ -122,6 +149,13 @@ private:
     bool settled_ = true;
     float settleThreshold_ = 0.0f;
     float postHitFloor_ = 0.0f;
+
+    Diagnostics candidateDiagnostics_{};
+    int32_t diagnosticSampleRate_ = 0;
+    int64_t committedSequence_ = 0;
+    int64_t previousCommittedPeakFrame_ = 0;
+    float previousCommittedPeakEnvelope_ = -1.0f;
+    float minimumEnvelopeBeforeArm_ = 0.0f;
 
     std::atomic<float> lastEnvelope_{0.0f};
     std::atomic<float> lastThreshold_{0.0f};
