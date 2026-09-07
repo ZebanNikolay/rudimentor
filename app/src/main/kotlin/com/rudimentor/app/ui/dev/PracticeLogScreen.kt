@@ -107,10 +107,11 @@ fun PracticeLogScreen(onBack: () -> Unit) {
                             notice = "Summary copied."
                         },
                         onCopyAll = {
-                            clipboard.setText(
-                                AnnotatedString(PracticeLogStore.combinedText(entry)),
+                            notice = copyPracticeLog(
+                                text = PracticeLogStore.combinedText(entry),
+                                copy = { clipboard.setText(AnnotatedString(it)) },
+                                onError = { AppLog.error("practice-log", "Clipboard copy failed", it) },
                             )
-                            notice = "Summary and events copied."
                         },
                         onShare = { notice = shareAttempt(context, entry) },
                     )
