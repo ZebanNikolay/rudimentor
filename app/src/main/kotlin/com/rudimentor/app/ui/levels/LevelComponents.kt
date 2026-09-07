@@ -81,98 +81,38 @@ internal fun StickingMap(
 }
 
 /**
- * How a unison stroke -- both hands landing as one note -- is written. A single-hand step
- * reads the same in every one of them; the difference is only the two-letter step, which
- * plain `RL` could not tell apart from two separate strokes (decision 216).
- */
-internal enum class StickingStyle(val tag: String) {
-    /** `R` over `L` in one cell, the way two notes share a stem. */
-    Stacked("A"),
-
-    /** `(RL)` -- stays plain text, costs two characters per stroke. */
-    Bracket("B"),
-
-    /** `R+L` -- shorter than brackets, denser in a monospaced face. */
-    Plus("C"),
-}
-
-/** Whether any step of the block asks for both hands at once. */
-internal val StickingBlock.hasUnison: Boolean
-    get() = groups.any { group -> group.any { it.length > 1 } }
-
-/**
- * One line of the sticking map. Single steps and rests are letters on the line; a unison
- * step is drawn per [style]. The line never wraps: a long sticking runs off the card and
- * the row scrolls, which keeps the letters in the order they are read.
+ * One line of the sticking map: one letter per stroke, a unison stroke in brackets --
+ * `R (RL) L` -- chosen on the device over stacked hands and `R+L` (decision 216). Plain
+ * `RL` could not be told apart from two separate strokes, which made every unison lesson
+ * read exactly like the singles lesson next to it.
+ *
+ * The line never wraps: a long sticking runs off the card and the row scrolls, which keeps
+ * the letters in the order they are read.
  */
 @Composable
-private fun StickingLine(groups: List<List<String>>, style: StickingStyle) {
+private fun StickingLine(groups: List<List<String>>) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         groups.forEachIndexed { index, group ->
             if (index > 0) Spacer(Modifier.width(GROUP_GAP))
             group.forEach { step ->
-                if (step.length > 1 && style == StickingStyle.Stacked) {
-                    StackedStep(step)
-                } else {
-                    StickingText(
-                        when {
-                            step.length <= 1 -> step
-                            style == StickingStyle.Bracket -> "($step)"
-                            else -> step.toCharArray().joinToString("+")
-                        }
-                    )
-                }
+                Text(
+                    text = if (step.length > 1) "($step)" else step,
+                    color = RudiColors.Text,
+                    fontFamily = JetBrainsMono,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 17.sp,
+                    softWrap = false,
+                    maxLines = 1,
+                )
                 Spacer(Modifier.width(STEP_GAP))
             }
         }
     }
 }
 
-/** A unison stroke as one cell: the two hands stacked, sharing the width of one letter. */
-@Composable
-private fun StackedStep(step: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        step.forEach { hand ->
-            Text(
-                text = hand.toString(),
-                color = RudiColors.Text,
-                fontFamily = JetBrainsMono,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = STACKED_SIZE,
-                lineHeight = STACKED_LINE,
-                softWrap = false,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@Composable
-private fun StickingText(text: String) {
-    Text(
-        text = text,
-        color = RudiColors.Text,
-        fontFamily = JetBrainsMono,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 17.sp,
-        softWrap = false,
-        maxLines = 1,
-    )
-}
-
-/**
- * Temporary, for one build: show every notation of a unison block at once so the reading
- * can be compared on the device. Set back to false once one of them is chosen.
- */
-private const val STICKING_STYLE_PREVIEW = true
-
 /** The gap that used to be `letterSpacing = 3.sp`, and the wider one between reading words. */
 private val STEP_GAP = 3.dp
 private val GROUP_GAP = 12.dp
-
-/** Two stacked hands have to fit the height of one line of the letters beside them. */
-private val STACKED_SIZE = 11.sp
-private val STACKED_LINE = 11.sp
 
 /** One block of the chain, boxed like the metric cards so the eye can tell where it ends. */
 @Composable
@@ -201,30 +141,7 @@ private fun StickingBlockCard(
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (STICKING_STYLE_PREVIEW && block.hasUnison) {
-                // Temporary: the three candidate notations for a unison stroke, one under
-                // the other, so the choice is made on the device instead of on paper.
-                // Whichever wins stays and this branch goes (decision 216).
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    StickingStyle.entries.forEach { style ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = style.tag,
-                                color = RudiColors.Muted,
-                                fontFamily = JetBrainsMono,
-                                fontSize = 12.sp,
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            StickingLine(groups = block.groups, style = style)
-                        }
-                    }
-                }
-            } else {
-                StickingLine(
-                    groups = block.groups,
-                    style = if (block.hasUnison) StickingStyle.Stacked else StickingStyle.Bracket,
-                )
-            }
+            StickingLine(groups = block.groups)
             // The multiplier sits on the pattern rather than in the line below it: it counts
             // the words just written, and a block that plays its group once states nothing
             // at all instead of a bare `×1` (decision 205).
@@ -256,7 +173,13 @@ private fun StickingBlockCard(
  */
 @Composable
 private fun blockSize(block: StickingBlock): String {
-    val density = block.densities.joinToString("→")
+    // A subdivided block switches density every beat, and written out in full the line was
+    // wider than the screen and dragged the card off it. The repeating figure is collapsed
+    // the way the sticking above it already is: stated once, then counted (decision 217).
+    val cycle = block.densityCycle.joinToString("→")
+    val density = block.densityRepeats?.let { repeats ->
+        cycle + " " + stringResource(R.string.level_detail_block_repeats, repeats)
+    } ?: cycle
     return stringResource(R.string.level_detail_block_hits, block.notes, density)
 }
 

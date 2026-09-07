@@ -118,6 +118,18 @@ internal data class StickingBlock(
     val hitsPerBeat: Int?,
     /** Densities in the order they are played, `1, 2, 1`, with repeats collapsed. */
     val densities: List<Int>,
+    /**
+     * The shortest run of densities the block keeps repeating, and how many times it repeats
+     * it -- `[1, 2]` sixteen times rather than `1→2→1→2→…` written out.
+     *
+     * A subdivided block switches density on every beat, and spelled out in full the line
+     * grew wider than the card and pushed the whole block off the screen (decision 217). It
+     * is the same collapse the sticking already does with its `×N` multiplier: a repeating
+     * figure is stated once and counted, only a genuinely changing one is spelled out.
+     * [densityRepeats] is null when the run does not repeat.
+     */
+    val densityCycle: List<Int>,
+    val densityRepeats: Int?,
 )
 
 /** Every block one pass of an attempt plays, in order. A one-pattern level has one block. */
@@ -146,6 +158,8 @@ internal fun Level.stickingBlocks(target: RankTarget): List<StickingBlock> {
             repeats = notes.takeIf { it > 0 && it % group.size == 0 }?.div(group.size),
             hitsPerBeat = hitsPerBeat,
             densities = densities.toList(),
+            densityCycle = densities.take(densityCycleLength(densities)),
+            densityRepeats = (densities.size / densityCycleLength(densities)).takeIf { it > 1 },
         )
     }
     return blocks
@@ -198,6 +212,19 @@ private fun readingGroup(steps: List<String>): List<String> {
     var group = steps
     while (group.size in 1 until MIN_READING_GROUP) group = group + group
     return group
+}
+
+/**
+ * The length of the shortest prefix the whole list is built of: 2 for `1,2,1,2,1,2`, and the
+ * full size when nothing repeats. Only lengths that divide the list evenly count, so a run
+ * that breaks its own figure at the end is left spelled out rather than rounded off.
+ */
+private fun densityCycleLength(values: List<Int>): Int {
+    for (length in 1..values.size / 2) {
+        if (values.size % length != 0) continue
+        if (values.indices.all { values[it] == values[it % length] }) return length
+    }
+    return values.size.coerceAtLeast(1)
 }
 
 /** Triplet densities are spaced in threes, everything else in fours. */

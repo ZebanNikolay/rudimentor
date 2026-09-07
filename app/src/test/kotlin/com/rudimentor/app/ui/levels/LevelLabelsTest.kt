@@ -98,6 +98,31 @@ class LevelLabelsTest {
     }
 
     @Test
+    fun `a density that keeps switching is collapsed to its figure and a count`() {
+        val level = level(
+            lesson("doubles.SS-03", type = LevelType.SubdivisionSwitch).copy(
+                execution = Execution(beatCount = 24),
+                rankTargets = listOf(
+                    RankTarget(
+                        rank = PracticeRank.Practice,
+                        bpm = 60,
+                        hitsPerBeat = 1,
+                        subdivisionPlan = SubdivisionPlan(blockBeats = 2, hitsPerBeat = listOf(1, 2)),
+                    ),
+                ),
+            ),
+        )
+
+        val block = level.stickingBlocks(level.target(PracticeRank.Practice)).single()
+
+        // Twelve switches, written as the figure they are plus a count: spelled out in full
+        // the line was wider than the card and dragged the block off screen (decision 217).
+        assertEquals(listOf(1, 2), block.densityCycle)
+        assertEquals(6, block.densityRepeats)
+        assertEquals(12, block.densities.size)
+    }
+
+    @Test
     fun `a unison step stays one step of the reading group`() {
         val lesson = lesson("singles.ST-01").copy(
             pattern = Pattern(
