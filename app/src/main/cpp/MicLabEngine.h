@@ -9,6 +9,7 @@
 #include <oboe/Oboe.h>
 
 #include "OnsetDetector.h"
+#include "AudioTempoLoop.h"
 
 /**
  * Full-duplex engine for the mic lab dev screen.
@@ -27,6 +28,7 @@ class MicLabEngine : public oboe::AudioStreamDataCallback,
                      public oboe::AudioStreamErrorCallback {
 public:
     static constexpr int kEventCapacity = 128;
+    static constexpr int kMaxPlanBeats = AudioTempoLoop::kMaxPlanBeats;
 
     struct HitEvent {
         int64_t frame;
@@ -129,13 +131,15 @@ public:
      * from Kotlin would land it a buffer late, which over Bluetooth is a good
      * fraction of a beat, and the click would drift off the notes (decision 148).
      *
-     * `count` beats past the end of the plan repeat it from the top, so an
-     * attempt that overruns its own plan keeps clicking in tempo. Pass a count of
-     * 0 to go back to the fixed tempo. Call it before start(): the plan is read
-     * by the audio callback and only the size is published atomically, so it is
-     * not safe to swap a running plan.
+     * Beats past the end repeat from the top unless setTempoPlanLoopStart() is
+     * called afterwards. Installing a plan resets that index to 0. At most
+     * kMaxPlanBeats are retained. Pass count 0 to return to fixed tempo.
+     * Call before start(); updates while running are ignored.
      */
     void setTempoPlan(const int *bpmPerBeat, int count);
+
+    /** One-time prefix, repeating suffix. Invalid/empty suffix falls back to 0. */
+    void setTempoPlanLoopStart(int beat);
 
     /**
      * How many beats at the top of the plan are count-in. The accented click
@@ -195,12 +199,6 @@ private:
     static constexpr int kMinBpm = 40;
     static constexpr int kMaxBpm = 240;
     static constexpr int kClickFrames = 960;
-    /**
-     * Room for the longest attempt the course can author: the densest ramp is
-     * 48 beats per pass with a handful of passes, so this is generous.
-     */
-    static constexpr int kMaxPlanBeats = 512;
-
     mutable std::mutex streamMutex_;
     std::shared_ptr<oboe::AudioStream> outputStream_;
     std::shared_ptr<oboe::AudioStream> inputStream_;
@@ -211,6 +209,9 @@ private:
     // is installed while the engine is stopped.
     std::array<int, kMaxPlanBeats> tempoPlan_{};
     std::atomic<int> tempoPlanSize_{0};
+    std::atomic<int> tempoPlanLoopStart_{0};
+    // Rebuilt for the opened sample rate before callbacks start, then read-only.
+    std::array<double, kMaxPlanBeats + 1> tempoPlanCumulativeFrames_{};
     std::atomic<int> countInBeats_{0};
     // Off by default: without headphones, an audible click leaks from the
     // speaker back into the mic and the detector scores that echo as a hit

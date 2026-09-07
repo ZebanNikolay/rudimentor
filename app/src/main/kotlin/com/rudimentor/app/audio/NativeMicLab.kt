@@ -145,9 +145,18 @@ class NativeMicLab {
      * Installs the tempo of every beat of the attempt, count-in included, replacing the
      * fixed tempo. The engine switches tempo on the frame the beat starts on, which is
      * what keeps the click of a tempo ramp on its notes (decision 148). An empty array
-     * goes back to the fixed tempo. Call it before [start].
+     * goes back to the fixed tempo. Replacing the plan resets its loop start to 0
+     * (the legacy whole-plan repeat). At most 512 beats are retained.
+     * Call it before [start]; running plans are not replaced.
      */
     fun setTempoPlan(bpmPerBeat: IntArray) = nativeSetTempoPlan(bpmPerBeat)
+
+    /**
+     * Play the prefix once, then repeat from [beat]. Call after [setTempoPlan] and
+     * before [start]. An index outside the retained plan, including an empty suffix,
+     * falls back to 0. This changes no stream clocks and never restarts at a seam.
+     */
+    fun setTempoPlanLoopStart(beat: Int) = nativeSetTempoPlanLoopStart(beat)
 
     /** Beats at the top of the plan that are count-in; the bar accent counts from after them. */
     fun setCountInBeats(beats: Int) = nativeSetCountInBeats(beats)
@@ -235,6 +244,7 @@ class NativeMicLab {
     private external fun nativeStop()
     private external fun nativeSetBpm(bpm: Int)
     private external fun nativeSetTempoPlan(bpmPerBeat: IntArray)
+    private external fun nativeSetTempoPlanLoopStart(beat: Int)
     private external fun nativeSetCountInBeats(beats: Int)
     private external fun nativeSetClickAudible(audible: Boolean)
     private external fun nativeSetSensitivity(sensitivity: Float)

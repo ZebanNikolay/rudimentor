@@ -53,6 +53,12 @@ bool MicLabEngine::start() {
     inputLatencyMillis_.store(0.0f, std::memory_order_release);
     inputLatencyPollCountdown_ = 0;
     nextTickFrame_ = static_cast<double>(sampleRate_) * 0.30;  // brief warm-up
+    tempoPlanCumulativeFrames_[0] = 0.0;
+    const int planSize = tempoPlanSize_.load(std::memory_order_acquire);
+    for (int i = 0; i < planSize; ++i) {
+        tempoPlanCumulativeFrames_[i + 1] = tempoPlanCumulativeFrames_[i] +
+                static_cast<double>(sampleRate_) * 60.0 / tempoPlan_[i];
+    }
     step_ = 0;
     clickFrame_ = kClickFrames;
     phase_ = 0.0;
@@ -107,6 +113,11 @@ void MicLabEngine::setBpm(int bpm) {
 }
 
 void MicLabEngine::setTempoPlan(const int *bpmPerBeat, int count) {
+    std::lock_guard<std::mutex> lock(streamMutex_);
+    if (running_.load(std::memory_order_acquire)) {
+        return;
+    }
+    tempoPlanLoopStart_.store(0, std::memory_order_release);
     if (bpmPerBeat == nullptr || count <= 0) {
         tempoPlanSize_.store(0, std::memory_order_release);
         return;
@@ -115,9 +126,19 @@ void MicLabEngine::setTempoPlan(const int *bpmPerBeat, int count) {
     for (int i = 0; i < size; ++i) {
         tempoPlan_[static_cast<size_t>(i)] = std::clamp(bpmPerBeat[i], kMinBpm, kMaxBpm);
     }
-    // The size is published last: the callback reads it first and then only
-    // touches entries below it, so it never reads a half-written plan.
+    // Only stopped plans are written; the stream lock excludes a concurrent start.
     tempoPlanSize_.store(size, std::memory_order_release);
+}
+
+void MicLabEngine::setTempoPlanLoopStart(int beat) {
+    std::lock_guard<std::mutex> lock(streamMutex_);
+    if (running_.load(std::memory_order_acquire)) {
+        return;
+    }
+    tempoPlanLoopStart_.store(
+            AudioTempoLoop::normalizedLoopStart(
+                    beat, tempoPlanSize_.load(std::memory_order_acquire)),
+            std::memory_order_release);
 }
 
 void MicLabEngine::setCountInBeats(int beats) {
@@ -353,6 +374,7 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
     const bool audible = clickAudible_.load(std::memory_order_acquire);
     const int fixedBpm = bpm_.load(std::memory_order_acquire);
     const int planSize = tempoPlanSize_.load(std::memory_order_acquire);
+    const int loopStart = tempoPlanLoopStart_.load(std::memory_order_acquire);
     const int64_t countIn = countInBeats_.load(std::memory_order_acquire);
     // The accent falls on the first beat of the count-in and then on every bar
     // start counted from the first beat after it; a count-in shorter than a bar
@@ -361,15 +383,8 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
         const int64_t inBar = tick < countIn ? tick : tick - countIn;
         return inBar % kBeatsPerBar == 0;
     };
-    // The length of a beat is decided when that beat starts, so a tempo ramp
-    // switches tempo on the exact frame of the switch instead of a buffer later
-    // (decision 148). Without a plan every beat is the fixed tempo.
-    const auto framesPerBeatOf = [&](int64_t beat) {
-        const int beatBpm = planSize > 0
-                ? tempoPlan_[static_cast<size_t>(beat % planSize)]
-                : fixedBpm;
-        return static_cast<double>(sampleRate_) * 60.0 / static_cast<double>(beatBpm);
-    };
+    const double fixedFramesPerBeat = static_cast<double>(sampleRate_) * 60.0 / fixedBpm;
+    const double firstTickFrame = static_cast<double>(sampleRate_) * 0.30;
 
     for (int32_t f = 0; f < numFrames; ++f) {
         const int64_t frameIndex = outputFrames_ + f;
@@ -378,8 +393,14 @@ oboe::DataCallbackResult MicLabEngine::onAudioReady(
             publishTick(frameIndex, step_);
             clickFrame_ = 0;
             phase_ = 0.0;
-            nextTickFrame_ += framesPerBeatOf(step_);
             step_ += 1;
+            // Absolute prefix + suffix math preserves fractional frames without
+            // accumulating loop drift. No stream, counter, accent or click reset
+            // at seams; only the tempo plan wraps. Fixed-tempo scheduling is unchanged.
+            nextTickFrame_ = planSize > 0
+                    ? firstTickFrame + AudioTempoLoop::framesBeforeBeat(
+                            step_, tempoPlanCumulativeFrames_.data(), planSize, loopStart)
+                    : nextTickFrame_ + fixedFramesPerBeat;
         }
 
         float sample = 0.0f;

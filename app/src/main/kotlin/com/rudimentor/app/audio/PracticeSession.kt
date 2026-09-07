@@ -28,6 +28,8 @@ class PracticeSession(
         val envelope: Float,
         val threshold: Float,
         val diagnostics: OnsetDiagnostics? = null,
+        /** Full-precision attempt clock for long loops; Float scoring is unchanged. */
+        val positionMsExact: Double = positionMs.toDouble(),
     )
 
     /** Everything one poll produced. */
@@ -92,6 +94,8 @@ class PracticeSession(
          * run is never corrected by it (decision 188).
          */
         val clockDrift: StreamClockDrift.Reading? = null,
+        /** Full-precision attempt clock; convert only local drawing offsets to Float. */
+        val positionMsExact: Double = positionMs.toDouble(),
     )
 
     var bpm: Int = MicLab.DEFAULT_BPM
@@ -104,6 +108,10 @@ class PracticeSession(
      * length (decision 148).
      */
     var tempoPlan: IntArray = IntArray(0)
+        private set
+
+    /** Beats before this plan index play once; the suffix repeats without restarting. */
+    var tempoPlanLoopStart: Int = 0
         private set
 
     var running: Boolean = false
@@ -181,12 +189,14 @@ class PracticeSession(
         micThresholdLevel: Float = MicThreshold.DEFAULT_LEVEL,
         tempoPlan: IntArray = IntArray(0),
         countInBeats: Int = 0,
+        /** 0 keeps whole-plan looping; endless practice passes its count-in length. */
+        tempoPlanLoopStart: Int = 0,
     ): Boolean {
         if (running) return true
         this.bpm = bpm.coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
-        this.tempoPlan = IntArray(tempoPlan.size) {
-            tempoPlan[it].coerceIn(MicLab.MIN_BPM, MicLab.MAX_BPM)
-        }
+        this.tempoPlan = AudioTempoLoop.boundedPlan(tempoPlan)
+        this.tempoPlanLoopStart =
+            AudioTempoLoop.normalizedLoopStart(tempoPlanLoopStart, this.tempoPlan.size)
         anchorFrame = null
         anchorOutputLatencyMs = null
         streamSkewMs = 0f
@@ -199,6 +209,7 @@ class PracticeSession(
         tickScratch.clear()
         native.setBpm(this.bpm)
         native.setTempoPlan(this.tempoPlan)
+        native.setTempoPlanLoopStart(this.tempoPlanLoopStart)
         native.setCountInBeats(countInBeats.coerceAtLeast(0))
         native.setClickAudible(clickAudible)
         native.setSensitivity(sensitivity.coerceIn(0f, 1f))
@@ -349,6 +360,8 @@ class PracticeSession(
                 positionMs = (hit.frame - anchor) / framesPerMs,
                 envelope = hit.envelope,
                 threshold = hit.threshold,
+                positionMsExact =
+                    AudioTempoLoop.positionMsExact(hit.frame, anchor, snapshot.sampleRate),
                 diagnostics = hit.diagnostics,
             )
             if (MicThreshold.passes(hit.envelope, micThresholdLevel)) {
@@ -378,20 +391,15 @@ class PracticeSession(
             micLatencyMs = micLatencyMs,
             visualShiftMs = visualShiftMs,
             clockDrift = clockReading,
+            positionMsExact =
+                AudioTempoLoop.positionMsExact(snapshot.outputFrame, anchor, snapshot.sampleRate) -
+                    visualShiftMs.toDouble(),
         )
     }
 
     /** Frames the engine spends on the beats before [beat], at [sampleRate]. */
-    private fun framesBeforeBeat(beat: Long, sampleRate: Int): Long {
-        if (beat <= 0L || sampleRate <= 0) return 0L
-        val plan = tempoPlan
-        if (plan.isEmpty()) return (beat * sampleRate * 60.0 / bpm).toLong()
-        var frames = 0.0
-        for (i in 0 until beat) {
-            frames += sampleRate * 60.0 / plan[(i % plan.size).toInt()]
-        }
-        return frames.toLong()
-    }
+    private fun framesBeforeBeat(beat: Long, sampleRate: Int): Long =
+        AudioTempoLoop.framesBeforeBeat(beat, sampleRate, bpm, tempoPlan, tempoPlanLoopStart)
 
     companion object {
         /** Same 8 ms cadence the mic lab polls at (~120 Hz). */
