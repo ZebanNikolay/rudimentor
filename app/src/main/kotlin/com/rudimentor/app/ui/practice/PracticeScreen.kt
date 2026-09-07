@@ -677,7 +677,7 @@ fun PracticeScreen(
         // nothing to stop, and the run stays "running" to the corner across a restart even
         // though the engine is stopped and started underneath. Removing Stop and flipping
         // Repeat back to Play for the frames in between strobed the corner on every press
-        // (decision 218).
+        // (decision 219).
         val transportActive = running || restartPending
         Column(
             modifier = Modifier
