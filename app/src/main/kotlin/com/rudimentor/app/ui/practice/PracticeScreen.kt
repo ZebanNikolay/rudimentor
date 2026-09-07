@@ -672,6 +672,13 @@ fun PracticeScreen(
         // with one press, without stopping first and without finding Play again
         // (decision 214). Stop steps up and back to the small size -- it ends the session,
         // which happens once, while Repeat happens all evening.
+        //
+        // The pair never changes shape: Stop keeps its place and greys out when there is
+        // nothing to stop, and the run stays "running" to the corner across a restart even
+        // though the engine is stopped and started underneath. Removing Stop and flipping
+        // Repeat back to Play for the frames in between strobed the corner on every press
+        // (decision 218).
+        val transportActive = running || restartPending
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -679,26 +686,25 @@ fun PracticeScreen(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (running) {
-                TransportButton(
-                    playing = true,
-                    size = TransportSize.Tiny,
-                    onClick = { stopAttempt() },
-                )
-            }
+            TransportButton(
+                playing = transportActive,
+                size = TransportSize.Tiny,
+                enabled = transportActive,
+                onClick = { if (transportActive) stopAttempt() },
+            )
             TransportButton(
                 playing = false,
                 size = TransportSize.Small,
                 // Brick in both states: on the level map the call to action is red,
                 // and a grey Play read as disabled on the device.
                 accentIdle = true,
-                glyph = if (running) Icons.Filled.Replay else null,
-                contentDescription = if (running) {
+                glyph = if (transportActive) Icons.Filled.Replay else null,
+                contentDescription = if (transportActive) {
                     stringResource(R.string.practice_repeat)
                 } else {
                     null
                 },
-                onClick = { if (running) restartAttempt() else startAttempt() },
+                onClick = { if (transportActive) restartAttempt() else startAttempt() },
             )
         }
     }
