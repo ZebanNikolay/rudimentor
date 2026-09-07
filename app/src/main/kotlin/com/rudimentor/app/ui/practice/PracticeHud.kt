@@ -64,6 +64,7 @@ fun PracticeHud(
     finished: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    practiceElapsed: String? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -77,6 +78,7 @@ fun PracticeHud(
             color = if (finished) RudiColors.BrickLit else RudiColors.Muted,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
         if (!finished) {
             chips.forEach { chip -> RudiChip(text = chip) }
@@ -90,10 +92,9 @@ fun PracticeHud(
                 )
             }
         }
-        Spacer(modifier = Modifier.weight(1f))
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = stringResource(
+                text = practiceElapsed ?: stringResource(
                     R.string.practice_hud_accuracy,
                     (accuracy * 100f).roundToInt(),
                 ),
@@ -101,7 +102,11 @@ fun PracticeHud(
                 color = RudiColors.Text,
             )
             Text(
-                text = stringResource(R.string.practice_hud_errors, misses, extras),
+                text = if (practiceElapsed != null) {
+                    stringResource(R.string.practice_elapsed_label)
+                } else {
+                    stringResource(R.string.practice_hud_errors, misses, extras)
+                },
                 style = RudiTextStyles.RowNumber,
                 color = RudiColors.Muted,
             )

@@ -41,6 +41,7 @@ import com.rudimentor.app.ui.component.ResultMarks
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.dev.LevelDataSheet
+import com.rudimentor.app.ui.practice.RunMode
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
 import kotlin.math.ceil
@@ -64,7 +65,7 @@ fun LevelDetailScreen(
     rank: PracticeRank,
     progress: LevelProgress,
     onBack: () -> Unit,
-    onStartPractice: (Level, PracticeRank, Int) -> Unit,
+    onStartPractice: (Level, PracticeRank, Int, RunMode) -> Unit,
     /**
      * True while a prerequisite of the level is still open at [rank]. The map disables such
      * nodes, but the card is reached from the result screen too, so it guards the start
@@ -232,20 +233,30 @@ fun LevelDetailScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = stringResource(R.string.level_detail_mode).uppercase(),
+                        text = stringResource(R.string.level_detail_execution_label).uppercase(),
                         style = RudiTextStyles.RowNumber,
                         color = RudiColors.Muted,
-                        letterSpacing = 1.6.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = executionLabel(level, target),
                         style = RudiTextStyles.Timer,
                         color = RudiColors.Text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
+                RudiButton(
+                    text = stringResource(R.string.practice_free_action),
+                    onClick = { onStartPractice(level, rank, target.bpm, RunMode.Practice) },
+                    style = RudiButtonStyle.Ghost,
+                    enabled = startable,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 LevelPlayButton(
-                    onClick = { onStartPractice(level, rank, target.bpm) },
+                    onClick = { onStartPractice(level, rank, target.bpm, RunMode.Challenge) },
                     contentDescription = stringResource(
                         when {
                             !level.playable -> R.string.level_detail_preview_only

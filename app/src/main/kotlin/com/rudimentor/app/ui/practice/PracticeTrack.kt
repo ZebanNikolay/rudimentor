@@ -60,6 +60,8 @@ fun PracticeTrack(
     finishMs: Float,
     modifier: Modifier = Modifier,
     showOffsetMs: Boolean = false,
+    loop: PracticeLoop? = null,
+    loopPositionMs: Double = positionMs.toDouble(),
 ) {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
@@ -82,9 +84,15 @@ fun PracticeTrack(
         val extraDotY = laneY + side * EXTRA_DOT_OFFSET
         // The verdict block starts below the hit dot rail and stays inside the canvas.
         val verdictY = minOf(laneY + side * VERDICT_TOP_OFFSET, height - side * 0.5f)
+        val loopView = loop?.renderView(
+            positionMs = loopPositionMs,
+            beforeMs = ((lineX + side) / pxPerMs).toDouble(),
+            afterMs = ((width - lineX + side) / pxPerMs).toDouble(),
+        )
+        val drawingPositionMs = if (loopView == null) positionMs else 0f
 
         drawBarLines(
-            positionMs = positionMs,
+            positionMs = drawingPositionMs,
             beatTimesMs = beatTimesMs,
             pxPerMs = pxPerMs,
             lineX = lineX,
@@ -93,6 +101,7 @@ fun PracticeTrack(
             // ruling out beats past the end was keeping time to nothing (decision 203).
             untilMs = finishMs,
             countInBeats = countInBeats,
+            loopBeats = loopView?.beats,
         )
         drawLane(laneY = laneY, width = width)
         drawHitLine(lineX = lineX, height = height)
@@ -105,8 +114,8 @@ fun PracticeTrack(
         )
 
         drawCountIn(
-            positionMs = positionMs,
-            beatTimesMs = beatTimesMs,
+            positionMs = drawingPositionMs,
+            beatTimesMs = loopView?.countInTimesMs ?: beatTimesMs,
             countInBeats = countInBeats,
             pxPerMs = pxPerMs,
             lineX = lineX,
@@ -119,7 +128,7 @@ fun PracticeTrack(
         // The finish is a line across the lane, not a pad: a pad shape says "hit me",
         // and on the first live run it did exactly that (decision 130 replaces 116).
         // Drawn before the notes so the last note passes over it, not under it.
-        if (finishMs > 0f) {
+        if (loopView == null && finishMs > 0f) {
             val finishX = lineX + (finishMs - positionMs) * pxPerMs
             if (finishX > -side && finishX < width + side) {
                 drawFinishLine(
@@ -135,18 +144,23 @@ fun PracticeTrack(
             }
         }
 
-        notes.forEach { note ->
-            val x = lineX + (note.timeMs - positionMs) * pxPerMs
-            if (x < -side || x > width + side) return@forEach
+        val drawingNotes = loopView?.notes?.map { it.note } ?: notes
+        drawingNotes.forEachIndexed { drawingIndex, note ->
+            val x = lineX + (note.timeMs - drawingPositionMs) * pxPerMs
+            if (x < -side || x > width + side) return@forEachIndexed
             // No mark in front of a new block: the brick hairline of decisions 141/146 was
             // read on the device as one more grid line and only muddied the lane, and the
             // switch is legible from the letters themselves (decision 196).
-            val judgement = attempt.judgementAt(note.index)
+            val judgement = if (loopView == null) {
+                attempt.judgementAt(note.index)
+            } else {
+                loopView.notes[drawingIndex].judgement
+            }
             val missed = judgement?.window == HitWindow.Miss
             // A missed note drops out of the lane and fades instead of being crossed
             // out (decision 87).
             val fallProgress = if (missed) {
-                ((positionMs - (note.timeMs + attempt.windows.forNote(note.index).okMs)) / MISS_FALL_MS)
+                ((drawingPositionMs - (note.timeMs + attempt.windows.forNote(note.index).okMs)) / MISS_FALL_MS)
                     .coerceIn(0f, 1f)
             } else {
                 0f
@@ -160,7 +174,9 @@ fun PracticeTrack(
             // says "that one landed" at a glance; the old dimmed face read as disabled.
             val played = judgement != null
             val lit = played && !missed
-            val tone = if (played) PadTone.Normal else PadTone.Accent
+            // Silence in free practice is a neutral passed pad, never a falling MISS.
+            val passedInLoop = loopView != null && note.timeMs <= drawingPositionMs
+            val tone = if (played || passedInLoop) PadTone.Normal else PadTone.Accent
             val palette = padPalette(
                 round = note.hand == PatternHand.Left,
                 tone = tone,
@@ -235,8 +251,8 @@ fun PracticeTrack(
             }
         }
 
-        attempt.extras.forEach { hitMs ->
-            val x = lineX + (hitMs - positionMs) * pxPerMs
+        (loopView?.extrasMs ?: attempt.extras).forEach { hitMs ->
+            val x = lineX + (hitMs - drawingPositionMs) * pxPerMs
             if (x < 0f || x > width) return@forEach
             drawCircle(
                 color = RudiColors.TrackExtraHit.copy(alpha = 0.7f),
@@ -340,13 +356,16 @@ private fun DrawScope.drawBarLines(
     height: Float,
     untilMs: Float,
     countInBeats: Int,
+    loopBeats: List<LoopTrackBeat>? = null,
 ) {
+    if (loopBeats != null) {
+        loopBeats.forEach { beat ->
+            val x = lineX + (beat.timeMs - positionMs) * pxPerMs
+            if (x in 0f..size.width) drawBeatBar(x, height, beat.strong)
+        }
+        return
+    }
     if (beatTimesMs.isEmpty()) return
-    // Widths in dp, not raw pixels: a 1 px line on a ~3x density panel is a third
-    // of a hairline and disappeared on device, which is what made the metronome
-    // invisible on the track (decision 147).
-    val thin = BAR_WIDTH.toPx()
-    val thick = BAR_STRONG_WIDTH.toPx()
     val fromMs = positionMs - lineX / pxPerMs
     val toMs = positionMs + (size.width - lineX) / pxPerMs
     val tailBeatMs = if (beatTimesMs.size >= 2) {
@@ -378,14 +397,19 @@ private fun DrawScope.drawBarLines(
         // count-in, the same way the engine places its accent (decision 211).
         val inBar = if (barBeat < countInBeats) barBeat else barBeat - countInBeats
         val strong = inBar % PracticeScoring.COUNT_IN_BAR == 0
-        val inset = if (strong) 0f else height * BAR_INSET_FRACTION
-        drawLine(
-            color = if (strong) RudiColors.TrackBarStrong else RudiColors.TrackBar,
-            start = Offset(x, inset),
-            end = Offset(x, height - inset),
-            strokeWidth = if (strong) thick else thin,
-        )
+        drawBeatBar(x, height, strong)
     }
+}
+
+private fun DrawScope.drawBeatBar(x: Float, height: Float, strong: Boolean) {
+    // dp keeps the metronome visible on high-density panels (decision 147).
+    val inset = if (strong) 0f else height * BAR_INSET_FRACTION
+    drawLine(
+        color = if (strong) RudiColors.TrackBarStrong else RudiColors.TrackBar,
+        start = Offset(x, inset),
+        end = Offset(x, height - inset),
+        strokeWidth = if (strong) BAR_STRONG_WIDTH.toPx() else BAR_WIDTH.toPx(),
+    )
 }
 
 /**

@@ -92,7 +92,9 @@ object PracticeLogStore {
                 val json = File(directory, file.name.removeSuffix(TEXT_SUFFIX) + JSON_SUFFIX)
                 Entry(
                     name = file.name,
-                    title = summary.lineSequence().lastOrNull { it.startsWith("result ") }
+                    title = summary.lineSequence().lastOrNull {
+                        it.startsWith("result ") || it.startsWith("Practice ")
+                    }
                         ?: file.name,
                     summary = summary,
                     savedAtMs = file.lastModified(),

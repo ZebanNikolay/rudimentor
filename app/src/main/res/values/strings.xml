@@ -37,14 +37,14 @@
 
     <!-- Level detail -->
     <string name="level_detail_title">LEVEL %1$s</string>
-    <string name="level_detail_rank_meta">%1$s · ×%2$d</string>
+    <string name="level_detail_rank_meta">RANK: %1$s · ×%2$d</string>
     <string name="level_detail_bpm">BPM</string>
     <string name="level_detail_best_accuracy">best accuracy</string>
     <string name="level_detail_accuracy_value">%1$d%%</string>
     <string name="level_detail_no_score">—</string>
     <string name="level_detail_cleared">cleared at this rank</string>
     <string name="level_detail_not_cleared">not cleared yet</string>
-    <string name="level_detail_attempt">one attempt</string>
+    <string name="level_detail_attempt">one challenge</string>
     <string name="level_detail_attempt_notes">%1$d notes</string>
     <string name="level_detail_attempt_timed">≥ %1$d min</string>
     <string name="level_detail_attempt_duration">≈ %1$s at this tempo</string>
@@ -57,10 +57,10 @@
     <string name="level_detail_block_repeats">×%1$d</string>
     <string name="level_detail_marks">%1$d of %2$d stars earned</string>
     <string name="level_detail_marks_crown">%1$d of %2$d stars earned, crown earned</string>
-    <string name="level_detail_mode">Mode</string>
-    <string name="level_detail_start">Start level practice</string>
+    <string name="level_detail_execution_label">Challenge length</string>
+    <string name="level_detail_start">Play Challenge</string>
     <string name="level_detail_preview_tag">Preview</string>
-    <string name="level_detail_preview_only">Practice for this level is not available yet</string>
+    <string name="level_detail_preview_only">Playing this level is not available yet</string>
     <string name="level_detail_preview_body">Preview only for now: the engine cannot play this level yet.</string>
     <string name="level_detail_locked_only">Pass the level before this one first</string>
     <string name="level_detail_locked_body">Locked: pass the level before this one first.</string>
@@ -126,13 +126,26 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>
 
     <string name="practice_level_clear">LEVEL CLEAR</string>
+    <string name="run_mode_challenge">CHALLENGE</string>
+    <string name="run_mode_practice">PRACTICE</string>
+    <string name="practice_rank">RANK: %1$s</string>
+    <string name="practice_mode_hint">Loop endlessly · No progress saved</string>
+    <string name="practice_free_click_warning_title">The microphone hears the click</string>
+    <string name="practice_free_click_warning">Use headphones to keep the metronome click out of your detected hits.</string>
+    <string name="practice_elapsed_label">ELAPSED</string>
+    <string name="practice_free_action">Practice</string>
+    <string name="practice_free_again">Practice again</string>
+    <string name="practice_play_level">Play level</string>
+    <string name="practice_summary_title">Practice finished</string>
+    <string name="practice_summary_duration">Duration</string>
+    <string name="practice_summary_hits">Detected hits</string>
     <string name="practice_finishing_cycle">finishing the cycle</string>
     <string name="practice_bpm">%1$d BPM</string>
     <string name="practice_hits_per_beat">×%1$d</string>
     <string name="practice_hud_accuracy">%1$d%%</string>
     <string name="practice_hud_errors">%1$d miss · %2$d extra</string>
     <string name="practice_mic_cd">Microphone level</string>
-    <string name="practice_permission_body">Practice needs the microphone to hear your strokes.</string>
+    <string name="practice_permission_body">The microphone is needed to hear your strokes.</string>
     <string name="practice_permission_button">Allow microphone</string>
     <string name="mic_permission_open_settings">Open app settings</string>
     <string name="practice_audio_failed">Could not start audio. Close other apps using the microphone and try again.</string>

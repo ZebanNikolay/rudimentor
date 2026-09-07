@@ -53,6 +53,9 @@ import com.rudimentor.app.ui.miclab.MicLabScreen
 import com.rudimentor.app.ui.practice.PracticeResult
 import com.rudimentor.app.ui.practice.PracticeResultScreen
 import com.rudimentor.app.ui.practice.PracticeScreen
+import com.rudimentor.app.ui.practice.PracticeSummary
+import com.rudimentor.app.ui.practice.PracticeSummaryScreen
+import com.rudimentor.app.ui.practice.RunMode
 import com.rudimentor.app.ui.settings.CalibrationScreen
 import com.rudimentor.app.ui.settings.SettingsScreen
 import com.rudimentor.app.ui.soundcheck.SoundCheckScreen
@@ -69,6 +72,7 @@ private enum class Screen {
     LevelDetail,
     Practice,
     PracticeResult,
+    PracticeSummary,
     Metronome,
     Settings,
     Calibration,
@@ -123,9 +127,10 @@ fun RudiMentorApp(
     var metronomeBackTargetName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
     var practiceRankName by rememberSaveable { mutableStateOf(PracticeRank.Practice.name) }
     var practiceBpm by rememberSaveable { mutableIntStateOf(0) }
-    // The result lives for as long as the result screen does: an attempt is never
-    // restored across process death, it is replayed instead.
+    var modeName by rememberSaveable { mutableStateOf(RunMode.Challenge.name) }
+    // Outcomes are transient; process death must not restore an old result.
     var practiceResult by remember { mutableStateOf<PracticeResult?>(null) }
+    var practiceSummary by remember { mutableStateOf<PracticeSummary?>(null) }
     /** The accuracy record as it stood before the attempt that is being judged. */
     var practiceBestBefore by remember { mutableStateOf<Float?>(null) }
     var practiceRunId by rememberSaveable { mutableIntStateOf(0) }
@@ -154,7 +159,21 @@ fun RudiMentorApp(
     var soundCheckHeadphonesOnly by remember { mutableStateOf(false) }
     val practiceRank = PracticeRank.entries.firstOrNull { it.name == practiceRankName }
         ?: PracticeRank.Practice
+    val mode = RunMode.entries.firstOrNull { it.name == modeName } ?: RunMode.Challenge
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
+
+    fun prepareRun(level: Level, rank: PracticeRank, bpm: Int, runMode: RunMode) {
+        selectedLevelId = level.id
+        practiceRankName = rank.name
+        practiceBpm = bpm
+        modeName = runMode.name
+        practiceResult = null
+        practiceSummary = null
+        practiceBestBefore = null
+        practiceRunId += 1
+        screenName = Screen.Practice.name
+    }
+
     // The difficulty is chosen once for the whole course, and the open tab is the one the
     // learner left the map on — or the last map they have earned.
     val rank = levelsUi.rank
@@ -204,7 +223,9 @@ fun RudiMentorApp(
     // One stage for the whole practice flow, so the attempt and its result do not
     // hand the orientation back and forth between themselves.
     LandscapeStage(
-        landscape = screen == Screen.Practice || screen == Screen.PracticeResult,
+        landscape = screen == Screen.Practice ||
+            screen == Screen.PracticeResult ||
+            screen == Screen.PracticeSummary,
         // Any round that is playing without touching the phone: the screen timing out takes
         // the audio streams with it (decision 158). The sound check runs the same round and
         // was missing from this list, so the display lock killed step 2 for anybody with a
@@ -300,11 +321,8 @@ fun RudiMentorApp(
                         // The level owns tempo and rank of the attempt only: the
                         // metronome grid is the user's own and is never overwritten
                         // by entering a level (decision 102).
-                        onStartPractice = { _, rank, bpm ->
-                            practiceRankName = rank.name
-                            practiceBpm = bpm
-                            practiceRunId += 1
-                            screenName = Screen.Practice.name
+                        onStartPractice = { selected, selectedRank, bpm, runMode ->
+                            prepareRun(selected, selectedRank, bpm, runMode)
                         },
                     )
                 }
@@ -322,12 +340,14 @@ fun RudiMentorApp(
                         screenName = Screen.Levels.name
                     }
                 } else {
+                    val runId = practiceRunId
                     key(practiceRunId) {
                         PracticeScreen(
                             level = level,
                             family = family,
                             rank = practiceRank,
                             bpm = practiceBpm,
+                            mode = mode,
                             clickAudible = clickAudible,
                             latencyMs = settings.inputLatencyMs,
                             latencyCalibrated = settings.latencyCalibrated,
@@ -339,9 +359,14 @@ fun RudiMentorApp(
                             buildInfo = buildInfo,
                             unknownOutput = unknownOutput,
                             onExit = { screenName = Screen.LevelDetail.name },
-                            onFinished = { result ->
+                            onFinished = challengeFinished@{ result ->
+                                if (screenName != Screen.Practice.name ||
+                                    mode != RunMode.Challenge ||
+                                    modeName == RunMode.Practice.name ||
+                                    practiceRunId != runId
+                                ) return@challengeFinished
                                 AppLog.trace("practice") {
-                                    "finished ${level.id} rank=${practiceRank.name} " +
+                                    "finished ${level.id} mode=Challenge rank=${practiceRank.name} " +
                                         "bpm=$practiceBpm " +
                                         "accuracy=${(result.accuracy * 100f).roundToInt()}% " +
                                         "stars=${result.stars} passed=${result.passed}"
@@ -369,8 +394,24 @@ fun RudiMentorApp(
                                     if (settingsDraft != null) settingsDraft = tuned
                                     onApplyDraft(tuned)
                                 }
+                                practiceSummary = null
                                 practiceResult = result
                                 screenName = Screen.PracticeResult.name
+                            },
+                            onPracticeFinished = practiceFinished@{ summary ->
+                                if (screenName != Screen.Practice.name ||
+                                    mode != RunMode.Practice ||
+                                    modeName != RunMode.Practice.name ||
+                                    practiceRunId != runId
+                                ) return@practiceFinished
+                                AppLog.trace("practice") {
+                                    "finished ${level.id} mode=Practice rank=${practiceRank.name} " +
+                                        "bpm=$practiceBpm durationMs=${summary.durationMs} hits=${summary.hits}"
+                                }
+                                practiceResult = null
+                                practiceBestBefore = null
+                                practiceSummary = summary
+                                screenName = Screen.PracticeSummary.name
                             },
                         )
                     }
@@ -401,8 +442,7 @@ fun RudiMentorApp(
                         result = result,
                         previousBest = practiceBestBefore,
                         onRetry = {
-                            practiceRunId += 1
-                            screenName = Screen.Practice.name
+                            prepareRun(level, practiceRank, practiceBpm, RunMode.Challenge)
                         },
                         onNextLevel = nextLevel?.let { next ->
                             {
@@ -419,6 +459,33 @@ fun RudiMentorApp(
                             soundCheckHeadphonesOnly = false
                             screenName = Screen.SoundCheck.name
                         },
+                    )
+                }
+            }
+            Screen.PracticeSummary -> {
+                val level = selectedLevelId?.let(course::level)
+                val family = selectedLevelId?.let(course::family)
+                val summary = practiceSummary
+                if (level == null || family == null || summary == null) {
+                    LaunchedEffect(Unit) {
+                        if (screen != Screen.PracticeSummary) return@LaunchedEffect
+                        AppLog.error("nav", "summary without level/summary, back to the map")
+                        screenName = Screen.Levels.name
+                    }
+                } else {
+                    PracticeSummaryScreen(
+                        level = level,
+                        family = family,
+                        rank = practiceRank,
+                        bpm = practiceBpm,
+                        summary = summary,
+                        onPlayLevel = {
+                            prepareRun(level, practiceRank, practiceBpm, RunMode.Challenge)
+                        },
+                        onPracticeAgain = {
+                            prepareRun(level, practiceRank, practiceBpm, RunMode.Practice)
+                        },
+                        onToMap = { screenName = Screen.Levels.name },
                     )
                 }
             }

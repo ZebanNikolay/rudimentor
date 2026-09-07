@@ -5,7 +5,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -97,6 +101,7 @@ fun PracticeResultScreen(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ResultBody(
     level: Level,
@@ -134,59 +139,52 @@ private fun ResultBody(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
         ) {
-            // One header line, not three stacked ones (decision 213). The verdict, the
-            // level and its terms are all short: on a landscape window they fit side by
-            // side, and the three rows they used to be cost about seventy dp of height --
-            // which is exactly the height that pushed the readings into a scroll.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(
-                        when {
-                            !result.complete -> R.string.practice_result_stopped
-                            result.passed -> R.string.practice_result_passed
-                            else -> R.string.practice_result_failed
+            // One header; only the chips wrap when the landscape window is narrow.
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val chipsMaxWidth = maxWidth * 0.65f
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(
+                            when {
+                                !result.complete -> R.string.practice_result_stopped
+                                result.passed -> R.string.practice_result_passed
+                                else -> R.string.practice_result_failed
+                            }
+                        ),
+                        style = RudiTextStyles.Rubric,
+                        color = if (result.passed && result.complete) {
+                            RudiColors.BrickLit
+                        } else {
+                            RudiColors.Muted
+                        },
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "${level.title(family)} · ${level.displayCode}",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = RudiColors.Text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    FlowRow(
+                        modifier = Modifier.widthIn(max = chipsMaxWidth),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        RudiChip(text = stringResource(R.string.run_mode_challenge), accent = true)
+                        RudiChip(text = stringResource(R.string.practice_rank, rank.name.uppercase()))
+                        RudiChip(text = stringResource(R.string.practice_bpm, bpm))
+                        if (result.fullCombo) {
+                            RudiChip(text = stringResource(R.string.practice_result_full_combo), accent = true)
                         }
-                    ),
-                    style = RudiTextStyles.Rubric,
-                    color = if (result.passed && result.complete) {
-                        RudiColors.BrickLit
-                    } else {
-                        RudiColors.Muted
-                    },
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    // The exercise the attempt was, named the way the map and the level
-                    // screen name it, plus its code. The family name with a bare number
-                    // read `Paradiddles · 1` here while the level itself was called
-                    // `Sticking transition · TR-1` two screens earlier (decision 201).
-                    text = "${level.title(family)} · ${level.displayCode}",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = RudiColors.Text,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    // Takes only the width it needs, and gives way instead of wrapping:
-                    // a long level name must not push the chips off the header or turn
-                    // the one line back into two.
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                RudiChip(text = rank.name.uppercase(), accent = true)
-                Spacer(modifier = Modifier.width(6.dp))
-                RudiChip(text = stringResource(R.string.practice_bpm, bpm))
-                // The badges name the two top states the stars already encode, so the screen
-                // says out loud what the node will carry (decision 126).
-                if (result.fullCombo || result.crown) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    if (result.fullCombo) {
-                        RudiChip(text = stringResource(R.string.practice_result_full_combo), accent = true)
-                    }
-                    if (result.crown) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        RudiChip(text = stringResource(R.string.practice_result_crown), accent = true)
+                        if (result.crown) {
+                            RudiChip(text = stringResource(R.string.practice_result_crown), accent = true)
+                        }
                     }
                 }
             }

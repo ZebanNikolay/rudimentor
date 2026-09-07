@@ -75,6 +75,8 @@ import kotlin.math.roundToInt
 /**
  * The level attempt: a landscape track that scrolls the notes onto the hit line
  * while the microphone judges the strokes.
+ * Challenge ends with a scored result; Practice loops until stopped and returns only
+ * its duration and detected hit count through a separate callback.
  *
  * The screen owns the attempt only. Progress is saved by the caller once the
  * result screen is done with it, so an attempt that is abandoned mid-way leaves no
@@ -95,6 +97,7 @@ fun PracticeScreen(
     family: Family,
     rank: PracticeRank,
     bpm: Int,
+    mode: RunMode = RunMode.Challenge,
     clickAudible: Boolean,
     latencyMs: Float,
     /**
@@ -125,6 +128,7 @@ fun PracticeScreen(
     unknownOutput: Boolean,
     onExit: () -> Unit,
     onFinished: (PracticeResult) -> Unit,
+    onPracticeFinished: (PracticeSummary) -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -158,7 +162,7 @@ fun PracticeScreen(
     // the attempt, the expiry check and the deviation scale alike (decision 125). Each note
     // carries the windows of its own density, so a dense block does not tighten the sparse
     // beats of the same attempt (decision 151).
-    val windows = remember(notes) { attemptWindowsFor(notes) }
+    val attemptWindows = remember(notes) { attemptWindowsFor(notes) }
     // Self-tuning during the run is off (decision 167 cancelled): the only thing compensated
     // is the audio path, measured objectively on the calibration screen. The player's own
     // bias is what the trainer exists to show, so subtracting it here hid the very thing the
@@ -169,8 +173,12 @@ fun PracticeScreen(
     var attemptSeq by remember(notes) { mutableIntStateOf(0) }
     var restartPending by remember(notes) { mutableStateOf(false) }
     val attempt = remember(notes, attemptSeq) {
-        PracticeAttempt(notes, windows, LatencyTracker.disabled())
+        PracticeAttempt(notes, attemptWindows, LatencyTracker.disabled())
     }
+    val loop = remember(notes, attemptSeq, mode) {
+        if (mode == RunMode.Practice) PracticeLoop(level, rank, tempo) else null
+    }
+    val windows = loop?.windows ?: attemptWindows
     val minIntervalMs = remember(notes) { minNoteIntervalMs(notes) ?: 0f }
     // One collector per attempt, created when the engine starts and written once the
     // run is over: a screen that is only opened and left behind logs nothing.
@@ -204,6 +212,7 @@ fun PracticeScreen(
 
     var running by remember(attempt) { mutableStateOf(false) }
     var positionMs by remember(attempt) { mutableFloatStateOf(0f) }
+    var positionMsExact by remember(attempt) { mutableStateOf(0.0) }
     var frame by remember(attempt) { mutableIntStateOf(0) }
     var envelope by remember { mutableFloatStateOf(0f) }
     var threshold by remember { mutableFloatStateOf(0f) }
@@ -230,7 +239,7 @@ fun PracticeScreen(
     // Headphones can be plugged in or pulled out mid-attempt: the engine follows the
     // new click state without restarting the run (decision 114).
     LaunchedEffect(clickAudible, running) {
-        if (running && (lastNoteMs <= 0f || positionMs < lastNoteMs)) {
+        if (running && (loop != null || lastNoteMs <= 0f || positionMs < lastNoteMs)) {
             session.setClickAudible(clickAudible)
         }
     }
@@ -240,14 +249,16 @@ fun PracticeScreen(
     // timeline keeps running, which scored silence as a wall of misses. Without a
     // pause the attempt is simply dropped, exactly like back (decision 106).
     OnBackgrounded {
-        if (running) {
+        if (running || restartPending) {
             AppLog.trace("practice") { "backgrounded at ${positionMs.roundToInt()} ms, dropped" }
             closeTelemetry(
                 context, telemetry, session, attempt, positionMs,
                 aborted = true, frames = frameWatch.stop(),
+                loop = loop, positionMsExact = positionMsExact,
             )
             session.stop()
             running = false
+            restartPending = false
             onExit()
         }
     }
@@ -260,7 +271,7 @@ fun PracticeScreen(
 
     LaunchedEffect(level.id, rank, tempo) {
         AppLog.trace("practice") {
-            "open ${level.id} rank=${rank.name} bpm=$tempo notes=${notes.size} " +
+            "open ${level.id} mode=${mode.name} rank=${rank.name} bpm=$tempo notes=${notes.size} " +
                 "mic=$micGranted"
         }
     }
@@ -302,6 +313,7 @@ fun PracticeScreen(
                 closeTelemetry(
                     context, telemetry, session, attempt, positionMs,
                     aborted = true, frames = frameWatch.stop(),
+                    loop = loop, positionMsExact = positionMsExact,
                 )
                 session.stop()
                 running = false
@@ -319,7 +331,7 @@ fun PracticeScreen(
                 telemetry.value?.clock(poll.positionMs, clock)
                 AppLog.trace("practice") { clock.text() }
             }
-            if (!clickStopped && lastNoteMs > 0f && poll.positionMs >= lastNoteMs) {
+            if (loop == null && !clickStopped && lastNoteMs > 0f && poll.positionMs >= lastNoteMs) {
                 clickStopped = true
                 session.setClickAudible(false)
             }
@@ -364,6 +376,7 @@ fun PracticeScreen(
                 }
                 val now = poll.positionMs
                 positionMs = now
+                positionMsExact = poll.positionMsExact
                 // Judging runs on its own clock, a whole compensation behind the picture.
                 // A hit is reported at `arrival - appliedLatency`, so with 184 ms of
                 // compensation a stroke that landed dead on the note only reaches the
@@ -374,8 +387,12 @@ fun PracticeScreen(
                 val judgeNowMs = now - poll.appliedLatencyMs
                 val log = telemetry.value
                 poll.hits.forEach { hit ->
-                    if (hit.positionMs < firstJudgedMs) return@forEach
-                    val outcome = attempt.registerHit(hit.positionMs)
+                    val outcome = if (loop != null) {
+                        loop.registerHit(hit.positionMsExact) ?: return@forEach
+                    } else {
+                        if (hit.positionMs < firstJudgedMs) return@forEach
+                        attempt.registerHit(hit.positionMs)
+                    }
                     log?.hit(
                         atMs = hit.positionMs,
                         outcome = outcome,
@@ -385,12 +402,13 @@ fun PracticeScreen(
                         diagnostics = hit.diagnostics,
                         // An extra stroke carries no note of its own, so its distance to
                         // the nearest one is computed here (decision 154).
-                        extraOffsetMs = if (outcome is HitOutcome.Extra) {
+                        extraOffsetMs = if (loop == null && outcome is HitOutcome.Extra) {
                             nearestNoteOffsetMs(notes, hit.positionMs)
                         } else {
                             Float.NaN
                         },
                     )
+                    if (loop != null) return@forEach
                     val bias = attempt.latency
                     val moved = loggedBiasMs.isNaN() ||
                         abs(bias.biasMs - loggedBiasMs) >= LatencyTracker.LOG_STEP_MS
@@ -411,7 +429,7 @@ fun PracticeScreen(
                 }
                 // Everything the gate threw away is still written down: it is the only way
                 // to tell "the room is too loud" from "the detector is deaf" afterwards.
-                attempt.registerQuiet(poll.quietHits.size)
+                if (loop == null) attempt.registerQuiet(poll.quietHits.size)
                 poll.quietHits.forEach { hit ->
                     log?.quiet(
                         atMs = hit.positionMs,
@@ -421,11 +439,15 @@ fun PracticeScreen(
                         diagnostics = hit.diagnostics,
                     )
                 }
-                attempt.expireMissedNotes(judgeNowMs).forEach { index ->
-                    log?.miss(atMs = judgeNowMs, noteIndex = index)
+                if (loop != null) {
+                    loop.advance(poll.positionMsExact)
+                } else {
+                    attempt.expireMissedNotes(judgeNowMs).forEach { index ->
+                        log?.miss(atMs = judgeNowMs, noteIndex = index)
+                    }
                 }
                 frame += 1
-                if (judgeNowMs > endMs) {
+                if (loop == null && judgeNowMs > endMs) {
                     val result = attempt.result()
                     closeTelemetry(
                         context = context,
@@ -455,9 +477,11 @@ fun PracticeScreen(
         closeTelemetry(
             context, telemetry, session, attempt, positionMs,
             aborted = true, frames = frameWatch.stop(),
+            loop = loop, positionMsExact = positionMsExact,
         )
         session.stop()
         running = false
+        restartPending = false
         onExit()
     }
 
@@ -475,6 +499,7 @@ fun PracticeScreen(
             micThresholdLevel = micThresholdLevel,
             tempoPlan = tempoPlan,
             countInBeats = countInBeats,
+            tempoPlanLoopStart = if (loop != null && tempoPlan.isNotEmpty()) countInBeats else 0,
         )
         if (!started) AppLog.error("practice", "audio engine refused to start")
         audioFailed = !started
@@ -507,6 +532,7 @@ fun PracticeScreen(
                 clickAudible = clickAudible,
                 headphones = headphonesConnected,
                 audio = session.streamInfo().toTelemetry(),
+                runMode = mode.name,
             ),
         )
     }
@@ -517,6 +543,22 @@ fun PracticeScreen(
      * record cannot be moved by a run that never reached its own finish (decision 215).
      */
     fun stopAttempt() {
+        restartPending = false
+        if (loop != null) {
+            val summary = PracticeSummary(
+                durationMs = (positionMsExact - loop.countInMs).coerceAtLeast(0.0).toLong(),
+                hits = loop.hitCount,
+            )
+            closeTelemetry(
+                context, telemetry, session, attempt, positionMs,
+                aborted = false, frames = frameWatch.stop(),
+                loop = loop, positionMsExact = positionMsExact,
+            )
+            session.stop()
+            running = false
+            onPracticeFinished(summary)
+            return
+        }
         if (attempt.nothingJudged) {
             // Stopped before the first note was judged: there is no run to review,
             // and a 0% result would have been written into the level's history.
@@ -549,6 +591,7 @@ fun PracticeScreen(
         closeTelemetry(
             context, telemetry, session, attempt, positionMs,
             aborted = true, frames = frameWatch.stop(),
+            loop = loop, positionMsExact = positionMsExact,
         )
         session.stop()
         running = false
@@ -581,14 +624,14 @@ fun PracticeScreen(
                 // Same name as the map, the level screen and the result (decision 201).
                 rubric = "${level.title(family)} · ${level.displayCode}",
                 chips = listOf(
-                    rank.name.uppercase(),
-                    stringResource(R.string.practice_bpm, tempo),
                     stringResource(
-                        R.string.practice_hits_per_beat,
-                        practiceTarget(level, rank)?.hitsPerBeat ?: 1,
+                        if (mode == RunMode.Practice) R.string.run_mode_practice
+                        else R.string.run_mode_challenge,
                     ),
+                    stringResource(R.string.practice_rank, rank.name.uppercase()),
+                    stringResource(R.string.practice_bpm, tempo),
                 ),
-                countdown = timedFloorMs?.let { floorMs ->
+                countdown = if (loop != null) null else timedFloorMs?.let { floorMs ->
                     if (positionMs >= floorMs) {
                         stringResource(R.string.practice_finishing_cycle)
                     } else {
@@ -598,13 +641,20 @@ fun PracticeScreen(
                 accuracy = attempt.liveAccuracy,
                 misses = attempt.misses,
                 extras = attempt.extras.size,
-                finished = finishMs > 0f && positionMs >= finishMs,
+                finished = loop == null && finishMs > 0f && positionMs >= finishMs,
+                practiceElapsed = loop?.let {
+                    formatElapsed(
+                        ((positionMsExact - it.countInMs).coerceAtLeast(0.0) / 1000).toInt(),
+                    )
+                },
                 onBack = { leave() },
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
             )
-            PracticeProgressLine(
-                progress = if (finishMs <= 0f) 0f else positionMs / finishMs,
-            )
+            if (loop == null) {
+                PracticeProgressLine(
+                    progress = if (finishMs <= 0f) 0f else positionMs / finishMs,
+                )
+            }
             PracticeTrack(
                 notes = notes,
                 attempt = attempt,
@@ -612,12 +662,14 @@ fun PracticeScreen(
                 beatTimesMs = beatTimesMs,
                 countInBeats = countInBeats,
                 frame = frame,
-                finishMs = finishMs,
+                finishMs = if (loop == null) finishMs else 0f,
+                loop = loop,
+                loopPositionMs = positionMsExact,
                 showOffsetMs = showOffsetMs,
                 modifier = Modifier.fillMaxWidth().weight(1f),
             )
             PracticeDeviationScale(
-                offsets = attempt.offsets,
+                offsets = loop?.offsets ?: attempt.offsets,
                 modifier = Modifier.padding(horizontal = 18.dp),
                 // The scale has to hold the offsets of every density of the attempt, so it
                 // is drawn with the widest windows (decision 151).
@@ -635,6 +687,14 @@ fun PracticeScreen(
                     gate = micThresholdLevel,
                 )
                 Spacer(modifier = Modifier.weight(1f))
+                if (loop != null) {
+                    Text(
+                        text = stringResource(R.string.practice_mode_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = RudiColors.Muted,
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                    )
+                }
                 // Reserve the corner the floating transport button sits in.
                 Spacer(modifier = Modifier.width(TRANSPORT_RESERVE))
             }
@@ -646,10 +706,22 @@ fun PracticeScreen(
         // there is nothing left to decide by then (decision 192).
         if (!running && clickAudible && !headphonesConnected) {
             WarningBanner(
-                title = stringResource(R.string.practice_click_warning_title),
-                body = stringResource(R.string.practice_click_warning),
-                helpTitle = stringResource(R.string.practice_click_warning_help_title),
-                helpBody = stringResource(R.string.practice_click_warning_help_body),
+                title = stringResource(
+                    if (loop != null) R.string.practice_free_click_warning_title
+                    else R.string.practice_click_warning_title,
+                ),
+                body = stringResource(
+                    if (loop != null) R.string.practice_free_click_warning
+                    else R.string.practice_click_warning,
+                ),
+                helpTitle = stringResource(
+                    if (loop != null) R.string.practice_free_click_warning_title
+                    else R.string.practice_click_warning_help_title,
+                ),
+                helpBody = stringResource(
+                    if (loop != null) R.string.practice_free_click_warning
+                    else R.string.practice_click_warning_help_body,
+                ),
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(horizontal = 24.dp),
@@ -706,7 +778,9 @@ fun PracticeScreen(
                 } else {
                     null
                 },
-                onClick = { if (transportActive) restartAttempt() else startAttempt() },
+                onClick = {
+                    if (transportActive || audioLost) restartAttempt() else startAttempt()
+                },
             )
         }
     }
@@ -757,6 +831,8 @@ private fun closeTelemetry(
     aborted: Boolean,
     result: PracticeResult? = null,
     frames: String? = null,
+    loop: PracticeLoop? = null,
+    positionMsExact: Double = positionMs.toDouble(),
 ) {
     val log = telemetry.value ?: return
     telemetry.value = null
@@ -764,13 +840,25 @@ private fun closeTelemetry(
     // next freeze report is guesswork again (decision 206).
     frames?.let { log.audioEvent(positionMs, "frames", it) }
     val audio = runCatching { session.streamInfo().toTelemetry() }.getOrNull()
-    log.finish(
-        atMs = positionMs,
-        result = result ?: attempt.result(),
-        debouncedTotal = attempt.debounced,
-        audio = audio,
-        aborted = aborted,
-    )
+    if (loop != null) {
+        log.finishPractice(
+            atMs = positionMs,
+            summary = PracticeSummary(
+                durationMs = (positionMsExact - loop.countInMs).coerceAtLeast(0.0).toLong(),
+                hits = loop.hitCount,
+            ),
+            audio = audio,
+            aborted = aborted,
+        )
+    } else {
+        log.finish(
+            atMs = positionMs,
+            result = result ?: attempt.result(),
+            debouncedTotal = attempt.debounced,
+            audio = audio,
+            aborted = aborted,
+        )
+    }
     PracticeLogStore.save(context, log)
 }
 

@@ -4,6 +4,7 @@ import com.rudimentor.app.audio.OnsetDiagnostics
 import com.rudimentor.app.audio.StreamClockDrift
 import com.rudimentor.app.ui.practice.HitOutcome
 import com.rudimentor.app.ui.practice.PracticeResult
+import com.rudimentor.app.ui.practice.PracticeSummary
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -69,6 +70,8 @@ data class TelemetryHeader(
     val clickAudible: Boolean,
     val headphones: Boolean,
     val audio: TelemetryAudio?,
+    /** Free practice has no scored result and retains only a bounded diagnostic prefix. */
+    val runMode: String = "Challenge",
 )
 
 /**
@@ -82,24 +85,28 @@ data class TelemetryHeader(
  * The events keep enough of the raw path -- every detector trigger, including the ones
  * the debounce filter dropped, with its envelope and threshold -- that a finished
  * attempt can be re-judged against different windows or a different filter from the
- * log alone.
+ * log alone, while its events fit within the cap. Endless Practice instead keeps
+ * bounded event and diagnostic-sample prefixes, followed by cumulative duration/hits;
+ * it never has a scored result.
  */
 class PracticeTelemetry(
     val header: TelemetryHeader,
     private val maxEvents: Int = MAX_EVENTS,
 ) {
 
+    private val isPractice = header.runMode == "Practice"
+    private val sampleLimit = if (isPractice) maxEvents.coerceIn(0, MAX_EVENTS) else null
     private val events = ArrayList<String>(256)
 
     /** Events refused after [maxEvents], so a long run cannot grow without bound. */
     private var dropped = 0
 
-    private var judged = 0
-    private var extras = 0
-    private var debounced = 0
-    private var afterEnd = 0
-    private var quiet = 0
-    private var missed = 0
+    private var judged = 0L
+    private var extras = 0L
+    private var debounced = 0L
+    private var afterEnd = 0L
+    private var quiet = 0L
+    private var missed = 0L
 
     // The output latency the engine measured during the run. Over Bluetooth it is
     // hundreds of milliseconds and it moves, and that movement is what makes a run drift
@@ -122,7 +129,7 @@ class PracticeTelemetry(
      * scored no notes at all and reported "timing mean 0 ms · 0 offsets" -- the one number
      * that would have named the problem was missing from the dev.39 log (decision 164).
      */
-    private val driftOffsets = ArrayList<Float>(64)
+    private val driftOffsets = SummarySamples(64, sampleLimit)
 
     /**
      * Distance from the note of every judged stroke *before* the run's own latency bias was
@@ -135,11 +142,11 @@ class PracticeTelemetry(
      * the end, spread only 25 ms -- names itself in one line instead of ten iterations
      * (decision 167).
      */
-    private val rawOffsets = ArrayList<Float>(64)
+    private val rawOffsets = SummarySamples(64, sampleLimit)
 
     /** Envelope of every accepted stroke and of every one the gate refused. */
-    private val hitEnvelopes = ArrayList<Float>(64)
-    private val quietEnvelopes = ArrayList<Float>(32)
+    private val hitEnvelopes = SummarySamples(64, sampleLimit)
+    private val quietEnvelopes = SummarySamples(32, sampleLimit)
 
     /** The latency bias the attempt measured on itself, and how it got there. */
     private var biasMs = Float.NaN
@@ -158,6 +165,7 @@ class PracticeTelemetry(
     private var stalls = 0
 
     private var result: PracticeResult? = null
+    private var practiceSummary: PracticeSummary? = null
     private var finalAudio: TelemetryAudio? = null
     private var aborted = false
     private var abortedAtMs = 0f
@@ -344,13 +352,14 @@ class PracticeTelemetry(
         audio: TelemetryAudio?,
         aborted: Boolean,
     ) {
+        check(!isPractice) { "Free practice must close with finishPractice, not a scored result" }
         this.result = result
         this.finalAudio = audio
         this.aborted = aborted
         this.abortedAtMs = atMs
         // The attempt is the source of truth for the dropped strokes: an event that fell
         // off the tail of the ring would otherwise quietly lower the count.
-        this.debounced = debouncedTotal
+        this.debounced = debouncedTotal.toLong()
         add(
             TelemetryJson(if (aborted) "abort" else "result")
                 .num("atMs", atMs)
@@ -373,9 +382,36 @@ class PracticeTelemetry(
         )
     }
 
+    /** Closes a free run without inventing a score or retaining a finite attempt's result. */
+    fun finishPractice(
+        atMs: Float,
+        summary: PracticeSummary,
+        audio: TelemetryAudio?,
+        aborted: Boolean,
+    ) {
+        check(isPractice) { "finishPractice requires runMode Practice" }
+        // Closing can be requested by both an audio fault and screen disposal.
+        if (practiceSummary != null) return
+        practiceSummary = summary
+        finalAudio = audio
+        this.aborted = aborted
+        abortedAtMs = atMs
+        val event = TelemetryJson(if (aborted) "practiceAbort" else "practiceEnd")
+            .num("atMs", atMs)
+            .text("mode", header.runMode)
+            .done()
+        // TelemetryJson handles only Int/Float numbers. Append these two fixed numeric
+        // fields as Longs: neither duration nor the cumulative hit count may lose precision.
+        add(
+            event.dropLast(1) +
+                ",\"durationMs\":${summary.durationMs},\"hits\":${summary.hits}}",
+            closing = true,
+        )
+    }
+
     /**
-     * The whole attempt as JSONL: the session line, the attempt line, every event in
-     * order, and the result. Built on demand, off the poll loop.
+     * The log as JSONL: the session line, the attempt line, retained events in order,
+     * and the scored result or free-practice close. Built on demand, off the poll loop.
      */
     fun jsonLines(): List<String> {
         val lines = ArrayList<String>(events.size + 3)
@@ -452,8 +488,9 @@ class PracticeTelemetry(
         )
         lines.add(
             "${header.levelLabel} · ${header.family} · rank ${header.rank} · " +
-                "${header.bpm} bpm · ${header.noteCount} notes · " +
-                "interval ${ms(header.minIntervalMs)}",
+                "${header.bpm} bpm · ${header.noteCount} " +
+                (if (isPractice) "template notes" else "notes") +
+                " · interval ${ms(header.minIntervalMs)} · mode ${header.runMode}",
         )
         lines.add(
             "windows perfect ±${ms(header.perfectMs)} / good ±${ms(header.goodMs)} / " +
@@ -483,7 +520,13 @@ class PracticeTelemetry(
             },
         )
         val outcome = result
-        if (outcome == null) {
+        if (isPractice) {
+            lines.add(practiceLine())
+            lines.add(
+                "detector matched $judged · extra $extras · debounced $debounced · " +
+                    "afterEnd $afterEnd · quiet $quiet",
+            )
+        } else if (outcome == null) {
             lines.add(
                 "result none · judged $judged · extra $extras · debounced $debounced · " +
                     "afterEnd $afterEnd · quiet $quiet",
@@ -531,9 +574,9 @@ class PracticeTelemetry(
         val drift = medianOf(driftOffsets)
         lines.add(
             if (drift == null) {
-                "drift no strokes"
+                "drift${driftOffsets.scope()} no strokes"
             } else {
-                "drift median ${signed(drift)} · " +
+                "drift${driftOffsets.scope()} median ${signed(drift)} · " +
                     "spread ${ms(spreadMs(driftOffsets))} · ${driftOffsets.size} strokes"
             },
         )
@@ -543,9 +586,9 @@ class PracticeTelemetry(
         // (decision 167).
         lines.add(
             if (rawOffsets.isEmpty()) {
-                "raw no strokes"
+                "raw${rawOffsets.scope()} no strokes"
             } else {
-                "raw median ${signed(medianOf(rawOffsets) ?: 0f)} · " +
+                "raw${rawOffsets.scope()} median ${signed(medianOf(rawOffsets) ?: 0f)} · " +
                     "spread ${ms(spreadMs(rawOffsets))} · " +
                     "profile ${profileOf(rawOffsets)} (per $PROFILE_GROUP)"
             },
@@ -563,8 +606,8 @@ class PracticeTelemetry(
         // reaches the score at all, so its levels belong next to the ones that passed.
         lines.add(
             "gate ${decimal(header.micThresholdLevel, ACCURACY_DIGITS)} · " +
-                "hits ${envelopeRange(hitEnvelopes)} · " +
-                "refused $quiet ${envelopeRange(quietEnvelopes)}",
+                "hits${hitEnvelopes.scope()} ${envelopeRange(hitEnvelopes)} · " +
+                "refused $quiet${quietEnvelopes.scope()} ${envelopeRange(quietEnvelopes)}",
         )
         lines.add(
             frameSummary?.let { "picture $it · main-thread stalls $stalls" }
@@ -577,9 +620,46 @@ class PracticeTelemetry(
 
     /** First line of the summary, for the log list. */
     fun title(): String {
+        if (isPractice) {
+            return "${header.levelLabel} · ${header.bpm} bpm · ${practiceLine()}"
+        }
         val accuracy = result?.let { percent(it.accuracy) } ?: "no result"
         val suffix = if (aborted) " · aborted" else ""
         return "${header.levelLabel} · ${header.rank} · ${header.bpm} bpm · $accuracy$suffix"
+    }
+
+    private fun practiceLine(): String {
+        val summary = practiceSummary ?: return "Practice running"
+        return "Practice ${if (aborted) "aborted" else "ended"} · " +
+            "duration ${summary.durationMs} ms · hits ${summary.hits}"
+    }
+
+    /**
+     * Finite attempts retain their original samples; endless practice keeps only the first
+     * [limit] values of each series. The backing array is allocated once for practice, never
+     * grown or rotated. Counts still cover the entire run, even after the JSON event cap.
+     *
+     * The scope travels with every statistic in the summary, so a median/profile/range of
+     * this prefix cannot be mistaken for a measurement of the entire free run.
+     */
+    private class SummarySamples(initialCapacity: Int, private val limit: Int?) :
+        AbstractList<Float>() {
+        private val values = ArrayList<Float>(limit ?: initialCapacity)
+        private var total = 0L
+
+        override val size: Int get() = values.size
+        override fun get(index: Int): Float = values[index]
+
+        fun add(value: Float) {
+            total += 1
+            if (limit == null || size < limit) values.add(value)
+        }
+
+        fun scope(): String {
+            if (limit == null) return ""
+            val truncated = if (total > size) "; truncated" else ""
+            return " [prefix samples $size/$total$truncated]"
+        }
     }
 
     /**
@@ -638,6 +718,7 @@ class PracticeTelemetry(
         .num("sensitivity", header.sensitivity, ACCURACY_DIGITS)
         .num("micGate", header.micThresholdLevel, LEVEL_DIGITS)
         .bool("clickAudible", header.clickAudible)
+        .text("mode", header.runMode)
         .done()
 
     companion object {
