@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.R
@@ -133,19 +134,26 @@ private fun ResultBody(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text(
-                text = stringResource(
-                    if (result.passed) {
-                        R.string.practice_result_passed
-                    } else {
-                        R.string.practice_result_failed
-                    }
-                ),
-                style = RudiTextStyles.Rubric,
-                color = if (result.passed) RudiColors.BrickLit else RudiColors.Muted,
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // One header line, not three stacked ones (decision 213). The verdict, the
+            // level and its terms are all short: on a landscape window they fit side by
+            // side, and the three rows they used to be cost about seventy dp of height --
+            // which is exactly the height that pushed the readings into a scroll.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(
+                        if (result.passed) {
+                            R.string.practice_result_passed
+                        } else {
+                            R.string.practice_result_failed
+                        }
+                    ),
+                    style = RudiTextStyles.Rubric,
+                    color = if (result.passed) RudiColors.BrickLit else RudiColors.Muted,
+                )
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     // The exercise the attempt was, named the way the map and the level
                     // screen name it, plus its code. The family name with a bare number
@@ -154,29 +162,32 @@ private fun ResultBody(
                     text = "${level.title(family)} · ${level.displayCode}",
                     style = MaterialTheme.typography.titleLarge,
                     color = RudiColors.Text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    // Takes only the width it needs, and gives way instead of wrapping:
+                    // a long level name must not push the chips off the header or turn
+                    // the one line back into two.
+                    modifier = Modifier.weight(1f, fill = false),
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 RudiChip(text = rank.name.uppercase(), accent = true)
                 Spacer(modifier = Modifier.width(6.dp))
                 RudiChip(text = stringResource(R.string.practice_bpm, bpm))
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                StarRow(stars = result.stars)
                 // The badges name the two top states the stars already encode, so the screen
                 // says out loud what the node will carry (decision 126).
-                if (result.fullCombo) {
-                    Spacer(modifier = Modifier.width(12.dp))
-                    RudiChip(text = stringResource(R.string.practice_result_full_combo), accent = true)
-                }
-                if (result.crown) {
+                if (result.fullCombo || result.crown) {
                     Spacer(modifier = Modifier.width(6.dp))
-                    RudiChip(text = stringResource(R.string.practice_result_crown), accent = true)
+                    if (result.fullCombo) {
+                        RudiChip(text = stringResource(R.string.practice_result_full_combo), accent = true)
+                    }
+                    if (result.crown) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        RudiChip(text = stringResource(R.string.practice_result_crown), accent = true)
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -193,6 +204,9 @@ private fun ResultBody(
                     label = stringResource(R.string.practice_result_accuracy),
                     value = stringResource(R.string.practice_result_accuracy_value, nowPercent),
                     strong = true,
+                    // The stars are what the accuracy earned, so they stand beside the
+                    // number instead of on a row of their own (decision 213).
+                    trailing = { StarRow(stars = result.stars) },
                     note = when {
                         bestPercent == null -> stringResource(R.string.practice_result_best_first)
                         beaten -> stringResource(
@@ -310,6 +324,8 @@ private fun Metric(
     /** One small line under the value, e.g. the record the accuracy just moved. */
     note: String? = null,
     noteAccent: Boolean = false,
+    /** Drawn on the same line as the value, to its right. */
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     Column {
         Text(
@@ -318,15 +334,21 @@ private fun Metric(
             color = RudiColors.Muted,
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = value,
-            style = if (strong) {
-                RudiTextStyles.BpmValue.copy(fontSize = 30.sp, lineHeight = 32.sp)
-            } else {
-                RudiTextStyles.BpmValue.copy(fontSize = 20.sp, lineHeight = 22.sp)
-            },
-            color = RudiColors.Text,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = value,
+                style = if (strong) {
+                    RudiTextStyles.BpmValue.copy(fontSize = 30.sp, lineHeight = 32.sp)
+                } else {
+                    RudiTextStyles.BpmValue.copy(fontSize = 20.sp, lineHeight = 22.sp)
+                },
+                color = RudiColors.Text,
+            )
+            if (trailing != null) {
+                Spacer(modifier = Modifier.width(12.dp))
+                trailing()
+            }
+        }
         if (note != null) {
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -342,12 +364,14 @@ private fun Metric(
 private fun StarRow(stars: Int) {
     val cd = stringResource(R.string.practice_result_stars_cd, stars)
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.semantics { contentDescription = cd },
     ) {
         repeat(3) { index ->
             val filled = index < stars
-            Canvas(modifier = Modifier.size(24.dp)) {
+            // Sized to the accuracy digits they now stand next to (decision 213).
+            Canvas(modifier = Modifier.size(22.dp)) {
                 val path = padStarPath(size.minDimension)
                 if (filled) {
                     drawPath(path = path, color = RudiColors.BrickLit)
