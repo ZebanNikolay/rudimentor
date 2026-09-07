@@ -1,5 +1,7 @@
 package com.rudimentor.app.telemetry
 
+import com.rudimentor.app.audio.OnsetHitWire
+import com.rudimentor.app.audio.onsetWireFixture
 import com.rudimentor.app.ui.practice.HitOutcome
 import com.rudimentor.app.ui.practice.HitWindow
 import com.rudimentor.app.ui.practice.HitWindows
@@ -14,6 +16,107 @@ import org.junit.Test
  * without a device.
  */
 class PracticeTelemetryTest {
+
+    @Test
+    fun `ordinary exports advertise schema even with no hits`() {
+        val lines = PracticeTelemetry(header()).jsonLines()
+        assertTrue(lines[0].contains("\"onsetDiagnosticsVersion\":1"))
+        assertTrue(lines[1].contains("\"onsetDiagnosticsVersion\":1"))
+        assertTrue(lines[0].contains("\"onsetDetector\":\"time-domain-v1\""))
+    }
+
+    @Test
+    fun `every logged outcome and quiet onset keep event evidence distinct from poll peak`() {
+        val d = OnsetHitWire.decode(onsetWireFixture(), 0).diagnostics!!
+        val telemetry = PracticeTelemetry(header())
+        val outcomes = listOf(
+            HitOutcome.Judged(0, NoteJudgement(-4f, HitWindow.Perfect)),
+            HitOutcome.Extra(10f),
+            HitOutcome.Debounced(10f),
+            HitOutcome.AfterEnd(10f),
+        )
+        outcomes.forEachIndexed { index, outcome ->
+            telemetry.hit(
+                10f, outcome, 0.5f, 0.25f, peak = 0.9f,
+                diagnostics = d.copy(sequence = index + 1L, candidateSignalPeak = (index + 1) / 8f),
+            )
+        }
+        telemetry.quiet(10f, 0.5f, 0.25f, 0.6f, diagnostics = d)
+        val events = telemetry.jsonLines().drop(2)
+        assertEquals(5, events.size)
+        events.forEach {
+            assertTrue(it.contains("\"onsetDiagnosticsVersion\":1"))
+            assertTrue(it.contains("\"onsetSampleRate\":48000"))
+            assertTrue(it.contains("\"onsetPeakFrame\":1099511627782"))
+            assertTrue(it.contains("\"onsetArmFrame\":1099511627783"))
+            assertTrue(it.contains("\"onsetCommitFrame\":1099511627784"))
+            assertTrue(it.contains("\"onsetPreviousPeakGapFrames\":null"))
+            assertTrue(it.contains("\"onsetPreviousPeakEnv\":null"))
+            assertTrue(it.contains("\"onsetPreArmEnv\":0.125000"))
+            assertTrue(it.contains("\"onsetArmEnv\":0.250000"))
+            assertTrue(it.contains("\"onsetMinEnvBeforeArm\":0.062500"))
+            assertTrue(it.contains("\"onsetCommitEnv\":0.500000"))
+            assertTrue(it.contains("\"onsetAdaptiveThresholdAtArm\":0.031250"))
+            assertTrue(it.contains("\"onsetPostHitFloorAtArm\":0.015625"))
+            assertTrue(it.contains("\"onsetEffectiveThresholdAtPeak\":0.375000"))
+            assertTrue(it.contains("\"onsetEffectiveThresholdAtCommit\":0.625000"))
+            assertTrue(it.contains("\"onsetThresholdFactorAtArm\":2.500000"))
+            assertTrue(it.contains("\"onsetThresholdFloorAtArm\":0.007812"))
+            assertTrue(it.contains("\"onsetMedianWindowAtArm\":512"))
+            assertTrue(it.contains("\"onsetRefractoryFramesAtArm\":1920"))
+        }
+        events.take(4).forEachIndexed { index, line ->
+            assertTrue(line.contains("\"peak\":0.9000"))
+            assertTrue(line.contains("\"pollPeak\":0.9000"))
+            assertTrue(line.contains("\"onsetSequence\":${index + 1}"))
+        }
+        assertTrue(events[0].contains("\"candidateSignalPeak\":0.125000"))
+        assertTrue(events[1].contains("\"candidateSignalPeak\":0.250000"))
+        assertTrue(events[2].contains("\"candidateSignalPeak\":0.375000"))
+        assertTrue(events[3].contains("\"candidateSignalPeak\":0.500000"))
+        assertTrue(events[4].contains("\"candidateSignalPeak\":0.750000"))
+        assertTrue(events[4].contains("\"gate\":0.6000"))
+    }
+
+    @Test
+    fun `missing evidence is explicit and does not change legacy hit values`() {
+        val telemetry = PracticeTelemetry(header())
+        telemetry.hit(10f, HitOutcome.Extra(10f), 0.5f, 0.25f, 0.75f)
+        telemetry.quiet(10f, 0.5f, 0.25f, 0.6f)
+        telemetry.jsonLines().drop(2).forEach {
+            assertTrue(it.contains("\"onsetDiagnosticsVersion\":0"))
+            assertTrue(it.contains("\"env\":0.5000"))
+            assertTrue(it.contains("\"thr\":0.2500"))
+            assertTrue(!it.contains("candidateSignalPeak"))
+            assertTrue(!it.contains("onsetSequence"))
+        }
+    }
+
+    @Test
+    fun `known zero and long gaps are not missing and nonfinite levels remain valid JSON`() {
+        val d = OnsetHitWire.decode(onsetWireFixture(), 0).diagnostics!!
+        val text = TelemetryJson("hit").onset(
+            d.copy(previousPeakGapFrames = 1L shl 40, previousPeakEnvelope = 0f, armEnvelope = Float.NaN),
+        ).done()
+        assertTrue(text.contains("\"onsetPreviousPeakGapFrames\":1099511627776"))
+        assertTrue(text.contains("\"onsetPreviousPeakEnv\":0.000000"))
+        assertTrue(text.contains("\"onsetArmEnv\":null"))
+        assertTrue(!text.contains("NaN"))
+    }
+
+    @Test
+    fun `diagnostics do not bypass event cap or remove closing result`() {
+        val d = OnsetHitWire.decode(onsetWireFixture(), 0).diagnostics!!
+        val telemetry = PracticeTelemetry(header(), maxEvents = 2)
+        repeat(5) {
+            telemetry.hit(10f, HitOutcome.Extra(10f), 0.5f, 0.25f, 0.75f, diagnostics = d)
+        }
+        telemetry.finish(20f, result(), 0, audio(), aborted = false)
+        val lines = telemetry.jsonLines()
+        assertEquals(2, lines.count { it.contains("\"type\":\"hit\"") })
+        assertTrue(lines.any { it.contains("\"droppedEvents\":3") })
+        assertTrue(lines.any { it.contains("\"type\":\"result\"") })
+    }
 
     @Test
     fun `every event lands on its own line`() {
