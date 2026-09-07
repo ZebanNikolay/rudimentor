@@ -1,5 +1,6 @@
 package com.rudimentor.app.ui.levels
 
+import com.rudimentor.app.data.levels.CompletionMode
 import com.rudimentor.app.data.levels.Execution
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
@@ -95,6 +96,24 @@ class LevelLabelsTest {
 
         // 30 beats at 60 BPM = 30 s, 30 beats at 120 BPM = 15 s.
         assertEquals(45, level.attemptSeconds(level.target(PracticeRank.Practice)))
+    }
+
+    @Test
+    fun `a timed level states the notes it plays, not zero`() {
+        val level = level(
+            lesson("singles.EN-01").copy(
+                execution = Execution(durationSeconds = 120, completionMode = CompletionMode.CompletePatternCycle),
+                rankTargets = listOf(RankTarget(rank = PracticeRank.Practice, bpm = 100, hitsPerBeat = 1)),
+            ),
+        )
+
+        val block = level.stickingBlocks(level.target(PracticeRank.Practice)).single()
+
+        // Two minutes at 100 bpm, one note a beat: 200 of them. Nothing about the run is
+        // open, so the card states the number instead of `0 hits` (decision 220).
+        assertEquals(200, block.beats)
+        assertEquals(200, block.notes)
+        assertEquals(1, block.hitsPerBeat)
     }
 
     @Test

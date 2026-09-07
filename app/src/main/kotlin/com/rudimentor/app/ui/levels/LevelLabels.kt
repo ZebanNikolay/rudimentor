@@ -132,11 +132,19 @@ internal data class StickingBlock(
     val densityRepeats: Int?,
 )
 
-/** Every block one pass of an attempt plays, in order. A one-pattern level has one block. */
+/**
+ * Every block one pass of an attempt plays, in order. A one-pattern level has one block.
+ *
+ * Read through [attemptPhases], not [phases]: a timed level states no beat count of its own,
+ * and reading the authored phases gave it a block of zero beats and therefore `0 hits` on the
+ * card. Its length is not open -- tempo, density and duration are all fixed, so the beats are
+ * arithmetic, and [attemptPhases] is the same arithmetic the practice engine runs
+ * (decision 220).
+ */
 internal fun Level.stickingBlocks(target: RankTarget): List<StickingBlock> {
     var beat = 0
     val blocks = mutableListOf<StickingBlock>()
-    phases.forEach { phase ->
+    attemptPhases(target).forEach { phase ->
         if (phase.steps.isEmpty()) return@forEach
         var notes = 0
         val densities = mutableListOf<Int>()
