@@ -144,14 +144,18 @@ private fun ResultBody(
             ) {
                 Text(
                     text = stringResource(
-                        if (result.passed) {
-                            R.string.practice_result_passed
-                        } else {
-                            R.string.practice_result_failed
+                        when {
+                            !result.complete -> R.string.practice_result_stopped
+                            result.passed -> R.string.practice_result_passed
+                            else -> R.string.practice_result_failed
                         }
                     ),
                     style = RudiTextStyles.Rubric,
-                    color = if (result.passed) RudiColors.BrickLit else RudiColors.Muted,
+                    color = if (result.passed && result.complete) {
+                        RudiColors.BrickLit
+                    } else {
+                        RudiColors.Muted
+                    },
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
@@ -208,6 +212,10 @@ private fun ResultBody(
                     // number instead of on a row of their own (decision 213).
                     trailing = { StarRow(stars = result.stars) },
                     note = when {
+                        // A stopped run is scored but not counted, and the line under the
+                        // accuracy is where that has to be said -- otherwise the number
+                        // reads like a result the level now remembers (decision 215).
+                        !result.complete -> stringResource(R.string.practice_result_not_counted)
                         bestPercent == null -> stringResource(R.string.practice_result_best_first)
                         beaten -> stringResource(
                             R.string.practice_result_best_new,

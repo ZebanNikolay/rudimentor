@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -162,7 +164,13 @@ fun PracticeScreen(
     // bias is what the trainer exists to show, so subtracting it here hid the very thing the
     // learner needs to see - and it is not even constant enough to subtract: it moved 20 ms
     // between sessions while the path repeated to 0.3 ms.
-    val attempt = remember(notes) { PracticeAttempt(notes, windows, LatencyTracker.disabled()) }
+    // Bumped by Repeat: a new attempt object clears every piece of state remembered
+    // against it -- the judged notes, the position, the collector (decision 214).
+    var attemptSeq by remember(notes) { mutableIntStateOf(0) }
+    var restartPending by remember(notes) { mutableStateOf(false) }
+    val attempt = remember(notes, attemptSeq) {
+        PracticeAttempt(notes, windows, LatencyTracker.disabled())
+    }
     val minIntervalMs = remember(notes) { minNoteIntervalMs(notes) ?: 0f }
     // One collector per attempt, created when the engine starts and written once the
     // run is over: a screen that is only opened and left behind logs nothing.
@@ -453,6 +461,108 @@ fun PracticeScreen(
 
     BackHandler { leave() }
 
+    /** Starts the engine and opens a fresh collector for the run it is about to record. */
+    fun startAttempt() {
+        val started = session.start(
+            bpm = tempo,
+            clickAudible = clickAudible,
+            inputLatencyMs = latencyMs,
+            latencyCalibrated = latencyCalibrated,
+            calibrationSkewMs = calibrationSkewMs,
+            storedMicLatencyMs = micLatencyMs,
+            micThresholdLevel = micThresholdLevel,
+            tempoPlan = tempoPlan,
+            countInBeats = countInBeats,
+        )
+        if (!started) AppLog.error("practice", "audio engine refused to start")
+        audioFailed = !started
+        audioLost = false
+        running = started
+        if (!started) return
+        telemetry.value = PracticeTelemetry(
+            header = TelemetryHeader(
+                startedAt = logStamp(),
+                device = "${Build.MANUFACTURER} ${Build.MODEL}",
+                androidVersion = "${Build.VERSION.RELEASE} (sdk ${Build.VERSION.SDK_INT})",
+                build = buildInfo.displayLabel,
+                levelId = level.id,
+                levelLabel = level.displayCode,
+                family = family.name,
+                rank = rank.name,
+                bpm = tempo,
+                noteCount = notes.size,
+                minIntervalMs = minIntervalMs,
+                // The tightest windows of the attempt: they are the ones the
+                // shortest interval above produced (decision 151).
+                perfectMs = windows.tightest.perfectMs,
+                goodMs = windows.tightest.goodMs,
+                okMs = windows.tightest.okMs,
+                latencyMs = latencyMs,
+                latencyCalibrated = latencyCalibrated,
+                calibrationSkewMs = calibrationSkewMs,
+                sensitivity = MicLab.DEFAULT_SENSITIVITY,
+                micThresholdLevel = micThresholdLevel,
+                clickAudible = clickAudible,
+                headphones = headphonesConnected,
+                audio = session.streamInfo().toTelemetry(),
+            ),
+        )
+    }
+
+    /**
+     * Stop closes the attempt: the result screen is where the run is reviewed and the
+     * settings are tuned (decision 106). The run is marked incomplete, so the level's
+     * record cannot be moved by a run that never reached its own finish (decision 215).
+     */
+    fun stopAttempt() {
+        if (attempt.nothingJudged) {
+            // Stopped before the first note was judged: there is no run to review,
+            // and a 0% result would have been written into the level's history.
+            leave()
+            return
+        }
+        val result = attempt.result().copy(complete = false)
+        closeTelemetry(
+            context = context,
+            telemetry = telemetry,
+            session = session,
+            attempt = attempt,
+            positionMs = positionMs,
+            aborted = false,
+            result = result,
+            frames = frameWatch.stop(),
+        )
+        session.stop()
+        running = false
+        onFinished(result)
+    }
+
+    /**
+     * Repeat: the run is dropped where it stands and the level starts over on the same
+     * press, without a result screen in between (decision 214). A dropped run is written
+     * to the log as aborted and never reaches the store, so hammering Repeat cannot leave
+     * a 10% "record" behind for the finished run to beat (decision 215).
+     */
+    fun restartAttempt() {
+        closeTelemetry(
+            context, telemetry, session, attempt, positionMs,
+            aborted = true, frames = frameWatch.stop(),
+        )
+        session.stop()
+        running = false
+        // A new attempt object is a new set of remembered state; the engine is started
+        // again from the effect below, once that state exists.
+        attemptSeq += 1
+        restartPending = true
+    }
+
+    LaunchedEffect(attempt) {
+        if (!restartPending) return@LaunchedEffect
+        restartPending = false
+        startAttempt()
+    }
+
+
     Box(modifier = Modifier.fillMaxSize().background(RudiColors.Bg).stageSafePadding()) {
         if (!micGranted) {
             PermissionGate(
@@ -558,87 +668,39 @@ fun PracticeScreen(
             )
         }
 
-        TransportButton(
-            playing = running,
-            size = TransportSize.Small,
-            // Brick in both states: on the level map the call to action is red,
-            // and a grey Play read as disabled on the device.
-            accentIdle = true,
-            onClick = {
-                if (running && attempt.nothingJudged) {
-                    // Stopped before the first note was judged: there is no run to review,
-                    // and a 0% result would have been written into the level's history.
-                    leave()
-                } else if (running) {
-                    // Stop closes the attempt: the result screen is where the run is
-                    // reviewed and the settings are tuned (decision 106).
-                    val result = attempt.result()
-                    closeTelemetry(
-                        context = context,
-                        telemetry = telemetry,
-                        session = session,
-                        attempt = attempt,
-                        positionMs = positionMs,
-                        aborted = false,
-                        result = result,
-                        frames = frameWatch.stop(),
-                    )
-                    session.stop()
-                    running = false
-                    onFinished(result)
-                } else {
-                    val started = session.start(
-                        bpm = tempo,
-                        clickAudible = clickAudible,
-                        inputLatencyMs = latencyMs,
-                        latencyCalibrated = latencyCalibrated,
-                        calibrationSkewMs = calibrationSkewMs,
-                        storedMicLatencyMs = micLatencyMs,
-                        micThresholdLevel = micThresholdLevel,
-                        tempoPlan = tempoPlan,
-                        countInBeats = countInBeats,
-                    )
-                    if (!started) AppLog.error("practice", "audio engine refused to start")
-                    audioFailed = !started
-                    audioLost = false
-                    running = started
-                    if (started) {
-                        telemetry.value = PracticeTelemetry(
-                            header = TelemetryHeader(
-                                startedAt = logStamp(),
-                                device = "${Build.MANUFACTURER} ${Build.MODEL}",
-                                androidVersion = "${Build.VERSION.RELEASE} " +
-                                    "(sdk ${Build.VERSION.SDK_INT})",
-                                build = buildInfo.displayLabel,
-                                levelId = level.id,
-                                levelLabel = level.displayCode,
-                                family = family.name,
-                                rank = rank.name,
-                                bpm = tempo,
-                                noteCount = notes.size,
-                                minIntervalMs = minIntervalMs,
-                                // The tightest windows of the attempt: they are the ones the
-                                // shortest interval above produced (decision 151).
-                                perfectMs = windows.tightest.perfectMs,
-                                goodMs = windows.tightest.goodMs,
-                                okMs = windows.tightest.okMs,
-                                latencyMs = latencyMs,
-                                latencyCalibrated = latencyCalibrated,
-                                calibrationSkewMs = calibrationSkewMs,
-                                sensitivity = MicLab.DEFAULT_SENSITIVITY,
-                                micThresholdLevel = micThresholdLevel,
-                                clickAudible = clickAudible,
-                                headphones = headphonesConnected,
-                                audio = session.streamInfo().toTelemetry(),
-                            ),
-                        )
-                    }
-                }
-            },
+        // Repeat is the button of the attempt: a run the player wants to redo is redone
+        // with one press, without stopping first and without finding Play again
+        // (decision 214). Stop steps up and back to the small size -- it ends the session,
+        // which happens once, while Repeat happens all evening.
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 18.dp, bottom = 14.dp),
-        )
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            if (running) {
+                TransportButton(
+                    playing = true,
+                    size = TransportSize.Tiny,
+                    onClick = { stopAttempt() },
+                )
+            }
+            TransportButton(
+                playing = false,
+                size = TransportSize.Small,
+                // Brick in both states: on the level map the call to action is red,
+                // and a grey Play read as disabled on the device.
+                accentIdle = true,
+                glyph = if (running) Icons.Filled.Replay else null,
+                contentDescription = if (running) {
+                    stringResource(R.string.practice_repeat)
+                } else {
+                    null
+                },
+                onClick = { if (running) restartAttempt() else startAttempt() },
+            )
+        }
     }
 }
 

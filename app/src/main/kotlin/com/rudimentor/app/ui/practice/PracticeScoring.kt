@@ -300,6 +300,14 @@ data class PracticeResult(
      * the run nothing, and the app's own click is the usual source of them.
      */
     val afterEnd: Int = 0,
+    /**
+     * Whether the run reached its own finish. A run cut short by Stop is still scored and
+     * still shown -- there is something to read in it -- but it is not a performance of the
+     * level, so it never touches the record, the stars or the pass (decision 215). Repeating
+     * the first eight bars a dozen times used to leave a 10% "personal best" that the
+     * finished run then proudly beat.
+     */
+    val complete: Boolean = true,
 ) {
     val hits: Int get() = perfect + good + ok
     val passed: Boolean get() = accuracy >= PracticeScoring.PASS_ACCURACY

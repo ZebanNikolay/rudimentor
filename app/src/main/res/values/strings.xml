@@ -111,6 +111,7 @@
     <string name="toolbar_back">Back</string>
     <string name="transport_start">Start</string>
     <string name="transport_stop">Stop</string>
+    <string name="practice_repeat">Restart the level</string>
 
     <!-- Practice screen -->
     <string name="practice_click_label">Metronome click</string>
@@ -205,6 +206,8 @@ Better never to turn this on. The one case where it holds: you know your microph
     <!-- Practice result screen -->
     <string name="practice_result_passed">LEVEL PASSED</string>
     <string name="practice_result_failed">NOT YET</string>
+    <string name="practice_result_stopped">STOPPED</string>
+    <string name="practice_result_not_counted">NOT COUNTED · STOPPED EARLY</string>
     <string name="practice_result_accuracy">Accuracy</string>
     <string name="practice_result_perfect">Perfect</string>
     <string name="practice_result_good">Good</string>

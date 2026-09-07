@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -31,13 +32,16 @@ import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /**
- * The two sizes of the transport button. [Large] is the metronome's centre-piece;
+ * The sizes of the transport button. [Large] is the metronome's centre-piece;
  * [Small] is the one every other screen uses -- the level card and the floating
- * corner button of an attempt (decision 102).
+ * corner button of an attempt (decision 102). [Tiny] is the secondary control that
+ * sits above a [Small] one: during an attempt Repeat is the button the hand reaches
+ * for over and over, so Stop steps back to this size (decision 214).
  */
 enum class TransportSize(val buttonSize: Dp) {
     Large(92.dp),
     Small(64.dp),
+    Tiny(46.dp),
 }
 
 /**
@@ -50,6 +54,10 @@ enum class TransportSize(val buttonSize: Dp) {
  *
  * [accentIdle] paints the idle button brick instead of Surface, so Play reads as
  * the call to action.
+ *
+ * [glyph] replaces the Play/Stop icon without changing anything else, so a third
+ * control of the same family -- Repeat during an attempt -- is the same pad with a
+ * different face rather than a second button implementation (decision 214).
  */
 @Composable
 fun TransportButton(
@@ -60,6 +68,7 @@ fun TransportButton(
     accentIdle: Boolean = false,
     enabled: Boolean = true,
     contentDescription: String? = null,
+    glyph: ImageVector? = null,
 ) {
     val buttonSize = size.buttonSize
     val accented = enabled && (playing || accentIdle)
@@ -114,7 +123,7 @@ fun TransportButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = if (playing) Icons.Filled.Stop else Icons.Filled.PlayArrow,
+            imageVector = glyph ?: if (playing) Icons.Filled.Stop else Icons.Filled.PlayArrow,
             contentDescription = null,
             tint = if (enabled) RudiColors.Text else RudiColors.RowNumber,
             modifier = Modifier.size(buttonSize * ICON_RATIO),

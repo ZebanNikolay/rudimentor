@@ -110,14 +110,19 @@ class MainActivity : ComponentActivity() {
                     onApplyDraft = viewModel::applyDraft,
                     onOutputChanged = viewModel::selectProfileForOutput,
                     onAttemptFinished = { level, rank, result ->
-                        viewModel.recordAttempt(
-                            levelId = level.id,
-                            rank = rank,
-                            accuracy = result.accuracy,
-                            stars = result.stars,
-                            passed = result.passed,
-                            crown = result.crown,
-                        )
+                        // Only a run that reached its finish is a performance of the level:
+                        // a stopped one is read on the result screen and forgotten
+                        // (decision 215).
+                        if (result.complete) {
+                            viewModel.recordAttempt(
+                                levelId = level.id,
+                                rank = rank,
+                                accuracy = result.accuracy,
+                                stars = result.stars,
+                                passed = result.passed,
+                                crown = result.crown,
+                            )
+                        }
                     },
                     onSoundCheckDone = viewModel::markSoundCheckDone,
                     onHideSoundCheckPlate = viewModel::hideSoundCheckPlate,
