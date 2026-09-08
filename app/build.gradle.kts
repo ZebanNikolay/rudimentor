@@ -34,8 +34,8 @@ val uploadKeyPassword = providers.environmentVariable("RUDIMENTOR_UPLOAD_KEY_PAS
 //   1.0.0-dev.N  sandbox build installed on the developer's phone
 //   1.0.0-rc.N   candidate uploaded to the internal / closed testing track
 //   1.0.0        production
-val appVersionName = "1.0.0-dev.58"
-val appVersionCode = 58
+val appVersionName = "1.0.0-dev.59"
+val appVersionCode = 59
 
 base {
     archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")
