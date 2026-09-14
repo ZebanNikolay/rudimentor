@@ -2,6 +2,7 @@ package com.rudimentor.app.ui.practice
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -65,6 +66,9 @@ fun PracticeTrack(
 ) {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
+    val minimumIntervalMs = remember(notes, loop) {
+        loop?.minimumNoteIntervalMs ?: minimumPracticeNoteIntervalMs(notes)
+    }
     Canvas(modifier = modifier) {
         // Reading the poll counter is what makes the track redraw every poll.
         if (frame < 0) return@Canvas
@@ -72,11 +76,16 @@ fun PracticeTrack(
         val width = size.width
         val height = size.height
         if (width <= 0f || height <= 0f) return@Canvas
-        val pxPerMs = width / VISIBLE_MS
         val lineX = width * LINE_FRACTION
         val side = minOf(
             with(density) { RudiDimens.TrackNoteSize.toPx() },
             height * RudiDimens.TRACK_NOTE_HEIGHT_FRACTION,
+        )
+        val pxPerMs = practiceTrackPixelsPerMs(
+            widthPx = width,
+            noteSidePx = side,
+            noteGapPx = with(density) { MIN_NOTE_GAP.toPx() },
+            minimumIntervalMs = minimumIntervalMs,
         )
         // The lane sits on the vertical centre and the notes are centred on it.
         val laneY = height / 2f
@@ -500,12 +509,7 @@ internal fun verdictWord(judgement: NoteJudgement): String = when (judgement.win
     HitWindow.Miss -> "MISS"
 }
 
-/**
- * How much time the lane shows at once. Shorter than the concept's two seconds: the
- * notes grew by half (decision 130), so the lane has to spread them out to keep the
- * air between them at the fast ranks.
- */
-private const val VISIBLE_MS = 1400f
+private val MIN_NOTE_GAP = 8.dp
 private const val LINE_FRACTION = 0.33f
 
 /** Beat grid strokes: the metronome as seen, in dp so density cannot erase them. */

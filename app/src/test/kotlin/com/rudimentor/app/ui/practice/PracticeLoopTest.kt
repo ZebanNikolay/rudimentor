@@ -48,6 +48,18 @@ class PracticeLoopTest {
                 val expectedPeriod = bpms.sumOf { 60_000.0 / it }
                 val label = "${level.id}/${target.rank}"
                 assertEquals(label, expectedPeriod, loop.cycleDurationMs, 0.000001)
+                val minimumInterval = notes.indices.minOf { index ->
+                    val next = if (index < notes.lastIndex) LoopNoteId(0, index + 1) else LoopNoteId(1, 0)
+                    loop.noteTimeMs(next) - loop.noteTimeMs(LoopNoteId(0, index))
+                }
+                assertEquals(label, minimumInterval, loop.minimumNoteIntervalMs, 0.000001)
+                for (width in listOf(640f, 720f, 800f)) {
+                    val loopScale = practiceTrackPixelsPerMs(width, 66f, 8f, loop.minimumNoteIntervalMs)
+                    assertTrue(label, loopScale * minimumInterval >= 74.0 - 0.0001)
+                    val finiteMinimum = minimumPracticeNoteIntervalMs(notes)
+                    val finiteScale = practiceTrackPixelsPerMs(width, 66f, 8f, finiteMinimum)
+                    assertTrue(label, finiteScale * finiteMinimum >= 74.0 - 0.0001)
+                }
                 assertEquals(label, attemptCountInBeats(level, target.rank, target.bpm) * (60_000.0 / bpms.first()), loop.countInMs, 0.000001)
                 notes.forEach { note ->
                     val due = loop.noteTimeMs(LoopNoteId(0, note.index))
@@ -100,6 +112,7 @@ class PracticeLoopTest {
     fun `single note uses its own circular period as both neighbours`() {
         val loop = loop(level(hands = "R", beats = 1, bpm = 240))
         assertEquals(250.0, loop.cycleDurationMs, 0.0)
+        assertEquals(250.0, loop.minimumNoteIntervalMs, 0.0)
         assertEquals(HitWindows.forMinInterval(250f), loop.windows.forNote(0))
         assertTrue(loop.windows.forNote(0).okMs < HitWindows.Default.okMs)
         val next = LoopNoteId(1, 0)
@@ -302,6 +315,25 @@ class PracticeLoopTest {
         assertEquals(-0.125f, rendered.note.timeMs, 0.0f)
         assertFalse(rendered.judgement?.window == HitWindow.Miss)
         assertNull(loop.registerHit(now - 10_000))
+    }
+
+    @Test
+    fun `render scale includes a seam shorter than every internal note interval`() {
+        val level = level(hands = "R__R", beats = 1, bpm = 180, density = 4)
+        val loop = loop(level)
+        val notes = buildPracticeNotes(level, PracticeRank.Practice, 180)
+        assertEquals(250.0, minimumPracticeNoteIntervalMs(notes), 0.001)
+        assertEquals(60_000.0 / 720, loop.minimumNoteIntervalMs, 0.000001)
+        val scale = practiceTrackPixelsPerMs(720f, 66f, 8f, loop.minimumNoteIntervalMs)
+        assertEquals(74.0, scale * loop.minimumNoteIntervalMs, 0.0001)
+        val seam = loop.noteTimeMs(LoopNoteId(1, 0))
+        val view = loop.renderView(seam, 75.0 / scale, 75.0 / scale)
+        assertTrue(view.notes.any { it.id == LoopNoteId(0, 1) })
+        assertTrue(view.notes.any { it.id == LoopNoteId(1, 0) })
+        val windows = loop.windows
+        assertTrue(loop.registerHit(seam) is HitOutcome.Judged)
+        assertEquals(windows, loop.windows)
+        assertEquals(seam, loop.noteTimeMs(LoopNoteId(1, 0)), 0.0)
     }
 
     private fun loop(level: Level) = PracticeLoop(level, PracticeRank.Practice, level.target(PracticeRank.Practice).bpm)

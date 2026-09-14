@@ -15,6 +15,7 @@ class PracticeLoop(level: Level, rank: PracticeRank, bpm: Int) {
     val countInMs: Double
     val cycleDurationMs: Double
     val windows: AttemptWindows
+    internal val minimumNoteIntervalMs: Double
 
     private data class Played(val keepUntilMs: Double, val judgement: NoteJudgement)
 
@@ -42,6 +43,11 @@ class PracticeLoop(level: Level, rank: PracticeRank, bpm: Int) {
         cycleDurationMs = beatStarts.last()
         // Reuse the finite builder's note identities and styling, but never its Float clock.
         noteTimes = buildLoopNoteTimes(level, rank, bpm, beatStarts, beatBpms, template.size)
+        // A sparse template can still have a dense last-to-first pair across the loop seam.
+        minimumNoteIntervalMs = noteTimes.indices.minOf { index ->
+            val after = if (index < noteTimes.lastIndex) noteTimes[index + 1] else noteTimes.first() + cycleDurationMs
+            after - noteTimes[index]
+        }
         windows = AttemptWindows.forIntervals(noteTimes.indices.map { index ->
             val before = if (index > 0) noteTimes[index - 1] else noteTimes.last() - cycleDurationMs
             val after = if (index < noteTimes.lastIndex) noteTimes[index + 1] else noteTimes.first() + cycleDurationMs
