@@ -116,6 +116,7 @@ class DataStoreLevelProgressRepository(
     }
 
     private fun toLearningProgress(preferences: Preferences): LearningProgress = LearningProgress(
+        loaded = true,
         streakDays = preferences[LevelProgressKeys.StreakDays] ?: 0,
         levels = levelIds.associateWith { levelId ->
             LevelProgress(

@@ -611,8 +611,20 @@ private fun LevelMap(
         val panning = neededWidth > maxWidth
         val mapWidth = if (panning) neededWidth else maxWidth
 
-        LaunchedEffect(verticalScroll.maxValue, verticalScroll.viewportSize, catalog.family.id, rank) {
-            if (verticalScroll.maxValue == 0) return@LaunchedEffect
+        // Wait for the stored progress before placing the map, and place it again whenever the
+        // current level moves. Storage answers a frame or two after the screen is composed, and
+        // until it does every level looks unplayed: the map read that as "start of the tree",
+        // scrolled to the bottom and stayed there, so the learner opened the map on levels they
+        // had already cleared with the current one off the top edge (decision 221).
+        LaunchedEffect(
+            verticalScroll.maxValue,
+            verticalScroll.viewportSize,
+            catalog.family.id,
+            rank,
+            progress.loaded,
+            currentRow,
+        ) {
+            if (verticalScroll.maxValue == 0 || !progress.loaded) return@LaunchedEffect
             val currentY = with(density) {
                 (
                     mapHeight - MAP_VERTICAL_PADDING - SOUND_CHECK_ROW_HEIGHT -

@@ -38,6 +38,13 @@ data class LevelProgress(
 data class LearningProgress(
     val streakDays: Int = 0,
     val levels: Map<String, LevelProgress> = emptyMap(),
+    /**
+     * False until the stored progress has actually been read. The screens are composed
+     * before storage answers, and an unread progress looks exactly like a cleared one: every
+     * level unplayed, the first level current. The map used to believe that and scroll to the
+     * bottom of the tree, then never move again once the real progress arrived (decision 221).
+     */
+    val loaded: Boolean = false,
 ) {
     fun forLevel(levelId: String): LevelProgress = levels[levelId] ?: LevelProgress()
 
