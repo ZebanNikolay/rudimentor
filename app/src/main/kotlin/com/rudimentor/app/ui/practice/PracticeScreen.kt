@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.MaterialTheme
@@ -722,9 +723,14 @@ fun PracticeScreen(
                     if (loop != null) R.string.practice_free_click_warning
                     else R.string.practice_click_warning_help_body,
                 ),
+                // Capped like a dialog, not stretched like a bar: in landscape the full width
+                // made one line of the body run from edge to edge, too long to read in one go.
+                // 480 dp leaves the text column around 65 characters, the comfortable measure
+                // Material's own dialogs keep under their 560 dp ceiling (decision 223).
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp)
+                    .widthIn(max = WARNING_MAX_WIDTH),
             )
         }
 
@@ -879,3 +885,5 @@ private const val FINISH_HOLD_MS = 450f
 
 /** Corner kept free for the floating transport button: its size plus its margin. */
 private val TRANSPORT_RESERVE = 82.dp
+
+private val WARNING_MAX_WIDTH = 480.dp
