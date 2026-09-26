@@ -147,22 +147,6 @@ private fun ResultBody(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = stringResource(
-                            when {
-                                !result.complete -> R.string.practice_result_stopped
-                                result.passed -> R.string.practice_result_passed
-                                else -> R.string.practice_result_failed
-                            }
-                        ),
-                        style = RudiTextStyles.Rubric,
-                        color = if (result.passed && result.complete) {
-                            RudiColors.BrickLit
-                        } else {
-                            RudiColors.Muted
-                        },
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
                         text = "${level.title(family)} · ${level.displayCode}",
                         style = MaterialTheme.typography.titleLarge,
                         color = RudiColors.Text,
@@ -207,8 +191,27 @@ private fun ResultBody(
                     value = stringResource(R.string.practice_result_accuracy_value, nowPercent),
                     strong = true,
                     // The stars are what the accuracy earned, so they stand beside the
-                    // number instead of on a row of their own (decision 213).
-                    trailing = { StarRow(stars = result.stars) },
+                    // number instead of on a row of their own (decision 213). The verdict is
+                    // the last word of that same reading -- how much, how many stars, and so
+                    // passed or not -- so it closes the line instead of opening the header,
+                    // where it made the top row tall and read as a stray word in front of the
+                    // level name (decision 224). A stopped run has no verdict: the note under
+                    // the number already says it was not counted.
+                    trailing = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            StarRow(stars = result.stars)
+                            if (result.complete) {
+                                Spacer(modifier = Modifier.width(12.dp))
+                                RudiChip(
+                                    text = stringResource(
+                                        if (result.passed) R.string.practice_result_passed
+                                        else R.string.practice_result_failed,
+                                    ),
+                                    accent = result.passed,
+                                )
+                            }
+                        }
+                    },
                     note = when {
                         // A stopped run is scored but not counted, and the line under the
                         // accuracy is where that has to be said -- otherwise the number
