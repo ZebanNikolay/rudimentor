@@ -78,6 +78,8 @@ fun PracticeResultScreen(
     /** The accuracy record of this level and rank *before* this run, if there was one. */
     previousBest: Float?,
     onRetry: () -> Unit,
+    /** Opens the same level in endless practice: the way to work on it before the next attempt. */
+    onPractice: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
     /** Opens the sound check, offered when the run says the audio path is the problem. */
@@ -95,6 +97,7 @@ fun PracticeResultScreen(
         result = result,
         previousBest = previousBest,
         onRetry = onRetry,
+        onPractice = onPractice,
         onNextLevel = onNextLevel,
         onToMap = onToMap,
         onSoundCheck = onSoundCheck,
@@ -111,6 +114,7 @@ private fun ResultBody(
     result: PracticeResult,
     previousBest: Float?,
     onRetry: () -> Unit,
+    onPractice: () -> Unit,
     onNextLevel: (() -> Unit)?,
     onToMap: () -> Unit,
     onSoundCheck: () -> Unit,
@@ -316,6 +320,14 @@ private fun ResultBody(
                     onClick = onRetry,
                 )
             }
+            // A run that went badly usually needs rehearsal, not another scored attempt: the
+            // endless practice of this same level is one tap away, next to Try again, instead
+            // of back through the map and the level card (decision 225).
+            RudiButton(
+                text = stringResource(R.string.practice_free_action),
+                onClick = onPractice,
+                style = RudiButtonStyle.Secondary,
+            )
             RudiButton(
                 text = stringResource(R.string.practice_result_map),
                 onClick = onToMap,

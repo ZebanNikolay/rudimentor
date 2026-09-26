@@ -444,6 +444,9 @@ fun RudiMentorApp(
                         onRetry = {
                             prepareRun(level, practiceRank, practiceBpm, RunMode.Challenge)
                         },
+                        onPractice = {
+                            prepareRun(level, practiceRank, practiceBpm, RunMode.Practice)
+                        },
                         onNextLevel = nextLevel?.let { next ->
                             {
                                 selectedLevelId = next.id
