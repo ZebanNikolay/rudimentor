@@ -37,7 +37,7 @@ data class LevelsUiState(
     val defaultRank: PracticeRank = PracticeRank.Practice,
 ) {
     /**
-     * Difficulty is a choice per map, not per course (decision 226): singles walked through
+     * Difficulty is a choice per map, not per course (decision 227): singles walked through
      * at Practice are replayed at Groove while doubles and paradiddles are still learned at
      * Practice, and switching one used to switch them all.
      */
@@ -173,7 +173,7 @@ class DataStoreLevelProgressRepository(
 internal object LevelProgressKeys {
     val StreakDays = intPreferencesKey("streak_days")
     val ActiveFamily = stringPreferencesKey("levels.active_family")
-    /** The course-wide rank of the builds before decision 226: read as the fallback only. */
+    /** The course-wide rank of the builds before decision 227: read as the fallback only. */
     val ActiveRank = stringPreferencesKey("levels.active_rank")
 
     fun activeRank(familyId: String) = stringPreferencesKey("levels.$familyId.active_rank")

@@ -175,7 +175,7 @@ fun RudiMentorApp(
     }
 
     // The open tab is the one the learner left the map on — or the last map they have
-    // earned — and the difficulty is the one that map was left on (decision 226).
+    // earned — and the difficulty is the one that map was left on (decision 227).
     val activeTabId = levelsUi.familyId
         ?: course.tabs.lastOrNull { it.available && learningProgress.isTabUnlocked(it) }?.id
         ?: course.tabs.first().id
