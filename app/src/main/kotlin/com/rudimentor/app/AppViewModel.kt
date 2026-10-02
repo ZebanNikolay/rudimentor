@@ -177,8 +177,8 @@ class AppViewModel(
         viewModelScope.launch { progressRepository.selectFamily(familyId) }
     }
 
-    fun selectRank(rank: PracticeRank) {
-        viewModelScope.launch { progressRepository.selectRank(rank) }
+    fun selectRank(familyId: String, rank: PracticeRank) {
+        viewModelScope.launch { progressRepository.selectRank(familyId, rank) }
     }
 
     private fun AppSettings.setRowCountInternal(count: Int): AppSettings {

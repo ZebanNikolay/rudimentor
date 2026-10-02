@@ -28,20 +28,33 @@ private val Context.levelProgressDataStore by preferencesDataStore(
 /** What the levels screen remembers between launches besides progress itself. */
 data class LevelsUiState(
     val familyId: String? = null,
-    val rank: PracticeRank = PracticeRank.Practice,
-)
+    /**
+     * The difficulty each map was left on. A map with no choice of its own falls back to
+     * [defaultRank] -- the one course-wide rank the app stored before ranks were per map, so
+     * an update keeps every map where the learner had it.
+     */
+    val ranks: Map<String, PracticeRank> = emptyMap(),
+    val defaultRank: PracticeRank = PracticeRank.Practice,
+) {
+    /**
+     * Difficulty is a choice per map, not per course (decision 226): singles walked through
+     * at Practice are replayed at Groove while doubles and paradiddles are still learned at
+     * Practice, and switching one used to switch them all.
+     */
+    fun rankFor(familyId: String): PracticeRank = ranks[familyId] ?: defaultRank
+}
 
 interface LevelProgressRepository {
     val progress: Flow<LearningProgress>
 
-    /** The selected map and the global rank, restored on the next launch. */
+    /** The selected map and the rank of every map, restored on the next launch. */
     val uiState: Flow<LevelsUiState>
 
     suspend fun saveLevel(levelId: String, rank: PracticeRank, progress: RankProgress)
 
     suspend fun selectFamily(familyId: String)
 
-    suspend fun selectRank(rank: PracticeRank)
+    suspend fun selectRank(familyId: String, rank: PracticeRank)
 }
 
 /**
@@ -80,9 +93,10 @@ class DataStoreLevelProgressRepository(
         }
     }
 
-    override suspend fun selectRank(rank: PracticeRank) {
+    override suspend fun selectRank(familyId: String, rank: PracticeRank) {
+        require(familyId in familyIds) { "Unknown family: $familyId" }
         context.levelProgressDataStore.edit { preferences ->
-            preferences[LevelProgressKeys.ActiveRank] = rank.storageName
+            preferences[LevelProgressKeys.activeRank(familyId)] = rank.storageName
         }
     }
 
@@ -135,10 +149,14 @@ class DataStoreLevelProgressRepository(
 
     private fun toUiState(preferences: Preferences): LevelsUiState = LevelsUiState(
         familyId = preferences[LevelProgressKeys.ActiveFamily]?.takeIf { it in familyIds },
-        rank = preferences[LevelProgressKeys.ActiveRank]
-            ?.let { stored -> PracticeRank.entries.firstOrNull { it.storageName == stored } }
-            ?: PracticeRank.Practice,
+        ranks = familyIds.mapNotNull { familyId ->
+            preferences[LevelProgressKeys.activeRank(familyId)]?.toRank()?.let { familyId to it }
+        }.toMap(),
+        defaultRank = preferences[LevelProgressKeys.ActiveRank]?.toRank() ?: PracticeRank.Practice,
     )
+
+    private fun String.toRank(): PracticeRank? =
+        PracticeRank.entries.firstOrNull { it.storageName == this }
 
     private fun MutablePreferences.write(levelId: String, rank: PracticeRank, progress: RankProgress) {
         this[LevelProgressKeys.completed(levelId, rank)] = progress.completed
@@ -155,7 +173,10 @@ class DataStoreLevelProgressRepository(
 internal object LevelProgressKeys {
     val StreakDays = intPreferencesKey("streak_days")
     val ActiveFamily = stringPreferencesKey("levels.active_family")
+    /** The course-wide rank of the builds before decision 226: read as the fallback only. */
     val ActiveRank = stringPreferencesKey("levels.active_rank")
+
+    fun activeRank(familyId: String) = stringPreferencesKey("levels.$familyId.active_rank")
 
     fun mapVersion(familyId: String) = intPreferencesKey("map.$familyId.applied_version")
 

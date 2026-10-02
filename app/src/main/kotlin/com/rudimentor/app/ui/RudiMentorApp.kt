@@ -92,7 +92,7 @@ fun RudiMentorApp(
     levelsUi: LevelsUiState,
     actions: MetronomeActions,
     onSelectTab: (String) -> Unit,
-    onSelectRank: (PracticeRank) -> Unit,
+    onSelectRank: (familyId: String, rank: PracticeRank) -> Unit,
     onApplyDraft: (SettingsDraft) -> Unit,
     onOutputChanged: (OutputDevice?) -> Unit,
     onAttemptFinished: (Level, PracticeRank, PracticeResult) -> Unit,
@@ -174,12 +174,12 @@ fun RudiMentorApp(
         screenName = Screen.Practice.name
     }
 
-    // The difficulty is chosen once for the whole course, and the open tab is the one the
-    // learner left the map on — or the last map they have earned.
-    val rank = levelsUi.rank
+    // The open tab is the one the learner left the map on — or the last map they have
+    // earned — and the difficulty is the one that map was left on (decision 226).
     val activeTabId = levelsUi.familyId
         ?: course.tabs.lastOrNull { it.available && learningProgress.isTabUnlocked(it) }?.id
         ?: course.tabs.first().id
+    val rank = levelsUi.rankFor(activeTabId)
 
     // A pair of headphones nobody has measured is the one thing that silently ruins every
     // attempt afterwards, so the map offers its own step instead of waiting for the player to
@@ -256,7 +256,7 @@ fun RudiMentorApp(
                 rank = rank,
                 activeTabId = activeTabId,
                 onSelectTab = onSelectTab,
-                onSelectRank = onSelectRank,
+                onSelectRank = { selected -> onSelectRank(activeTabId, selected) },
                 onBack = { screenName = Screen.Menu.name },
                 onOpenLevel = { levelId ->
                     selectedLevelId = levelId
@@ -309,13 +309,16 @@ fun RudiMentorApp(
                         screenName = Screen.Levels.name
                     }
                 } else {
+                    // The rank of the level's own map: the card can be opened from a result
+                    // of another map than the open tab.
+                    val levelRank = levelsUi.rankFor(family.id)
                     LevelDetailScreen(
                         level = level,
                         family = family,
-                        rank = rank,
+                        rank = levelRank,
                         progress = learningProgress.forLevel(level.id),
                         locked = course.catalog(family.id)?.let { catalog ->
-                            learningProgress.stateOf(level, catalog, rank) == LevelNodeState.Locked
+                            learningProgress.stateOf(level, catalog, levelRank) == LevelNodeState.Locked
                         } ?: false,
                         onBack = { screenName = Screen.Levels.name },
                         // The level owns tempo and rank of the attempt only: the
