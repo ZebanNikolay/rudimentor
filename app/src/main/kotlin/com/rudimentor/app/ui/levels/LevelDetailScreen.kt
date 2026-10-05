@@ -30,12 +30,14 @@ import com.rudimentor.app.BuildConfig
 import com.rudimentor.app.R
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
+import com.rudimentor.app.data.levels.LevelMetronome
 import com.rudimentor.app.data.levels.LevelProgress
 import com.rudimentor.app.data.levels.LevelType
 import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.data.levels.RankProgress
 import com.rudimentor.app.data.levels.RankTarget
 import com.rudimentor.app.data.levels.WeakStrategy
+import com.rudimentor.app.data.levels.toMetronome
 import com.rudimentor.app.ui.component.AppToolbar
 import com.rudimentor.app.ui.component.ResultMarks
 import com.rudimentor.app.ui.component.RudiButton
@@ -66,6 +68,8 @@ fun LevelDetailScreen(
     progress: LevelProgress,
     onBack: () -> Unit,
     onStartPractice: (Level, PracticeRank, Int, RunMode) -> Unit,
+    /** Opens the sticking of the level on the metronome (decision 228). */
+    onOpenMetronome: (Level, LevelMetronome) -> Unit,
     /**
      * True while a prerequisite of the level is still open at [rank]. The map disables such
      * nodes, but the card is reached from the result screen too, so it guards the start
@@ -75,6 +79,8 @@ fun LevelDetailScreen(
 ) {
     val target = level.target(rank)
     val startable = level.playable && !locked
+    // Null for a level the metronome cannot hold -- unison steps need both hands on one beat.
+    val metronome = remember(level, target) { level.toMetronome(target) }
     val rankProgress = progress.forRank(rank)
     // Debug builds can read the course data behind the level they are standing on: the
     // screen itself hides the fields that explain unexpected behaviour (decision 145).
@@ -229,9 +235,10 @@ fun LevelDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 6.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Bottom,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                // The execution reads next to the play row, at the foot of the menu.
+                Column(modifier = Modifier.weight(1f).padding(bottom = 10.dp)) {
                     Text(
                         text = stringResource(R.string.level_detail_execution_label).uppercase(),
                         style = RudiTextStyles.RowNumber,
@@ -248,23 +255,20 @@ fun LevelDetailScreen(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                RudiButton(
-                    text = stringResource(R.string.practice_free_action),
-                    onClick = { onStartPractice(level, rank, target.bpm, RunMode.Practice) },
-                    style = RudiButtonStyle.Ghost,
-                    enabled = startable,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                LevelPlayButton(
-                    onClick = { onStartPractice(level, rank, target.bpm, RunMode.Challenge) },
-                    contentDescription = stringResource(
+                LevelModeMenu(
+                    playEnabled = startable,
+                    playDescription = stringResource(
                         when {
                             !level.playable -> R.string.level_detail_preview_only
                             locked -> R.string.level_detail_locked_only
                             else -> R.string.level_detail_start
                         },
                     ),
-                    active = startable,
+                    onPlay = { onStartPractice(level, rank, target.bpm, RunMode.Challenge) },
+                    practiceEnabled = startable,
+                    onPractice = { onStartPractice(level, rank, target.bpm, RunMode.Practice) },
+                    metronomeEnabled = metronome != null && !locked,
+                    onMetronome = { metronome?.let { onOpenMetronome(level, it) } },
                 )
             }
         }

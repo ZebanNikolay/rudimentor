@@ -32,6 +32,7 @@ import com.rudimentor.app.R
 import com.rudimentor.app.audio.AudioOutputMonitor
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.OutputDevice
+import com.rudimentor.app.data.MetronomeEdits
 import com.rudimentor.app.data.OutputProfile
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.levels.Level
@@ -125,6 +126,10 @@ fun RudiMentorApp(
     var screenName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
     var selectedLevelId by rememberSaveable { mutableStateOf<String?>(null) }
     var metronomeBackTargetName by rememberSaveable { mutableStateOf(Screen.Menu.name) }
+    // A level opened on the metronome: its own grid and tempo for that visit, never written
+    // over the metronome the user built (decisions 102 and 228). Not saved across process
+    // death -- the metronome then simply opens as the user's own.
+    var levelMetronome by remember { mutableStateOf<AppSettings?>(null) }
     var practiceRankName by rememberSaveable { mutableStateOf(PracticeRank.Practice.name) }
     var practiceBpm by rememberSaveable { mutableIntStateOf(0) }
     var modeName by rememberSaveable { mutableStateOf(RunMode.Challenge.name) }
@@ -243,6 +248,7 @@ fun RudiMentorApp(
                 buildInfo = buildInfo,
                 onOpenMetronome = {
                     metronomeBackTargetName = Screen.Menu.name
+                    levelMetronome = null
                     screenName = Screen.Metronome.name
                 },
                 onOpenLevels = { screenName = Screen.Levels.name },
@@ -326,6 +332,12 @@ fun RudiMentorApp(
                         // by entering a level (decision 102).
                         onStartPractice = { selected, selectedRank, bpm, runMode ->
                             prepareRun(selected, selectedRank, bpm, runMode)
+                        },
+                        onOpenMetronome = { selected, loop ->
+                            selectedLevelId = selected.id
+                            levelMetronome = settings.copy(grid = loop.grid, bpm = loop.bpm, activeRow = 0)
+                            metronomeBackTargetName = Screen.LevelDetail.name
+                            screenName = Screen.Metronome.name
                         },
                     )
                 }
@@ -495,12 +507,41 @@ fun RudiMentorApp(
                     )
                 }
             }
-            Screen.Metronome -> MetronomeScreen(
-                settings = settings,
-                buildInfo = buildInfo,
-                actions = actions,
-                onBack = { screenName = metronomeBackTargetName },
-            )
+            Screen.Metronome -> {
+                val session = levelMetronome
+                if (session == null) {
+                    MetronomeScreen(
+                        settings = settings,
+                        buildInfo = buildInfo,
+                        actions = actions,
+                        onBack = { screenName = metronomeBackTargetName },
+                    )
+                } else {
+                    // The same screen and the same edits, applied to the visit instead of
+                    // to storage. Hand letters stay the user's own switch.
+                    val edit: (AppSettings.() -> AppSettings) -> Unit = { change ->
+                        levelMetronome = levelMetronome?.change()
+                    }
+                    MetronomeScreen(
+                        settings = session.copy(showHandLetters = settings.showHandLetters),
+                        buildInfo = buildInfo,
+                        actions = actions.copy(
+                            cycleBeat = { row, beat -> edit { MetronomeEdits.cycleBeat(this, row, beat) } },
+                            toggleHand = { row, beat -> edit { MetronomeEdits.toggleHand(this, row, beat) } },
+                            addBeat = { row -> edit { MetronomeEdits.addBeat(this, row) } },
+                            removeBeat = { row -> edit { MetronomeEdits.removeBeat(this, row) } },
+                            addRow = { edit { MetronomeEdits.addRow(this) } },
+                            removeRow = { edit { MetronomeEdits.removeRow(this) } },
+                            selectRow = { row -> edit { MetronomeEdits.selectRow(this, row) } },
+                            bpmDelta = { delta -> edit { MetronomeEdits.adjustBpm(this, delta) } },
+                        ),
+                        onBack = {
+                            levelMetronome = null
+                            screenName = metronomeBackTargetName
+                        },
+                    )
+                }
+            }
             Screen.Settings -> {
                 // The draft does not survive process death while the screen name does: open
                 // a fresh mirror of the settings rather than bounce back to the menu.
