@@ -1,5 +1,7 @@
 package com.rudimentor.app.data.levels
 
+import com.rudimentor.app.audio.BeatState
+import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.audio.Hand
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -403,16 +405,52 @@ class LevelCatalogTest {
     }
 
     @Test
-    fun `practice grid keeps the hand order of the pattern`() {
+    fun `the metronome loop keeps the hand order of the pattern`() {
         val level = catalog(
             lessons = listOf(lesson("f.ST-01", hands = "RLRRLRLL")),
             nodes = listOf(node("f.ST-01")),
         ).levels.single()
 
-        val row = level.toPracticeGrid().rows.single()
+        val loop = level.toMetronome(RankTarget(PracticeRank.Practice, bpm = 60, hitsPerBeat = 1))!!
+        val row = loop.grid.rows.single()
 
         assertEquals("RLRRLRLL", row.beats.joinToString("") { it.hand.label })
         assertEquals(Hand.Left, row.beats.last().hand)
+        assertEquals(60, loop.bpm)
+    }
+
+    @Test
+    fun `the metronome runs in strokes and accents every beat`() {
+        val level = catalog(
+            lessons = listOf(lesson("f.ST-01", hands = "RLL")),
+            nodes = listOf(node("f.ST-01")),
+        ).levels.single()
+
+        val loop = level.toMetronome(RankTarget(PracticeRank.Groove, bpm = 75, hitsPerBeat = 2))!!
+        val row = loop.grid.rows.single()
+
+        // Three strokes do not fill whole beats of two: the row is two patterns long, so the
+        // accent stays on the beat on every pass of the loop.
+        assertEquals("RLLRLL", row.beats.joinToString("") { it.hand.label })
+        assertEquals(
+            listOf(BeatState.Accent, BeatState.Normal, BeatState.Accent, BeatState.Normal, BeatState.Accent, BeatState.Normal),
+            row.beats.map { it.state },
+        )
+        assertEquals(150, loop.bpm)
+        assertFalse(loop.capped)
+    }
+
+    @Test
+    fun `a stroke rate above the click engine is clamped and said so`() {
+        val level = catalog(
+            lessons = listOf(lesson("f.ST-01")),
+            nodes = listOf(node("f.ST-01")),
+        ).levels.single()
+
+        val loop = level.toMetronome(RankTarget(PracticeRank.Stage, bpm = 120, hitsPerBeat = 4))!!
+
+        assertEquals(Bpm.MAX, loop.bpm)
+        assertTrue(loop.capped)
     }
 
     @Test
@@ -431,7 +469,7 @@ class LevelCatalogTest {
         assertFalse(unison.supportsBeatGrid)
         assertTrue(unison.playable)
         assertEquals("RL", unison.pattern.single().label)
-        assertThrows(IllegalArgumentException::class.java) { unison.toPracticeGrid() }
+        assertNull(unison.toMetronome(RankTarget(PracticeRank.Practice, bpm = 60, hitsPerBeat = 1)))
     }
 
     @Test

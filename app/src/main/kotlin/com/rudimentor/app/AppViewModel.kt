@@ -3,10 +3,9 @@ package com.rudimentor.app
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.rudimentor.app.audio.BeatGrid
-import com.rudimentor.app.audio.BeatRow
 import com.rudimentor.app.audio.Bpm
 import com.rudimentor.app.data.AppSettings
+import com.rudimentor.app.data.MetronomeEdits
 import com.rudimentor.app.data.OutputDevice
 import com.rudimentor.app.data.OutputProfile
 import com.rudimentor.app.data.SettingsDraft
@@ -48,37 +47,21 @@ class AppViewModel(
 
     fun setBpm(bpm: Int) = update { copy(bpm = Bpm.clamp(bpm)) }
 
-    fun adjustBpm(delta: Int) = update { copy(bpm = Bpm.adjust(bpm, delta)) }
+    fun adjustBpm(delta: Int) = update { MetronomeEdits.adjustBpm(this, delta) }
 
-    fun selectRow(rowIndex: Int) = update {
-        copy(activeRow = rowIndex.mod(grid.rowCount))
-    }
+    fun selectRow(rowIndex: Int) = update { MetronomeEdits.selectRow(this, rowIndex) }
 
-    // A new row duplicates the last one: the user usually wants a variation of what they
-    // already have, not an empty row they must fill from scratch.
-    fun addRow() = update {
-        if (grid.rowCount >= BeatGrid.MAX_ROWS) {
-            this
-        } else {
-            copy(grid = grid.withRowAppended(), activeRow = grid.rowCount)
-        }
-    }
+    fun addRow() = update { MetronomeEdits.addRow(this) }
 
-    fun removeRow() = update { setRowCountInternal(grid.rowCount - 1) }
+    fun removeRow() = update { MetronomeEdits.removeRow(this) }
 
-    fun addBeat(rowIndex: Int) = update { withRowLength(rowIndex, +1) }
+    fun addBeat(rowIndex: Int) = update { MetronomeEdits.addBeat(this, rowIndex) }
 
-    fun removeBeat(rowIndex: Int) = update { withRowLength(rowIndex, -1) }
+    fun removeBeat(rowIndex: Int) = update { MetronomeEdits.removeBeat(this, rowIndex) }
 
-    // The row always comes from the caller: the edit lands on the row the user touched,
-    // never on a stale "active row".
-    fun cycleBeat(rowIndex: Int, beatIndex: Int) = update {
-        copy(grid = grid.cycleState(rowIndex.coerceIn(0, grid.rowCount - 1), beatIndex))
-    }
+    fun cycleBeat(rowIndex: Int, beatIndex: Int) = update { MetronomeEdits.cycleBeat(this, rowIndex, beatIndex) }
 
-    fun toggleHand(rowIndex: Int, beatIndex: Int) = update {
-        copy(grid = grid.toggleHand(rowIndex.coerceIn(0, grid.rowCount - 1), beatIndex))
-    }
+    fun toggleHand(rowIndex: Int, beatIndex: Int) = update { MetronomeEdits.toggleHand(this, rowIndex, beatIndex) }
 
     fun setShowHandLetters(show: Boolean) = update { copy(showHandLetters = show) }
 
@@ -179,18 +162,6 @@ class AppViewModel(
 
     fun selectRank(familyId: String, rank: PracticeRank) {
         viewModelScope.launch { progressRepository.selectRank(familyId, rank) }
-    }
-
-    private fun AppSettings.setRowCountInternal(count: Int): AppSettings {
-        val target = count.coerceIn(BeatGrid.MIN_ROWS, BeatGrid.MAX_ROWS)
-        val resized = grid.withRowCount(target)
-        return copy(grid = resized, activeRow = safeActiveRow.coerceIn(0, resized.rowCount - 1))
-    }
-
-    private fun AppSettings.withRowLength(rowIndex: Int, delta: Int): AppSettings {
-        val index = rowIndex.coerceIn(0, grid.rowCount - 1)
-        val target = (grid.rows[index].size + delta).coerceIn(BeatRow.MIN_BEATS, BeatRow.MAX_BEATS)
-        return copy(grid = grid.withRowLength(index, target))
     }
 
     private fun update(transform: AppSettings.() -> AppSettings) {
