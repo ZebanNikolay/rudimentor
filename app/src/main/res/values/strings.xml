@@ -134,6 +134,8 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="practice_free_click_warning">Use headphones to keep the metronome click out of your detected hits.</string>
     <string name="practice_elapsed_label">ELAPSED</string>
     <string name="practice_free_action">Practice</string>
+    <string name="level_mode_play">Play level</string>
+    <string name="level_mode_metronome">Metronome</string>
     <string name="practice_free_again">Practice again</string>
     <string name="practice_play_level">Play level</string>
     <string name="practice_summary_title">Practice finished</string>
