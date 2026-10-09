@@ -270,6 +270,12 @@ sealed interface HitOutcome {
     data class Debounced(val gapMs: Float) : HitOutcome
 
     /**
+     * The onset was an echo of a stroke [gapMs] earlier, at [ratio] of its loudness, and the
+     * echo filter dropped it before the attempt saw it: neither scored nor charged.
+     */
+    data class Echo(val gapMs: Float, val ratio: Float) : HitOutcome
+
+    /**
      * The hit arrived after the window of the last note had closed, so there was nothing
      * left to judge it against. Dropped instead of being charged as an extra: the app's own
      * metronome keeps clicking for one more beat after the last note and the microphone

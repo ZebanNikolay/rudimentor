@@ -31,6 +31,17 @@ class SettingsDraftTest {
     }
 
     @Test
+    fun `the echo filter is on by default and its switch is stored globally`() {
+        val settings = AppSettings()
+        assertTrue(settings.ignoreEchoes)
+        val draft = SettingsDraft.from(settings).copy(ignoreEchoes = false)
+        assertTrue(draft.differsFrom(settings))
+        val saved = draft.applyTo(settings)
+        assertFalse(saved.ignoreEchoes)
+        assertTrue(SettingsDraft.from(saved).copy(ignoreEchoes = true).applyTo(saved).ignoreEchoes)
+    }
+
+    @Test
     fun `the click switch is saved on the output in force`() {
         val draft = SettingsDraft.from(AppSettings()).withClickAudible(true)
         assertTrue(draft.clickAudible)

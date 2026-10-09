@@ -124,6 +124,11 @@ fun PracticeScreen(
      */
     micThresholdLevel: Float,
     showOffsetMs: Boolean,
+    /**
+     * Drop the weak echo a stand or a room returns 45-130 ms after a stroke instead of
+     * charging it as an extra (decision 230). On by default; the learner can turn it off.
+     */
+    ignoreEchoes: Boolean = true,
     buildInfo: BuildInfo,
     headphonesConnected: Boolean,
     unknownOutput: Boolean,
@@ -280,6 +285,8 @@ fun PracticeScreen(
     LaunchedEffect(running, attempt) {
         if (!running) return@LaunchedEffect
         var skewLogged = false
+        // One filter per run: an echo is measured against the strokes of this run only.
+        val echoFilter = EchoFilter(enabled = ignoreEchoes)
         // Output latency is what the timeline is corrected by; over Bluetooth it is
         // hundreds of milliseconds and it drifts, so a jump belongs in the log next
         // to the strokes it moved (decision 147).
@@ -388,7 +395,13 @@ fun PracticeScreen(
                 val judgeNowMs = now - poll.appliedLatencyMs
                 val log = telemetry.value
                 poll.hits.forEach { hit ->
-                    val outcome = if (loop != null) {
+                    // Before anything judges it: an echo is neither a stroke nor an extra,
+                    // only a line in the log (decision 230).
+                    val echo = echoFilter.check(hit.positionMsExact, hit.envelope)
+                    val outcome = if (echo != null) {
+                        if (loop == null && hit.positionMs < firstJudgedMs) return@forEach
+                        echo
+                    } else if (loop != null) {
                         loop.registerHit(hit.positionMsExact) ?: return@forEach
                     } else {
                         if (hit.positionMs < firstJudgedMs) return@forEach
@@ -534,6 +547,7 @@ fun PracticeScreen(
                 headphones = headphonesConnected,
                 audio = session.streamInfo().toTelemetry(),
                 runMode = mode.name,
+                echoFilter = ignoreEchoes,
             ),
         )
     }

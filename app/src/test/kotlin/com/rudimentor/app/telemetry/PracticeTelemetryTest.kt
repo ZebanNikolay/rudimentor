@@ -351,6 +351,40 @@ class PracticeTelemetryTest {
         assertTrue(session.count { it == '\n' } == 0)
     }
 
+    @Test
+    fun `an echo is logged with its gap and ratio and counted apart from extras`() {
+        val telemetry = PracticeTelemetry(header().copy(echoFilter = true))
+        telemetry.hit(
+            atMs = 2_062f,
+            outcome = HitOutcome.Echo(gapMs = 62f, ratio = 0.15f),
+            envelope = 0.018f,
+            threshold = 0.013f,
+            peak = 0.2f,
+        )
+        telemetry.finish(
+            atMs = 3_000f,
+            result = result(),
+            debouncedTotal = 0,
+            audio = audio(),
+            aborted = false,
+        )
+        val lines = telemetry.jsonLines()
+        assertTrue(lines[1].contains("\"echoFilter\":true"))
+        val echo = lines.first { it.contains("\"outcome\":\"echo\"") }
+        assertTrue(echo.contains("\"gapMs\":62.0"))
+        assertTrue(echo.contains("\"ratio\":0.150"))
+        val summary = telemetry.summary()
+        assertTrue(summary.contains("echo filter on"))
+        assertTrue(summary.contains("echo 1 · combo"))
+    }
+
+    @Test
+    fun `logs from before the echo filter keep their old header`() {
+        val telemetry = PracticeTelemetry(header())
+        assertTrue(telemetry.jsonLines()[1].contains("echoFilter").not())
+        assertTrue(telemetry.summary().contains("echo filter").not())
+    }
+
     private fun header(device: String = "Google Pixel 7") = TelemetryHeader(
         startedAt = "2026-08-24 15:10:04",
         device = device,

@@ -124,6 +124,10 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="practice_latency_value">%1$d ms</string>
     <string name="practice_offset_ms_label">Show timing in ms</string>
     <string name="practice_offset_ms_note">Adds the millisecond offset under each verdict.</string>
+    <string name="practice_ignore_echoes_label">Ignore echoes</string>
+    <string name="practice_ignore_echoes_note">Skips the faint second sound a stand or room makes after a stroke.</string>
+    <string name="practice_ignore_echoes_help_title">Ignore echoes</string>
+    <string name="practice_ignore_echoes_help_body">After a stroke, a stand, the room or the pad itself can ring back once or twice: a faint sound 50\u2013130 ms later. The microphone hears it as one more stroke, and without this filter each one counts as an extra hit and lowers your accuracy.\n\nWith the filter on, a sound that comes within 130 ms of a stroke and is less than a third as loud is treated as an echo: it is not scored and not counted as an extra. In this course a played stroke is never that close and that quiet \u2014 even the fastest double in the course is 83 ms apart and its second stroke is at least half as loud as the first.\n\nTurn it off only if you deliberately play a very soft stroke right after a loud one and see it go missing.</string>
 
     <string name="practice_level_clear">LEVEL CLEAR</string>
     <string name="run_mode_challenge">CHALLENGE</string>

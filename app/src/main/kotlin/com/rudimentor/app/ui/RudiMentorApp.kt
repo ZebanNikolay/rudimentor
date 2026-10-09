@@ -371,6 +371,7 @@ fun RudiMentorApp(
                             micThresholdLevel = settings.micThresholdLevel,
                             headphonesConnected = headphonesConnected,
                             showOffsetMs = settings.showOffsetMs,
+                            ignoreEchoes = settings.ignoreEchoes,
                             buildInfo = buildInfo,
                             unknownOutput = unknownOutput,
                             onExit = { screenName = Screen.LevelDetail.name },

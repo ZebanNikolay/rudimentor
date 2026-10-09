@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -72,7 +73,10 @@ fun SettingsPanel(
     }
 }
 
-/** A label with a switch on the trailing edge. */
+/**
+ * A label with a switch on the trailing edge, and a help button next to the label when
+ * [helpTitle] and [helpBody] say what the switch does at more length than a caption can.
+ */
 @Composable
 fun SettingsSwitchRow(
     label: String,
@@ -80,17 +84,29 @@ fun SettingsSwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
+    helpTitle: String? = null,
+    helpBody: String? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = RudiColors.Text,
-        )
+        Row(
+            modifier = Modifier.weight(1f, fill = false),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = RudiColors.Text,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (helpTitle != null && helpBody != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+                HelpButton(title = helpTitle, body = helpBody)
+            }
+        }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,

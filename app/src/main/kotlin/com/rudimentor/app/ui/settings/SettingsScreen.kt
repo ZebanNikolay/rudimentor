@@ -113,6 +113,18 @@ fun SettingsScreen(
                 onCheckedChange = { onDraftChange(draft.copy(showOffsetMs = it)) },
             )
             SettingsNote(text = stringResource(R.string.practice_offset_ms_note))
+            SettingsGap()
+            // On by default (decision 230): a stand or a room returned a weak echo after
+            // most strokes and each one was charged as an extra. The switch stays for the
+            // learner who finds a real quiet stroke going missing.
+            SettingsSwitchRow(
+                label = stringResource(R.string.practice_ignore_echoes_label),
+                checked = draft.ignoreEchoes,
+                onCheckedChange = { onDraftChange(draft.copy(ignoreEchoes = it)) },
+                helpTitle = stringResource(R.string.practice_ignore_echoes_help_title),
+                helpBody = stringResource(R.string.practice_ignore_echoes_help_body),
+            )
+            SettingsNote(text = stringResource(R.string.practice_ignore_echoes_note))
         }
 
         Spacer(modifier = Modifier.height(16.dp))

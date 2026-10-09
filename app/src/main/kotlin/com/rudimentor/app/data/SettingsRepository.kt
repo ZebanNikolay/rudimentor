@@ -59,6 +59,7 @@ class DataStoreSettingsRepository(
             micThresholdLevel = preferences[Keys.MicThresholdLevel]
                 ?: MicThreshold.DEFAULT_LEVEL,
             showOffsetMs = preferences[Keys.ShowOffsetMs] ?: false,
+            ignoreEchoes = preferences[Keys.IgnoreEchoes] ?: true,
             outputProfiles = parseProfiles(
                 raw = preferences[Keys.OutputProfiles],
                 fallbackLatencyMs = preferences[Keys.InputLatencyMs] ?: MicLab.DEFAULT_LATENCY_MS,
@@ -86,6 +87,7 @@ class DataStoreSettingsRepository(
         this[Keys.MicLatencyMs] = safe.micLatencyMs
         this[Keys.MicThresholdLevel] = safe.micThresholdLevel
         this[Keys.ShowOffsetMs] = safe.showOffsetMs
+        this[Keys.IgnoreEchoes] = safe.ignoreEchoes
         this[Keys.OutputProfiles] = safe.outputProfiles.serialize()
         this[Keys.SelectedProfile] = safe.selectedProfileId
         this[Keys.SoundCheckDone] = safe.soundCheckDone
@@ -104,6 +106,7 @@ class DataStoreSettingsRepository(
         val LatencyCalibrated = booleanPreferencesKey("practice_latency_calibrated")
         val MicThresholdLevel = floatPreferencesKey("practice_mic_threshold_level")
         val ShowOffsetMs = booleanPreferencesKey("practice_show_offset_ms")
+        val IgnoreEchoes = booleanPreferencesKey("practice_ignore_echoes")
         val OutputProfiles = stringPreferencesKey("practice_output_profiles")
         val SelectedProfile = stringPreferencesKey("practice_output_profile_selected")
         val SoundCheckDone = booleanPreferencesKey("sound_check_done")

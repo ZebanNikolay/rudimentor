@@ -59,6 +59,12 @@ data class AppSettings(
      */
     val showOffsetMs: Boolean = false,
     /**
+     * Whether the weak echo a stand, a room or the pad returns 45-130 ms after a stroke is
+     * dropped instead of charged as an extra. On by default: the dev.59 logs counted one on
+     * most strokes (decision 230).
+     */
+    val ignoreEchoes: Boolean = true,
+    /**
      * Saved outputs with their own latency, newest use first after the built-in one
      * (decision 161). [inputLatencyMs] and [latencyCalibrated] above always mirror the
      * selected profile: the engine reads them and knows nothing about profiles.

@@ -34,6 +34,8 @@ data class SettingsDraft(
      */
     val outputProfiles: List<OutputProfile>,
     val selectedProfileId: String,
+    /** Drop stand and room echoes before judging; global, not per output (decision 230). */
+    val ignoreEchoes: Boolean = true,
 ) {
     val selectedProfile: OutputProfile
         get() = outputProfiles.firstOrNull { it.id == selectedProfileId }
@@ -192,6 +194,7 @@ data class SettingsDraft(
     fun applyTo(settings: AppSettings): AppSettings = settings.copy(
         clickAudible = clickAudible,
         showOffsetMs = showOffsetMs,
+        ignoreEchoes = ignoreEchoes,
         inputLatencyMs = latencyMs,
         latencyCalibrated = latencyCalibrated,
         micLatencyMs = micLatencyMs,
@@ -231,6 +234,7 @@ data class SettingsDraft(
             return SettingsDraft(
                 clickAudible = safe.clickAudible,
                 showOffsetMs = safe.showOffsetMs,
+                ignoreEchoes = safe.ignoreEchoes,
                 latencyMs = safe.inputLatencyMs,
                 latencyCalibrated = safe.latencyCalibrated,
                 micLatencyMs = safe.micLatencyMs,

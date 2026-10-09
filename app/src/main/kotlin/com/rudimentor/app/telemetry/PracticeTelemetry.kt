@@ -72,6 +72,8 @@ data class TelemetryHeader(
     val audio: TelemetryAudio?,
     /** Free practice has no scored result and retains only a bounded diagnostic prefix. */
     val runMode: String = "Challenge",
+    /** Whether the echo filter was on for this run; null in logs written before it. */
+    val echoFilter: Boolean? = null,
 )
 
 /**
@@ -104,6 +106,7 @@ class PracticeTelemetry(
     private var judged = 0L
     private var extras = 0L
     private var debounced = 0L
+    private var echoes = 0L
     private var afterEnd = 0L
     private var quiet = 0L
     private var missed = 0L
@@ -217,6 +220,13 @@ class PracticeTelemetry(
             is HitOutcome.Debounced -> {
                 debounced += 1
                 json.text("outcome", "debounced").num("gapMs", outcome.gapMs)
+            }
+
+            is HitOutcome.Echo -> {
+                echoes += 1
+                json.text("outcome", "echo")
+                    .num("gapMs", outcome.gapMs)
+                    .num("ratio", outcome.ratio, ACCURACY_DIGITS)
             }
 
             is HitOutcome.AfterEnd -> {
@@ -501,7 +511,8 @@ class PracticeTelemetry(
                 ") · " +
                 "click ${onOff(header.clickAudible)} · " +
                 "headphones ${yesNo(header.headphones)} · " +
-                "sensitivity ${decimal(header.sensitivity, ACCURACY_DIGITS)}",
+                "sensitivity ${decimal(header.sensitivity, ACCURACY_DIGITS)}" +
+                (header.echoFilter?.let { " · echo filter ${onOff(it)}" } ?: ""),
         )
         lines.add(
             if (audio == null) {
@@ -524,12 +535,12 @@ class PracticeTelemetry(
             lines.add(practiceLine())
             lines.add(
                 "detector matched $judged · extra $extras · debounced $debounced · " +
-                    "afterEnd $afterEnd · quiet $quiet",
+                    "afterEnd $afterEnd · quiet $quiet · echo $echoes",
             )
         } else if (outcome == null) {
             lines.add(
                 "result none · judged $judged · extra $extras · debounced $debounced · " +
-                    "afterEnd $afterEnd · quiet $quiet",
+                    "afterEnd $afterEnd · quiet $quiet · echo $echoes",
             )
         } else {
             lines.add(
@@ -538,7 +549,7 @@ class PracticeTelemetry(
                     " · perfect ${outcome.perfect} good ${outcome.good} ok ${outcome.ok} " +
                     "miss ${outcome.misses} · extra ${outcome.extras} · " +
                     "debounced $debounced · afterEnd $afterEnd · quiet $quiet · " +
-                    "combo ${outcome.maxCombo}",
+                    "echo $echoes · combo ${outcome.maxCombo}",
             )
             lines.add(
                 "timing mean ${signed(outcome.meanOffsetMs)} · " +
@@ -719,6 +730,7 @@ class PracticeTelemetry(
         .num("micGate", header.micThresholdLevel, LEVEL_DIGITS)
         .bool("clickAudible", header.clickAudible)
         .text("mode", header.runMode)
+        .apply { header.echoFilter?.let { bool("echoFilter", it) } }
         .done()
 
     companion object {
