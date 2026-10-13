@@ -5,9 +5,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import com.rudimentor.app.ui.component.TransportSize
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,9 +37,10 @@ import com.rudimentor.app.ui.theme.RudiColors
 /**
  * The three ways into a level, as a menu that is always open (decision 229).
  *
- * The pattern is the Material FAB menu: the main action is the round button in the corner
- * with its name to its left, and the other actions stand above it as labelled pills,
- * right-aligned to it. It is never collapsed -- three choices are few enough to read at once,
+ * The pattern is the Material FAB menu: the main action is the round button in the corner,
+ * the other two are small round buttons stacked above it on the same axis, and every button
+ * has its name to its left. Pills with the icon first read as a different control from the
+ * Play button and left the icons out of line (decision 231). It is never collapsed -- three choices are few enough to read at once,
  * and a menu behind a tap would hide the very choice the card is about. Two text buttons and
  * a round one in one row did not leave room for a third.
  *
@@ -59,7 +62,7 @@ internal fun LevelModeMenu(
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         ModePill(
             icon = painterResource(R.drawable.ic_menu_metronome),
@@ -83,9 +86,9 @@ internal fun LevelModeMenu(
                 modifier = Modifier
                     .clearAndSetSemantics { }
                     .clickable(enabled = playEnabled, onClick = onPlay)
-                    .padding(vertical = 8.dp),
+                    .padding(start = 10.dp, top = 8.dp, bottom = 8.dp),
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(LABEL_GAP))
             LevelPlayButton(
                 onClick = onPlay,
                 contentDescription = playDescription,
@@ -102,32 +105,43 @@ private fun ModePill(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(PILL_HEIGHT / 2)
+    // A small round button in the column of the big one, its name to its left: the label and
+    // the circle are one target, and every circle of the menu sits on one vertical axis with
+    // the Play button (decision 231).
     Row(
         modifier = Modifier
-            .height(PILL_HEIGHT)
             .alpha(if (enabled) 1f else DISABLED_ALPHA)
-            .clip(shape)
-            .background(RudiColors.Surface, shape)
-            .border(1.dp, RudiColors.Line, shape)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(start = 14.dp, end = 16.dp),
+            .clip(RoundedCornerShape(SMALL_SIZE / 2))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            painter = icon,
-            contentDescription = null,
-            tint = RudiColors.BrickLit,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.titleSmall,
             color = RudiColors.Text,
+            modifier = Modifier.padding(start = 10.dp),
         )
+        Spacer(modifier = Modifier.width(LABEL_GAP))
+        Box(modifier = Modifier.width(TransportSize.Small.buttonSize), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(SMALL_SIZE)
+                    .clip(CircleShape)
+                    .background(RudiColors.Surface, CircleShape)
+                    .border(1.dp, RudiColors.Line, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = icon,
+                    contentDescription = null,
+                    tint = RudiColors.BrickLit,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
     }
 }
 
-private val PILL_HEIGHT = 40.dp
+private val SMALL_SIZE = TransportSize.Tiny.buttonSize
+private val LABEL_GAP = 12.dp
 private const val DISABLED_ALPHA = 0.4f
