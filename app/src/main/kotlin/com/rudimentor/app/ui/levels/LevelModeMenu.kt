@@ -40,7 +40,9 @@ import com.rudimentor.app.ui.theme.RudiColors
  * The pattern is the Material FAB menu: the main action is the round button in the corner,
  * the other two are small round buttons stacked above it on the same axis, and every button
  * has its name to its left. Pills with the icon first read as a different control from the
- * Play button and left the icons out of line (decision 231). It is never collapsed -- three choices are few enough to read at once,
+ * Play button and left the icons out of line (decision 232).
+ *
+ * It is never collapsed -- three choices are few enough to read at once,
  * and a menu behind a tap would hide the very choice the card is about. Two text buttons and
  * a round one in one row did not leave room for a third.
  *
@@ -107,7 +109,7 @@ private fun ModePill(
 ) {
     // A small round button in the column of the big one, its name to its left: the label and
     // the circle are one target, and every circle of the menu sits on one vertical axis with
-    // the Play button (decision 231).
+    // the Play button (decision 232).
     Row(
         modifier = Modifier
             .alpha(if (enabled) 1f else DISABLED_ALPHA)

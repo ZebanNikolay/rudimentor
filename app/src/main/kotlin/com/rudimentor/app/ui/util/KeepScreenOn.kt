@@ -37,7 +37,7 @@ import kotlinx.coroutines.delay
  *
  * The window flag did not end it either: the display still went out mid-attempt on the last
  * Unison level of the doubles map (report 2026-10-13). Two things are fixed here (decision
- * 230). The flag is one bit per window while the helper has two callers -- the app-level
+ * 231). The flag is one bit per window while the helper has two callers -- the app-level
  * stage and the metronome -- so whichever let go first cleared it under the other; owners are
  * counted now and the flag drops with the last one. And nothing watched the bit once it was
  * set: while an owner is active the helper now checks it every few seconds, puts it back if
