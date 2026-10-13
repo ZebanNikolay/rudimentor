@@ -1,10 +1,13 @@
 package com.rudimentor.app.ui.util
 
+import android.view.Window
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import com.rudimentor.app.util.AppLog
+import kotlinx.coroutines.delay
 
 /**
  * Keeps the display awake while [active] is true.
@@ -31,6 +34,15 @@ import com.rudimentor.app.util.AppLog
  * The request now lives on the window itself, where it is a flag that stays set until
  * this helper clears it, and it is re-asserted on resume: returning from the background
  * already loses the immersive bars, and the flag is lost the same way.
+ *
+ * The window flag did not end it either: the display still went out mid-attempt on the last
+ * Unison level of the doubles map (report 2026-10-13). Two things are fixed here (decision
+ * 230). The flag is one bit per window while the helper has two callers -- the app-level
+ * stage and the metronome -- so whichever let go first cleared it under the other; owners are
+ * counted now and the flag drops with the last one. And nothing watched the bit once it was
+ * set: while an owner is active the helper now checks it every few seconds, puts it back if
+ * anything took it away and writes `keep-awake lost` to the log, so a repeat names itself
+ * instead of being a dark screen.
  */
 @Composable
 fun KeepScreenOn(active: Boolean) {
@@ -39,11 +51,18 @@ fun KeepScreenOn(active: Boolean) {
 
     DisposableEffect(window, active) {
         if (window == null || !active) return@DisposableEffect onDispose { }
-        AppLog.trace("screen") { "keep-awake on" }
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        onDispose {
-            AppLog.trace("screen") { "keep-awake off" }
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        ScreenAwakeOwners.acquire(window)
+        onDispose { ScreenAwakeOwners.release(window) }
+    }
+
+    LaunchedEffect(window, active) {
+        if (window == null || !active) return@LaunchedEffect
+        while (true) {
+            delay(WATCH_PERIOD_MS)
+            if (window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON == 0) {
+                AppLog.error("screen", "keep-awake lost, restored")
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
         }
     }
 
@@ -52,3 +71,28 @@ fun KeepScreenOn(active: Boolean) {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 }
+
+/** How many active callers want each window awake: the flag goes with the last of them. */
+private object ScreenAwakeOwners {
+    private val counts = mutableMapOf<Window, Int>()
+
+    fun acquire(window: Window) {
+        val count = (counts[window] ?: 0) + 1
+        counts[window] = count
+        AppLog.trace("screen") { "keep-awake on ($count)" }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
+    fun release(window: Window) {
+        val count = ((counts[window] ?: 1) - 1).coerceAtLeast(0)
+        AppLog.trace("screen") { "keep-awake off ($count)" }
+        if (count == 0) {
+            counts.remove(window)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            counts[window] = count
+        }
+    }
+}
+
+private const val WATCH_PERIOD_MS = 5_000L
