@@ -38,6 +38,11 @@ object RudiColors {
     val PadLetterMute = Color(0xFF4A4A48)
     val PadLetterLit = Color(0xFFFFFFFF)
 
+    /** Hand letters of the metronome grid, one tier brighter than the rest (decision 234). */
+    val PadLetterStrong = Color(0xFFE4E4E1)
+    val PadLetterAccentStrong = Color(0xFFF4D0D0)
+    val PadLetterMuteStrong = Color(0xFF8A8A86)
+
     // Level result marks on a node: three stars plus the crown. Both are
     // white — gold fought with the brick face of a lit pad (decision 126).
     val PadStar = Color(0xFFFFFFFF)

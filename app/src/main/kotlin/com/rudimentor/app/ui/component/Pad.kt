@@ -74,11 +74,18 @@ fun Pad(
     variant: PadVariant = PadVariant.Dark,
     stars: Int = 0,
     crown: Boolean = false,
+    contrastLetters: Boolean = false,
 ) {
     val light = variant == PadVariant.Light
     val round = shape == PadShape.Round
     val muted = tone == PadTone.Mute
-    val palette = padPalette(round = round, tone = tone, lit = lit, light = light)
+    val palette = padPalette(
+        round = round,
+        tone = tone,
+        lit = lit,
+        light = light,
+        contrastLetters = contrastLetters,
+    )
 
     // A lit pad is a key with the lamp switched on: flat brick fill and an even halo
     // around the whole outline, never a directional drop shadow.

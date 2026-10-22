@@ -40,6 +40,7 @@ internal fun padPalette(
     tone: PadTone,
     lit: Boolean,
     light: Boolean = false,
+    contrastLetters: Boolean = false,
 ): PadPalette {
     val muted = tone == PadTone.Mute
     return PadPalette(
@@ -66,6 +67,11 @@ internal fun padPalette(
             else -> RudiColors.PadLed
         },
         letter = when {
+            // The metronome grid is read from arm's length while playing, so its hand
+            // letters step up a tier (decision 234). Lit pads are already white.
+            contrastLetters && muted && !lit -> RudiColors.PadLetterMuteStrong
+            contrastLetters && !lit && tone == PadTone.Accent -> RudiColors.PadLetterAccentStrong
+            contrastLetters && !lit && !muted && !light -> RudiColors.PadLetterStrong
             muted && lit -> RudiColors.PadMuteLitLetter
             muted -> RudiColors.PadLetterMute
             lit -> RudiColors.PadLetterLit
