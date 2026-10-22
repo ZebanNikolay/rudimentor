@@ -72,7 +72,13 @@ fun BeatDrum(
     onCycleBeat: (Int, Int) -> Unit,
     onToggleHand: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Grows the slots and the pads together. Portrait keeps 1; landscape has the height to
+     * spare and fills it, since the grid is read from arm's length (decision 234).
+     */
+    sizeScale: Float = 1f,
 ) {
+    val slotHeight = RudiDimens.DrumSlotHeight * sizeScale
     if (grid.rowCount == 1) {
         // A single row is not a drum: no track, no guides, no row number.
         BeatRowPads(
@@ -83,9 +89,10 @@ fun BeatDrum(
             editable = editable,
             onCycleBeat = { beat -> onCycleBeat(0, beat) },
             onToggleHand = { beat -> onToggleHand(0, beat) },
+            sizeScale = sizeScale,
             modifier = modifier
                 .fillMaxWidth()
-                .height(RudiDimens.DrumSlotHeight),
+                .height(slotHeight),
         )
         return
     }
@@ -93,7 +100,7 @@ fun BeatDrum(
     val density = LocalDensity.current
     // Rows are pitched tighter than the focus slot is tall, so the neighbours
     // stay clear of the fade instead of hiding in it.
-    val slotHeightPx = with(density) { RudiDimens.DrumSlotHeight.toPx() } * DrumTuning.ROW_PITCH
+    val slotHeightPx = with(density) { slotHeight.toPx() } * DrumTuning.ROW_PITCH
     val scope = rememberCoroutineScope()
 
     // The barrel position is a continuous virtual row index, so it can cross
@@ -126,7 +133,7 @@ fun BeatDrum(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(RudiDimens.DrumSlotHeight * DrumTuning.VISIBLE_SLOTS)
+            .height(slotHeight * DrumTuning.VISIBLE_SLOTS)
             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
             .drawWithContent {
                 drawContent()
@@ -177,7 +184,7 @@ fun BeatDrum(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(RudiDimens.DrumSlotHeight)
+                .height(slotHeight)
                 .drawWithContent {
                     drawContent()
                     val stroke = 1.dp.toPx()
@@ -212,7 +219,7 @@ fun BeatDrum(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(RudiDimens.DrumSlotHeight)
+                    .height(slotHeight)
                     .offset { IntOffset(0, (distance * slotHeightPx).roundToInt()) }
                     .alpha(alpha)
                     .scale(scale),
@@ -232,6 +239,7 @@ fun BeatDrum(
                     editable = editable && isCentre,
                     onCycleBeat = { beat -> onCycleBeat(rowIndex, beat) },
                     onToggleHand = { beat -> onToggleHand(rowIndex, beat) },
+                    sizeScale = sizeScale,
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.width(RudiDimens.RowNumberWidth))

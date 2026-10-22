@@ -44,6 +44,7 @@ internal fun BeatRowPads(
     onCycleBeat: (Int) -> Unit,
     onToggleHand: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    sizeScale: Float = 1f,
 ) {
     val haptics = LocalHapticFeedback.current
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -52,10 +53,10 @@ internal fun BeatRowPads(
             count > 8 -> 5.dp
             count > 4 -> 8.dp
             else -> 12.dp
-        }
-        val divider: Dp = if (count > 4) 14.dp else 0.dp
+        } * sizeScale
+        val divider: Dp = (if (count > 4) 14.dp else 0.dp) * sizeScale
         val groups = if (count > 4) (count - 1) / 4 else 0
-        val maxSize = if (isActive) RudiDimens.PadActiveMaxSize else RudiDimens.PadNeighbourMaxSize
+        val maxSize = (if (isActive) RudiDimens.PadActiveMaxSize else RudiDimens.PadNeighbourMaxSize) * sizeScale
         val available = maxWidth - gap * (count - 1) - divider * groups
         val size = maxOf(RudiDimens.PadMinSize, minOf(available / count, maxSize))
 
@@ -81,6 +82,7 @@ internal fun BeatRowPads(
                     showLetter = showLetters,
                     pressed = pressed,
                     letterFraction = RudiDimens.PAD_LETTER_FRACTION_GRID,
+                    contrastLetters = true,
                     modifier = if (editable) {
                         Modifier.pointerInput(row, index) {
                             awaitEachGesture {
