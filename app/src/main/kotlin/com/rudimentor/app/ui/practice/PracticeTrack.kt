@@ -4,9 +4,12 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -154,6 +157,17 @@ fun PracticeTrack(
         }
 
         val drawingNotes = loopView?.notes?.map { it.note } ?: notes
+        drawWordBlocks(
+            notes = drawingNotes,
+            // A loop repeats its words every cycle: the cycle is part of the key, or the
+            // last word of one cycle would merge with the first of the next.
+            cycles = loopView?.notes?.map { it.id.cycle },
+            positionMs = drawingPositionMs,
+            pxPerMs = pxPerMs,
+            lineX = lineX,
+            laneY = laneY,
+            side = side,
+        )
         drawingNotes.forEachIndexed { drawingIndex, note ->
             val x = lineX + (note.timeMs - drawingPositionMs) * pxPerMs
             if (x < -side || x > width + side) return@forEachIndexed
@@ -269,6 +283,71 @@ fun PracticeTrack(
                 center = Offset(x, extraDotY),
             )
         }
+    }
+}
+
+/**
+ * One soft block behind each word of the sticking (decision 236): on a single lane the pads
+ * of `RLRL RLRL` ran together and the bar lines alone did not say where a word began.
+ *
+ * The block spans the pads of its word, a little taller than them, and stops short of the
+ * next word so a clean gap always separates two blocks -- at the densest spacing the pads
+ * are only [MIN_NOTE_GAP] apart, so the gap, not the margin, is what reads. It is a tint of
+ * the text colour with a hairline edge, under the bar lines' weight: there to group, not to
+ * be looked at. Drawn before the notes, so pads, letters and the falling miss stay on top.
+ */
+private fun DrawScope.drawWordBlocks(
+    notes: List<PracticeNote>,
+    cycles: List<Long>?,
+    positionMs: Float,
+    pxPerMs: Float,
+    lineX: Float,
+    laneY: Float,
+    side: Float,
+) {
+    if (notes.isEmpty()) return
+    val xs = FloatArray(notes.size) { lineX + (notes[it].timeMs - positionMs) * pxPerMs }
+    val sameWord = { a: Int, b: Int ->
+        notes[a].word == notes[b].word && (cycles == null || cycles[a] == cycles[b])
+    }
+    val gapPx = WORD_BLOCK_GAP.toPx()
+    val marginPx = side * WORD_BLOCK_MARGIN
+    val top = laneY - side / 2f - side * WORD_BLOCK_VERTICAL
+    val height = side + side * WORD_BLOCK_VERTICAL * 2f
+    val radius = CornerRadius(side * WORD_BLOCK_CORNER, side * WORD_BLOCK_CORNER)
+    val stroke = Stroke(width = 1.dp.toPx())
+    var start = 0
+    while (start < notes.size) {
+        var end = start
+        while (end + 1 < notes.size && sameWord(start, end + 1)) end += 1
+        // Each edge goes out by the margin, but never past the middle of the gap to the
+        // neighbouring word minus half the clean gap.
+        val left = if (start > 0) {
+            maxOf(xs[start] - side / 2f - marginPx, (xs[start - 1] + xs[start]) / 2f + gapPx / 2f)
+        } else {
+            xs[start] - side / 2f - marginPx
+        }
+        val right = if (end < notes.lastIndex) {
+            minOf(xs[end] + side / 2f + marginPx, (xs[end] + xs[end + 1]) / 2f - gapPx / 2f)
+        } else {
+            xs[end] + side / 2f + marginPx
+        }
+        if (right > 0f && left < size.width && right > left) {
+            drawRoundRect(
+                color = RudiColors.TrackWordFill,
+                topLeft = Offset(left, top),
+                size = Size(right - left, height),
+                cornerRadius = radius,
+            )
+            drawRoundRect(
+                color = RudiColors.TrackWordEdge,
+                topLeft = Offset(left, top),
+                size = Size(right - left, height),
+                cornerRadius = radius,
+                style = stroke,
+            )
+        }
+        start = end + 1
     }
 }
 
@@ -510,6 +589,10 @@ internal fun verdictWord(judgement: NoteJudgement): String = when (judgement.win
 }
 
 private val MIN_NOTE_GAP = 8.dp
+private val WORD_BLOCK_GAP = 6.dp
+private const val WORD_BLOCK_MARGIN = 0.16f
+private const val WORD_BLOCK_VERTICAL = 0.16f
+private const val WORD_BLOCK_CORNER = 0.30f
 private const val LINE_FRACTION = 0.33f
 
 /** Beat grid strokes: the metronome as seen, in dp so density cannot erase them. */

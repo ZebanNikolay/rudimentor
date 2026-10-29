@@ -76,6 +76,10 @@ object RudiColors {
     // metronome from the eye entirely (decision 147).
     val TrackBarStrong = Color(0xFF6A6A66)
     val TrackBar = Color(0xFF3C3C3A)
+
+    /** The soft block behind one word of the sticking on the track (decision 236). */
+    val TrackWordFill = Color(0x0FFFFFFF)
+    val TrackWordEdge = Color(0x1FFFFFFF)
     // The three windows read as one heat scale away from the target: brick for
     // PERFECT, orange for GOOD, yellow for OK (decision 130). The other order made
     // the wider window look hotter than the tighter one.

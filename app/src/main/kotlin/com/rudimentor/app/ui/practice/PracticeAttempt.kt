@@ -27,7 +27,30 @@ data class PracticeNote(
     val densityStart: Boolean = false,
     /** True when both hands strike this note together: one sound, judged as one stroke. */
     val unison: Boolean = false,
+    /**
+     * The word of the sticking the note belongs to, counted across the attempt: the track
+     * draws one block behind each word so the eye reads `RLRL`, `RLRL` instead of one long
+     * line of pads (decision 236). See [stickingWordSize].
+     */
+    val word: Int = 0,
 )
+
+/**
+ * How many positions of a sticking make one word on the track (decision 236).
+ *
+ * Four is the unit the player counts in -- one bar of quarter notes, half a paradiddle, the
+ * row the metronome shows. A sticking of one or two strokes repeats into a word of four; a
+ * long one (8, 12, 16) splits into fours, which is where its own accents and hand changes
+ * fall. A sticking that does not divide by four, or that four does not divide, is its own
+ * word, whatever its length.
+ */
+internal fun stickingWordSize(stickingLength: Int): Int = when {
+    stickingLength <= 0 -> WORD_SIZE
+    stickingLength % WORD_SIZE == 0 || WORD_SIZE % stickingLength == 0 -> WORD_SIZE
+    else -> stickingLength
+}
+
+private const val WORD_SIZE = 4
 
 /**
  * Builds the note list of one attempt.
@@ -65,10 +88,13 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
     // subdivision plan is read with, so both stay in step across phases and repeats.
     var beat = 0
     var previousHitsPerBeat = 0
+    // Words start over with every block, the way its sticking does.
+    var word = -1
     repeat(level.phaseRepeats * target.attemptRepeats) {
         attemptPhases.forEach { phase ->
             val steps = phase.steps
             if (steps.isEmpty()) return@forEach
+            val wordSize = stickingWordSize(steps.size)
             var position = 0
             repeat(phase.beatCount) { beatInPhase ->
                 val hitsPerBeat = target.hitsPerBeatAtBeat(beat)
@@ -78,6 +104,7 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
                 val noteMs = beatMs / hitsPerBeat
                 for (hit in 0 until hitsPerBeat) {
                     val step = steps[position % steps.size]
+                    if (position % wordSize == 0) word += 1
                     position += 1
                     // A rest takes its position in the sticking and its share of the beat,
                     // but puts no note on the track: nothing to hit, nothing to judge.
@@ -99,6 +126,7 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
                                 previousHitsPerBeat != 0 &&
                                 hitsPerBeat != previousHitsPerBeat,
                             unison = step.hands.size > 1,
+                            word = word,
                         ),
                     )
                 }
