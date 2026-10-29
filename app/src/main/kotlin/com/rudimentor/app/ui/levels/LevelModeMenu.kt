@@ -42,7 +42,7 @@ import com.rudimentor.app.ui.component.TransportSize
 import com.rudimentor.app.ui.theme.RudiColors
 
 /**
- * The three ways into a level, in the Material FAB-menu pattern (decisions 229, 232, 235).
+ * The three ways into a level, in the Material FAB-menu pattern (decisions 229, 232, 235, 237).
  *
  * Play is the main action: the big round button in the bottom-right corner with its name to
  * its left. It is the only mode that can pass the level. Practice -- the same track without
@@ -71,19 +71,64 @@ internal fun LevelSecondaryModes(
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(STACK_GAP),
     ) {
-        SecondaryMode(
-            icon = painterResource(R.drawable.ic_menu_metronome),
-            label = stringResource(R.string.level_mode_metronome),
-            enabled = metronomeEnabled,
-            onClick = onMetronome,
-        )
-        SecondaryMode(
-            icon = rememberVectorPainter(Icons.Filled.AllInclusive),
+        MetronomeMode(enabled = metronomeEnabled, onClick = onMetronome)
+        PracticeMode(
             label = stringResource(R.string.practice_free_action),
             enabled = practiceEnabled,
             onClick = onPractice,
         )
     }
+}
+
+/**
+ * The same three ways in, side by side, for the screens after a run (decision 237): the
+ * practice summary and the result of an attempt. The buttons are the ones of the level card --
+ * label on the left, circle on the right, Play last and largest -- so the level is entered the
+ * same way from wherever it is offered. [playLabel] and [practiceLabel] name the action in the
+ * screen's own words (`Try again`, `Practice again`); a null [onMetronome] greys the metronome
+ * out for the levels it cannot hold.
+ */
+@Composable
+internal fun LevelModesRow(
+    playLabel: String,
+    playDescription: String,
+    onPlay: () -> Unit,
+    practiceLabel: String,
+    onPractice: () -> Unit,
+    onMetronome: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(ROW_GAP),
+    ) {
+        MetronomeMode(enabled = onMetronome != null, onClick = { onMetronome?.invoke() }, axis = false)
+        PracticeMode(label = practiceLabel, enabled = true, onClick = onPractice, axis = false)
+        LevelPlayRow(enabled = true, description = playDescription, onPlay = onPlay, label = playLabel)
+    }
+}
+
+@Composable
+private fun MetronomeMode(enabled: Boolean, onClick: () -> Unit, axis: Boolean = true) {
+    SecondaryMode(
+        icon = painterResource(R.drawable.ic_menu_metronome),
+        label = stringResource(R.string.level_mode_metronome),
+        enabled = enabled,
+        onClick = onClick,
+        axis = axis,
+    )
+}
+
+@Composable
+private fun PracticeMode(label: String, enabled: Boolean, onClick: () -> Unit, axis: Boolean = true) {
+    SecondaryMode(
+        icon = rememberVectorPainter(Icons.Filled.AllInclusive),
+        label = label,
+        enabled = enabled,
+        onClick = onClick,
+        axis = axis,
+    )
 }
 
 /** The main action: `Play level` and the transport button, one target with one ripple. */
@@ -93,12 +138,13 @@ internal fun LevelPlayRow(
     description: String,
     onPlay: () -> Unit,
     modifier: Modifier = Modifier,
+    label: String = stringResource(R.string.level_mode_play),
 ) {
     val interaction = remember { MutableInteractionSource() }
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         // The button already speaks for itself to TalkBack, so the label is not announced twice.
         ModeLabel(
-            text = stringResource(R.string.level_mode_play),
+            text = label,
             enabled = enabled,
             modifier = Modifier
                 .clearAndSetSemantics { }
@@ -125,6 +171,8 @@ private fun SecondaryMode(
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
+    /** In the stack each circle sits in a column as wide as Play, on its axis; in a row it does not. */
+    axis: Boolean = true,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -143,11 +191,11 @@ private fun SecondaryMode(
             },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ModeLabel(text = label, enabled = true)
+        ModeLabel(text = label, enabled = true, chip = axis)
         Spacer(modifier = Modifier.width(LABEL_GAP))
         // A column as wide as the Play button, so every circle shares its axis.
         Box(
-            modifier = Modifier.width(TransportSize.Small.buttonSize),
+            modifier = if (axis) Modifier.width(TransportSize.Small.buttonSize) else Modifier,
             contentAlignment = Alignment.Center,
         ) {
             Box(
@@ -172,14 +220,20 @@ private fun SecondaryMode(
 
 /** A mode name on a chip of the background, legible over content that scrolls beneath it. */
 @Composable
-private fun ModeLabel(text: String, enabled: Boolean, modifier: Modifier = Modifier) {
+private fun ModeLabel(
+    text: String,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    /** The chip is for the floating stack only; in a row nothing scrolls beneath. */
+    chip: Boolean = true,
+) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,
         color = if (enabled) RudiColors.Text else RudiColors.Muted,
         maxLines = 1,
         modifier = modifier
-            .background(RudiColors.Bg.copy(alpha = 0.92f), RoundedCornerShape(8.dp))
+            .then(if (chip) Modifier.background(RudiColors.Bg.copy(alpha = 0.92f), RoundedCornerShape(8.dp)) else Modifier)
             .padding(horizontal = 8.dp, vertical = 4.dp),
     )
 }
@@ -187,4 +241,5 @@ private fun ModeLabel(text: String, enabled: Boolean, modifier: Modifier = Modif
 private val SMALL_SIZE = TransportSize.Tiny.buttonSize
 private val LABEL_GAP = 10.dp
 private val STACK_GAP = 10.dp
+private val ROW_GAP = 18.dp
 private const val DISABLED_ALPHA = 0.4f

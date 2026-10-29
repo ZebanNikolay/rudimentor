@@ -33,6 +33,8 @@ import com.rudimentor.app.audio.AudioOutputMonitor
 import com.rudimentor.app.data.AppSettings
 import com.rudimentor.app.data.OutputDevice
 import com.rudimentor.app.data.MetronomeEdits
+import com.rudimentor.app.data.levels.toMetronome
+import com.rudimentor.app.data.levels.LevelMetronome
 import com.rudimentor.app.data.OutputProfile
 import com.rudimentor.app.data.SettingsDraft
 import com.rudimentor.app.data.levels.Level
@@ -166,6 +168,14 @@ fun RudiMentorApp(
         ?: PracticeRank.Practice
     val mode = RunMode.entries.firstOrNull { it.name == modeName } ?: RunMode.Challenge
     val screen = Screen.entries.firstOrNull { it.name == screenName } ?: Screen.Menu
+
+    // The level's sticking on the metronome, from the card or from the screens after a run
+    // (decisions 228, 237); Back returns to the screen it was opened from.
+    fun openLevelMetronome(loop: LevelMetronome, back: Screen) {
+        levelMetronome = settings.copy(grid = loop.grid, bpm = loop.bpm, activeRow = 0)
+        metronomeBackTargetName = back.name
+        screenName = Screen.Metronome.name
+    }
 
     fun prepareRun(level: Level, rank: PracticeRank, bpm: Int, runMode: RunMode) {
         selectedLevelId = level.id
@@ -335,9 +345,7 @@ fun RudiMentorApp(
                         },
                         onOpenMetronome = { selected, loop ->
                             selectedLevelId = selected.id
-                            levelMetronome = settings.copy(grid = loop.grid, bpm = loop.bpm, activeRow = 0)
-                            metronomeBackTargetName = Screen.LevelDetail.name
-                            screenName = Screen.Metronome.name
+                            openLevelMetronome(loop, Screen.LevelDetail)
                         },
                     )
                 }
@@ -463,6 +471,9 @@ fun RudiMentorApp(
                         onPractice = {
                             prepareRun(level, practiceRank, practiceBpm, RunMode.Practice)
                         },
+                        onMetronome = level.toMetronome(level.target(practiceRank))?.let { loop ->
+                            { openLevelMetronome(loop, Screen.PracticeResult) }
+                        },
                         onNextLevel = nextLevel?.let { next ->
                             {
                                 selectedLevelId = next.id
@@ -503,6 +514,9 @@ fun RudiMentorApp(
                         },
                         onPracticeAgain = {
                             prepareRun(level, practiceRank, practiceBpm, RunMode.Practice)
+                        },
+                        onMetronome = level.toMetronome(level.target(practiceRank))?.let { loop ->
+                            { openLevelMetronome(loop, Screen.PracticeSummary) }
                         },
                         onToMap = { screenName = Screen.Levels.name },
                     )

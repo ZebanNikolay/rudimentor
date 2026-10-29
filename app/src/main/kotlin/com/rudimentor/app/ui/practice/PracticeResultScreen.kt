@@ -47,6 +47,7 @@ import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.RudiChip
 import com.rudimentor.app.ui.component.padStarPath
+import com.rudimentor.app.ui.levels.LevelModesRow
 import com.rudimentor.app.ui.levels.title
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
@@ -81,6 +82,8 @@ fun PracticeResultScreen(
     /** Opens the same level in endless practice: the way to work on it before the next attempt. */
     onPractice: () -> Unit,
     onNextLevel: (() -> Unit)?,
+    /** Opens the sticking on the metronome; null for a level the metronome cannot hold. */
+    onMetronome: (() -> Unit)?,
     onToMap: () -> Unit,
     /** Opens the sound check, offered when the run says the audio path is the problem. */
     onSoundCheck: () -> Unit,
@@ -99,6 +102,7 @@ fun PracticeResultScreen(
         onRetry = onRetry,
         onPractice = onPractice,
         onNextLevel = onNextLevel,
+        onMetronome = onMetronome,
         onToMap = onToMap,
         onSoundCheck = onSoundCheck,
     )
@@ -116,6 +120,7 @@ private fun ResultBody(
     onRetry: () -> Unit,
     onPractice: () -> Unit,
     onNextLevel: (() -> Unit)?,
+    onMetronome: (() -> Unit)?,
     onToMap: () -> Unit,
     onSoundCheck: () -> Unit,
 ) {
@@ -297,41 +302,36 @@ private fun ResultBody(
         }
 
         Spacer(modifier = Modifier.height(14.dp))
-        Row(
+        // The way out on the left; on the right the three ways back into the level, the
+        // buttons of the level card (decision 237). Another attempt is always one tap away,
+        // passed or not, and a run that went badly usually needs rehearsal -- endless practice
+        // or the metronome -- not another scored attempt (decision 225). A passed level adds
+        // the next one as the pill next to the map.
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            // Another attempt is always one tap away, whether the level was passed
-            // or not; only the primary action changes.
+            RudiButton(
+                text = stringResource(R.string.practice_result_map),
+                onClick = onToMap,
+                style = RudiButtonStyle.Ghost,
+            )
             if (result.passed && onNextLevel != null) {
                 RudiButton(
                     text = stringResource(R.string.practice_result_next),
                     onClick = onNextLevel,
                 )
-                RudiButton(
-                    text = stringResource(R.string.practice_result_retry),
-                    onClick = onRetry,
-                    style = RudiButtonStyle.Secondary,
-                )
-            } else {
-                RudiButton(
-                    text = stringResource(R.string.practice_result_retry),
-                    onClick = onRetry,
-                )
             }
-            // A run that went badly usually needs rehearsal, not another scored attempt: the
-            // endless practice of this same level is one tap away, next to Try again, instead
-            // of back through the map and the level card (decision 225).
-            RudiButton(
-                text = stringResource(R.string.practice_free_action),
-                onClick = onPractice,
-                style = RudiButtonStyle.Secondary,
-            )
-            RudiButton(
-                text = stringResource(R.string.practice_result_map),
-                onClick = onToMap,
-                style = RudiButtonStyle.Secondary,
+            Spacer(modifier = Modifier.weight(1f))
+            LevelModesRow(
+                playLabel = stringResource(R.string.practice_result_retry),
+                playDescription = stringResource(R.string.practice_result_retry),
+                onPlay = onRetry,
+                practiceLabel = stringResource(R.string.practice_free_action),
+                onPractice = onPractice,
+                onMetronome = onMetronome,
             )
         }
     }

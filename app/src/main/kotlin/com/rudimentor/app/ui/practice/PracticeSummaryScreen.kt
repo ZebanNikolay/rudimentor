@@ -32,6 +32,7 @@ import com.rudimentor.app.data.levels.PracticeRank
 import com.rudimentor.app.ui.component.RudiButton
 import com.rudimentor.app.ui.component.RudiButtonStyle
 import com.rudimentor.app.ui.component.RudiChip
+import com.rudimentor.app.ui.levels.LevelModesRow
 import com.rudimentor.app.ui.levels.title
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiColors
@@ -47,6 +48,8 @@ fun PracticeSummaryScreen(
     summary: PracticeSummary,
     onPlayLevel: () -> Unit,
     onPracticeAgain: () -> Unit,
+    /** Opens the sticking on the metronome; null for a level the metronome cannot hold. */
+    onMetronome: (() -> Unit)?,
     onToMap: () -> Unit,
 ) {
     BackHandler(onBack = onToMap)
@@ -114,24 +117,26 @@ fun PracticeSummaryScreen(
             }
         }
         Spacer(modifier = Modifier.height(10.dp))
+        // The three ways back into the level, the buttons of the level card (decision 237).
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
             verticalArrangement = Arrangement.spacedBy(8.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             RudiButton(
                 text = stringResource(R.string.practice_result_map),
                 onClick = onToMap,
                 style = RudiButtonStyle.Ghost,
             )
-            RudiButton(
-                text = stringResource(R.string.practice_free_again),
-                onClick = onPracticeAgain,
-                style = RudiButtonStyle.Secondary,
-            )
-            RudiButton(
-                text = stringResource(R.string.practice_play_level),
-                onClick = onPlayLevel,
+            Spacer(modifier = Modifier.weight(1f))
+            LevelModesRow(
+                playLabel = stringResource(R.string.practice_play_level),
+                playDescription = stringResource(R.string.practice_play_level),
+                onPlay = onPlayLevel,
+                practiceLabel = stringResource(R.string.practice_free_again),
+                onPractice = onPracticeAgain,
+                onMetronome = onMetronome,
             )
         }
     }
