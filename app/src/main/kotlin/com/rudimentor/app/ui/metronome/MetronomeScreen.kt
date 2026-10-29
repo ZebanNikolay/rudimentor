@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.DisposableEffect
@@ -241,8 +242,13 @@ fun MetronomeScreen(
                     }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
+                // The column is as wide as its widest control and no wider. The tempo row
+                // fills the width it is given, so left unbounded it took the whole screen
+                // and squeezed the drum to nothing (2026-10-30).
                 Column(
-                    modifier = Modifier.fillMaxHeight(),
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(IntrinsicSize.Max),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
