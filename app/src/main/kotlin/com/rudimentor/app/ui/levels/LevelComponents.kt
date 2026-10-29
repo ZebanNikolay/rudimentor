@@ -1,5 +1,6 @@
 package com.rudimentor.app.ui.levels
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -217,6 +218,7 @@ internal fun LevelPlayButton(
     contentDescription: String,
     modifier: Modifier = Modifier,
     active: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
 ) {
     // One transport button in the app, in its small size (decision 102): the level
     // card used to draw its own copy and the two drifted apart.
@@ -228,6 +230,7 @@ internal fun LevelPlayButton(
         accentIdle = true,
         enabled = active,
         contentDescription = contentDescription,
+        interactionSource = interactionSource,
     )
 }
 

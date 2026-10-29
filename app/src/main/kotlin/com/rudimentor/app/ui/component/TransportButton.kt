@@ -3,6 +3,7 @@ package com.rudimentor.app.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,6 +70,11 @@ fun TransportButton(
     enabled: Boolean = true,
     contentDescription: String? = null,
     glyph: ImageVector? = null,
+    /**
+     * Lets a label next to the button press it visibly: the label clicks without a ripple
+     * of its own and the ripple shows here, on the button (decision 235).
+     */
+    interactionSource: MutableInteractionSource? = null,
 ) {
     val buttonSize = size.buttonSize
     val accented = enabled && (playing || accentIdle)
@@ -116,7 +122,7 @@ fun TransportButton(
             .clickable(
                 enabled = enabled,
                 indication = ripple(color = RudiColors.Text),
-                interactionSource = null,
+                interactionSource = interactionSource,
                 onClick = onClick,
             )
             .semantics { this.contentDescription = cd },
