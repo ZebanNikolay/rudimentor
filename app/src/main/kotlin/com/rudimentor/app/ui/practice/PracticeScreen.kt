@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -780,10 +781,14 @@ fun PracticeScreen(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            // Stop wears the Stop glyph in both states: while it is greyed out before the
+            // first Play, `playing = false` alone drew a second, small Play here (decision 238).
             TransportButton(
                 playing = transportActive,
                 size = TransportSize.Tiny,
                 enabled = transportActive,
+                glyph = Icons.Filled.Stop,
+                contentDescription = stringResource(R.string.transport_stop),
                 onClick = { if (transportActive) stopAttempt() },
             )
             TransportButton(
