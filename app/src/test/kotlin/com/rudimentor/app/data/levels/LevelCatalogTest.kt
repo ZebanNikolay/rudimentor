@@ -412,11 +412,27 @@ class LevelCatalogTest {
         ).levels.single()
 
         val loop = level.toMetronome(RankTarget(PracticeRank.Practice, bpm = 60, hitsPerBeat = 1))!!
-        val row = loop.grid.rows.single()
 
-        assertEquals("RLRRLRLL", row.beats.joinToString("") { it.hand.label })
-        assertEquals(Hand.Left, row.beats.last().hand)
+        // Eight strokes are two words: two rows of the drum, played one after the other.
+        assertEquals(
+            listOf("RLRR", "LRLL"),
+            loop.grid.rows.map { row -> row.beats.joinToString("") { it.hand.label } },
+        )
+        assertEquals(Hand.Left, loop.grid.rows.last().beats.last().hand)
         assertEquals(60, loop.bpm)
+    }
+
+    @Test
+    fun `a row is not cut into words when four strokes are not whole beats`() {
+        val level = catalog(
+            lessons = listOf(lesson("f.ST-01", hands = "RLRRLRLL")),
+            nodes = listOf(node("f.ST-01")),
+        ).levels.single()
+
+        val loop = level.toMetronome(RankTarget(PracticeRank.Groove, bpm = 60, hitsPerBeat = 3))!!
+
+        // lcm(8, 3) = 24 does not fit on a row, so the row is the pattern itself.
+        assertEquals(listOf(8), loop.grid.rows.map { it.size })
     }
 
     @Test

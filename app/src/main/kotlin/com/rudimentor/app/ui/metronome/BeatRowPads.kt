@@ -49,14 +49,21 @@ internal fun BeatRowPads(
     val haptics = LocalHapticFeedback.current
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val count = row.size
-        val gap: Dp = when {
+        val baseGap: Dp = when {
             count > 8 -> 5.dp
             count > 4 -> 8.dp
             else -> 12.dp
-        } * sizeScale
-        val divider: Dp = (if (count > 4) 14.dp else 0.dp) * sizeScale
+        }
+        val baseDivider: Dp = if (count > 4) 14.dp else 0.dp
         val groups = if (count > 4) (count - 1) / 4 else 0
         val maxSize = (if (isActive) RudiDimens.PadActiveMaxSize else RudiDimens.PadNeighbourMaxSize) * sizeScale
+        // The gaps grow with the pads only while the width has room for both. A row the width
+        // already caps keeps the base gaps: grown gaps there only took the room from the pads,
+        // and a long row shrank below the size it had before the drum could grow (decision 240).
+        val grownAvailable = maxWidth - baseGap * sizeScale * (count - 1) - baseDivider * sizeScale * groups
+        val widthBound = grownAvailable / count < maxSize
+        val gap = if (widthBound) baseGap else baseGap * sizeScale
+        val divider = if (widthBound) baseDivider else baseDivider * sizeScale
         val available = maxWidth - gap * (count - 1) - divider * groups
         val size = maxOf(RudiDimens.PadMinSize, minOf(available / count, maxSize))
 

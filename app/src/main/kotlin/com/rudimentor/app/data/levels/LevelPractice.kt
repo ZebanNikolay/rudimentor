@@ -32,6 +32,7 @@ data class LevelMetronome(
  * A transition lesson becomes one row per phase, as long as the phase if it fits on a row, so
  * the switch comes where the level puts it. A single pattern gets the shortest row that holds
  * whole patterns and whole beats at once, otherwise the accents would drift across the loop.
+ * A row longer than four is then cut into rows of four, see [wordRows].
  *
  * Null for a level with unison steps: a beat on the metronome is struck by one hand.
  */
@@ -65,11 +66,32 @@ fun Level.toMetronome(target: RankTarget): LevelMetronome? {
     }
     val strokesPerMinute = target.bpm * density
     return LevelMetronome(
-        grid = BeatGrid(rows),
+        grid = BeatGrid(wordRows(rows, density)),
         bpm = Bpm.clamp(strokesPerMinute),
         capped = strokesPerMinute > Bpm.MAX,
     )
 }
+
+/**
+ * A long row cut into rows of four, the words of the practice track (decisions 236, 240):
+ * eight strokes on one line came out as two small groups side by side, while as two rows of
+ * the drum they are full-size pads and the barrel turns on every word. The loop plays the
+ * same -- the metronome runs the rows one after another. Only where four strokes are whole
+ * beats (one, two or four a beat) and the drum still holds every row; otherwise the rows stay.
+ */
+private fun wordRows(rows: List<BeatRow>, density: Int): List<BeatRow> {
+    if (WORD % density != 0) return rows
+    val split = rows.flatMap { row ->
+        if (row.size > WORD && row.size % WORD == 0) {
+            row.beats.chunked(WORD).map { BeatRow(beats = it) }
+        } else {
+            listOf(row)
+        }
+    }
+    return if (split.size <= BeatGrid.MAX_ROWS) split else rows
+}
+
+private const val WORD = 4
 
 private fun lcm(a: Int, b: Int): Int {
     tailrec fun gcd(x: Int, y: Int): Int = if (y == 0) x else gcd(y, x % y)
