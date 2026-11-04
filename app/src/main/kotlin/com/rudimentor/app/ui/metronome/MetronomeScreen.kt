@@ -1,20 +1,14 @@
 package com.rudimentor.app.ui.metronome
 
 import androidx.activity.compose.BackHandler
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import com.rudimentor.app.ui.stageSafePadding
 import com.rudimentor.app.ui.theme.RudiDimens
-import com.rudimentor.app.ui.util.OnForegrounded
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -115,7 +109,6 @@ fun MetronomeScreen(
     val missingAudioError = stringResource(R.string.metronome_no_audio_output)
     val lostAudioError = stringResource(R.string.metronome_audio_lost)
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    MetronomeOrientation(landscape = landscape)
 
     val back = {
         playback.stop()
@@ -298,32 +291,6 @@ fun MetronomeScreen(
                 )
             }
         }
-    }
-}
-
-/**
- * The metronome follows the phone into either orientation, even with auto-rotate off --
- * the same way the practice stage takes landscape on its own (decision 234). In landscape
- * the system bars step aside like on the stage; a swipe brings them back.
- */
-@Composable
-private fun MetronomeOrientation(landscape: Boolean) {
-    val activity = LocalActivity.current
-    DisposableEffect(activity) {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-        onDispose { activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
-    }
-    val window = activity?.window
-    DisposableEffect(window, landscape) {
-        if (window == null || !landscape) return@DisposableEffect onDispose { }
-        val insets = WindowInsetsControllerCompat(window, window.decorView)
-        insets.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        insets.hide(WindowInsetsCompat.Type.systemBars())
-        onDispose { insets.show(WindowInsetsCompat.Type.systemBars()) }
-    }
-    OnForegrounded {
-        if (window == null || !landscape) return@OnForegrounded
-        WindowInsetsControllerCompat(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
     }
 }
 

@@ -235,12 +235,16 @@ fun RudiMentorApp(
         AppLog.trace("nav") { "screen=${screen.name} level=${selectedLevelId ?: "-"}" }
     }
 
-    // One stage for the whole practice flow, so the attempt and its result do not
+    // One stage for the whole app, so the attempt, its result and the metronome do not
     // hand the orientation back and forth between themselves.
     LandscapeStage(
-        landscape = screen == Screen.Practice ||
-            screen == Screen.PracticeResult ||
-            screen == Screen.PracticeSummary,
+        orientation = when (screen) {
+            Screen.Practice, Screen.PracticeResult, Screen.PracticeSummary -> StageOrientation.Landscape
+            // The metronome turns with the phone (decision 234); asked for here, not by the
+            // screen itself, so there is one owner of the orientation (decision 239).
+            Screen.Metronome -> StageOrientation.Sensor
+            else -> null
+        },
         // Any round that is playing without touching the phone: the screen timing out takes
         // the audio streams with it (decision 158). The sound check runs the same round and
         // was missing from this list, so the display lock killed step 2 for anybody with a

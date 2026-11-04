@@ -1,6 +1,7 @@
 package com.rudimentor.app.ui
 
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
@@ -17,38 +19,60 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.rudimentor.app.ui.util.KeepScreenOn
 import com.rudimentor.app.ui.util.OnForegrounded
 
+/** Which way a screen asks the phone to turn. */
+enum class StageOrientation {
+    /** The practice flow: landscape either way round, whatever auto-rotate says. */
+    Landscape,
+
+    /** The metronome: follows the phone into either orientation, even with auto-rotate off. */
+    Sensor,
+}
+
 /**
- * The landscape stage of the practice flow: forced orientation, hidden system bars
- * and (while an attempt runs) a screen that stays awake.
+ * The one owner of the activity's orientation and of the immersive system bars, plus
+ * (while a round runs) a screen that stays awake. [orientation] null leaves the phone to
+ * the system.
  *
  * It is hoisted to the app level on purpose. Owning it per screen made the stage
  * flap between the attempt and its result -- the orientation was restored while
  * the next screen was already asking for landscape, which recreated the activity
- * and dropped the result on the floor (fix for the dev.15 report).
+ * and dropped the result on the floor (fix for the dev.15 report). The metronome had
+ * the same second owner: the screens cross-fade, so the metronome left composition only
+ * after the result screen had asked for landscape, and its reset handed the result to
+ * portrait (decision 239). One effect keyed by the request cannot race itself.
  */
 @Composable
-fun LandscapeStage(landscape: Boolean, keepScreenOn: Boolean) {
+fun LandscapeStage(orientation: StageOrientation?, keepScreenOn: Boolean) {
     val activity = LocalActivity.current
 
-    DisposableEffect(activity, landscape) {
-        if (!landscape) return@DisposableEffect onDispose { }
-        val window = activity?.window
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        val insets = window?.let { WindowInsetsControllerCompat(it, it.decorView) }
-        insets?.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        insets?.hide(WindowInsetsCompat.Type.systemBars())
-        onDispose {
-            insets?.show(WindowInsetsCompat.Type.systemBars())
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    DisposableEffect(activity, orientation) {
+        if (orientation == null) return@DisposableEffect onDispose { }
+        activity?.requestedOrientation = when (orientation) {
+            StageOrientation.Landscape -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            StageOrientation.Sensor -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
         }
+        onDispose { activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    }
+
+    // The bars step aside whenever the phone is actually in landscape for a stage screen:
+    // always on the practice flow, only while turned on the metronome.
+    val landscapeNow = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val immersive = orientation == StageOrientation.Landscape ||
+        (orientation == StageOrientation.Sensor && landscapeNow)
+    val window = activity?.window
+    DisposableEffect(window, immersive) {
+        if (!immersive || window == null) return@DisposableEffect onDispose { }
+        val insets = WindowInsetsControllerCompat(window, window.decorView)
+        insets.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        insets.hide(WindowInsetsCompat.Type.systemBars())
+        onDispose { insets.show(WindowInsetsCompat.Type.systemBars()) }
     }
 
     // Coming back from the background brings the system bars back with it, so the
     // immersive stage has to be re-applied instead of set once.
     OnForegrounded {
-        if (!landscape) return@OnForegrounded
-        val window = activity?.window ?: return@OnForegrounded
+        if (!immersive || window == null) return@OnForegrounded
         WindowInsetsControllerCompat(window, window.decorView)
             .hide(WindowInsetsCompat.Type.systemBars())
     }
