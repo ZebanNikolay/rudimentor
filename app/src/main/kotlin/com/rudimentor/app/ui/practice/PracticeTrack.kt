@@ -72,6 +72,11 @@ fun PracticeTrack(
     val minimumIntervalMs = remember(notes, loop) {
         loop?.minimumNoteIntervalMs ?: minimumPracticeNoteIntervalMs(notes)
     }
+    // When each miss was first drawn, on the track clock (decision 241). A note is judged
+    // missed only once its window and the latency slack have run out, well after it crossed
+    // the line: timing the fall from the note itself had it already dropped and faded the
+    // moment it turned MISS, so the miss was gone in the last few milliseconds.
+    val missSeenAtMs = remember(attempt) { HashMap<Int, Float>() }
     Canvas(modifier = modifier) {
         // Reading the poll counter is what makes the track redraw every poll.
         if (frame < 0) return@Canvas
@@ -96,10 +101,16 @@ fun PracticeTrack(
         val extraDotY = laneY + side * EXTRA_DOT_OFFSET
         // The verdict block starts below the hit dot rail and stays inside the canvas.
         val verdictY = minOf(laneY + side * VERDICT_TOP_OFFSET, height - side * 0.5f)
+        // The loop hands over only the notes in its window, so the window reaches a whole
+        // screen past both edges: a word block is drawn from the notes it gets, and a window
+        // cut at the edge grew the block in jumps as each next note came in -- at practice
+        // tempo, where the notes stand far apart, the block flashed on with every note
+        // (decision 242). The pads themselves are still culled at the edge below.
+        val wordReachMs = (width / pxPerMs).toDouble()
         val loopView = loop?.renderView(
             positionMs = loopPositionMs,
-            beforeMs = ((lineX + side) / pxPerMs).toDouble(),
-            afterMs = ((width - lineX + side) / pxPerMs).toDouble(),
+            beforeMs = ((lineX + side) / pxPerMs).toDouble() + wordReachMs,
+            afterMs = ((width - lineX + side) / pxPerMs).toDouble() + wordReachMs,
         )
         val drawingPositionMs = if (loopView == null) positionMs else 0f
 
@@ -156,6 +167,8 @@ fun PracticeTrack(
             }
         }
 
+        // A restart rewinds the clock: misses seen "in the future" belong to the old run.
+        missSeenAtMs.entries.removeAll { it.value > positionMs }
         val drawingNotes = loopView?.notes?.map { it.note } ?: notes
         drawWordBlocks(
             notes = drawingNotes,
@@ -182,13 +195,15 @@ fun PracticeTrack(
             val missed = judgement?.window == HitWindow.Miss
             // A missed note drops out of the lane and fades instead of being crossed
             // out (decision 87).
-            val fallProgress = if (missed) {
-                ((drawingPositionMs - (note.timeMs + attempt.windows.forNote(note.index).okMs)) / MISS_FALL_MS)
-                    .coerceIn(0f, 1f)
+            val fallProgress = if (missed && loopView == null) {
+                val seenAt = missSeenAtMs.getOrPut(note.index) { positionMs }
+                ((positionMs - seenAt) / MISS_FALL_MS).coerceIn(0f, 1f)
             } else {
                 0f
             }
-            val fallY = fallProgress * fallProgress * side * 1.6f
+            // The drop stays clear of the verdict row, so the falling pad never covers
+            // the MISS written under it.
+            val fallY = fallProgress * fallProgress * side * MISS_FALL_DEPTH
             val alpha = if (missed) (1f - fallProgress * 0.85f).coerceAtLeast(0.15f) else 1f
             // Three looks, one per state of the stroke (decision 197, replaces 115): a note
             // still coming wears the accent frame, a note that was hit *lights up* -- the same
@@ -270,6 +285,33 @@ fun PracticeTrack(
                     showOffsetMs = showOffsetMs,
                     measurer = measurer,
                     style = letterStyle,
+                )
+            }
+        }
+
+        // The latest miss is also pinned over the lane at the hit line (decision 241): the
+        // MISS under the note leaves with it at once, while this one holds where the eye
+        // already is, then fades. Hits keep their verdicts under the lane, so the two
+        // never share a place.
+        if (loopView == null) {
+            val lastMissAt = missSeenAtMs.values.maxOrNull()
+            val sinceMs = lastMissAt?.let { positionMs - it }
+            if (sinceMs != null && sinceMs < MISS_HOLD_MS) {
+                val fadeFrom = MISS_HOLD_MS * MISS_FADE_FROM
+                val alpha = if (sinceMs <= fadeFrom) 1f else 1f - (sinceMs - fadeFrom) / (MISS_HOLD_MS - fadeFrom)
+                val word = measurer.measure(
+                    text = "MISS",
+                    style = letterStyle.copy(
+                        fontSize = (side * MISS_PIN_FRACTION).toSp(),
+                        color = RudiColors.TrackMiss.copy(alpha = alpha.coerceIn(0f, 1f)),
+                    ),
+                )
+                drawText(
+                    textLayoutResult = word,
+                    topLeft = Offset(
+                        lineX - word.size.width / 2f,
+                        (laneY - side * VERDICT_TOP_OFFSET - word.size.height).coerceAtLeast(0f),
+                    ),
                 )
             }
         }
@@ -366,7 +408,7 @@ private fun DrawScope.drawVerdictLabel(
     measurer: TextMeasurer,
     style: TextStyle,
 ) {
-    val color = windowColor(judgement.window)
+    val color = if (judgement.window == HitWindow.Miss) RudiColors.TrackMiss else windowColor(judgement.window)
     val word = measurer.measure(
         text = verdictWord(judgement),
         style = style.copy(fontSize = (side * VERDICT_WORD_FRACTION).toSp(), color = color),
@@ -601,6 +643,14 @@ private val BAR_STRONG_WIDTH = 3.dp
 private const val BAR_INSET_FRACTION = 0.08f
 
 private const val MISS_FALL_MS = 420f
+
+/** How far a missed pad drops, in note sides: down to the verdict row, not into it. */
+private const val MISS_FALL_DEPTH = 0.45f
+
+/** The MISS pinned at the hit line: how long it holds, when it starts to fade, its size. */
+private const val MISS_HOLD_MS = 900f
+private const val MISS_FADE_FROM = 0.6f
+private const val MISS_PIN_FRACTION = 0.46f
 
 /** The finish line: how tall it stands, how heavy it is, where its label sits. */
 private const val FINISH_TOP_FRACTION = 0.18f

@@ -87,6 +87,11 @@ object RudiColors {
     val WindowGood = Color(0xFFE38A2B)
     val WindowOk = Color(0xFFE0C948)
     val WindowMiss = Color(0xFF4A4A4A)
+    /**
+     * The MISS written on the track (decision 241): WindowMiss is a dimmed pad, not a word --
+     * on the near-black lane it could not be read.
+     */
+    val TrackMiss = Color(0xFFB8B8B4)
     val TrackExtraHit = Color(0xFF6A6A68)
 
     /** Light-background logo variant, kept for external materials. */
