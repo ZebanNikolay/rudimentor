@@ -55,7 +55,10 @@ internal fun BeatRowPads(
             else -> 12.dp
         }
         val baseDivider: Dp = if (count > 4) 14.dp else 0.dp
-        val groups = if (count > 4) (count - 1) / 4 else 0
+        // Fours, unless the row only splits in threes: six or nine strokes are beats of three,
+        // and a gap after the fourth cut through a beat (decision 243, as 205 spaces stickings).
+        val groupSize = if (count % 4 != 0 && count % 3 == 0) 3 else 4
+        val groups = if (count > 4) (count - 1) / groupSize else 0
         val maxSize = (if (isActive) RudiDimens.PadActiveMaxSize else RudiDimens.PadNeighbourMaxSize) * sizeScale
         // The gaps grow with the pads only while the width has room for both. A row the width
         // already caps keeps the base gaps: grown gaps there only took the room from the pads,
@@ -71,7 +74,7 @@ internal fun BeatRowPads(
             row.beats.forEachIndexed { index, beat ->
                 if (index > 0) {
                     Spacer(modifier = Modifier.width(gap))
-                    if (count > 4 && index % 4 == 0) {
+                    if (count > 4 && index % groupSize == 0) {
                         Spacer(modifier = Modifier.width(divider))
                     }
                 }

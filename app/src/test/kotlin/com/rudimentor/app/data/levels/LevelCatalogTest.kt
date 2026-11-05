@@ -436,6 +436,22 @@ class LevelCatalogTest {
     }
 
     @Test
+    fun `a double paradiddle in threes is two rows of six`() {
+        val level = catalog(
+            lessons = listOf(lesson("f.ST-01", hands = "RLRLRRLRLRLL")),
+            nodes = listOf(node("f.ST-01")),
+        ).levels.single()
+
+        val loop = level.toMetronome(RankTarget(PracticeRank.Practice, bpm = 60, hitsPerBeat = 3))!!
+
+        // Fours would cut across the beats of three; sixes are two beats a row.
+        assertEquals(
+            listOf("RLRLRR", "LRLRLL"),
+            loop.grid.rows.map { row -> row.beats.joinToString("") { it.hand.label } },
+        )
+    }
+
+    @Test
     fun `the metronome runs in strokes and accents every beat`() {
         val level = catalog(
             lessons = listOf(lesson("f.ST-01", hands = "RLL")),

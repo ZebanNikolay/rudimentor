@@ -43,14 +43,20 @@ data class PracticeNote(
  * long one (8, 12, 16) splits into fours, which is where its own accents and hand changes
  * fall. A sticking that does not divide by four, or that four does not divide, is its own
  * word, whatever its length.
+ *
+ * A sticking played in threes or sixes per beat counts in sixes instead (decision 243):
+ * fours would cut across its beats, so a double paradiddle at three to the beat reads
+ * `RLRLRR`, `LRLRLL` -- two beats a word -- rather than `RLRL`, `RRLR`, `LRLL`.
  */
-internal fun stickingWordSize(stickingLength: Int): Int = when {
+internal fun stickingWordSize(stickingLength: Int, hitsPerBeat: Int = WORD_SIZE): Int = when {
     stickingLength <= 0 -> WORD_SIZE
+    hitsPerBeat % 3 == 0 && stickingLength % TERNARY_WORD_SIZE == 0 -> TERNARY_WORD_SIZE
     stickingLength % WORD_SIZE == 0 || WORD_SIZE % stickingLength == 0 -> WORD_SIZE
     else -> stickingLength
 }
 
 private const val WORD_SIZE = 4
+private const val TERNARY_WORD_SIZE = 6
 
 /**
  * Builds the note list of one attempt.
@@ -94,7 +100,7 @@ fun buildPracticeNotes(level: Level, rank: PracticeRank, bpm: Int): List<Practic
         attemptPhases.forEach { phase ->
             val steps = phase.steps
             if (steps.isEmpty()) return@forEach
-            val wordSize = stickingWordSize(steps.size)
+            val wordSize = stickingWordSize(steps.size, target.hitsPerBeatAtBeat(beat))
             var position = 0
             repeat(phase.beatCount) { beatInPhase ->
                 val hitsPerBeat = target.hitsPerBeatAtBeat(beat)

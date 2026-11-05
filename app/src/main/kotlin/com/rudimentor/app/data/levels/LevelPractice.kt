@@ -78,12 +78,19 @@ fun Level.toMetronome(target: RankTarget): LevelMetronome? {
  * the drum they are full-size pads and the barrel turns on every word. The loop plays the
  * same -- the metronome runs the rows one after another. Only where four strokes are whole
  * beats (one, two or four a beat) and the drum still holds every row; otherwise the rows stay.
+ * At three or six a beat the words are six (decision 243).
  */
 private fun wordRows(rows: List<BeatRow>, density: Int): List<BeatRow> {
-    if (WORD % density != 0) return rows
+    // Threes and sixes to the beat count in words of six, the rest in fours, so a row
+    // never splits inside a beat (decision 243): a double paradiddle of twelve is 6 + 6.
+    val word = when {
+        density % 3 == 0 -> TERNARY_WORD
+        WORD % density == 0 -> WORD
+        else -> return rows
+    }
     val split = rows.flatMap { row ->
-        if (row.size > WORD && row.size % WORD == 0) {
-            row.beats.chunked(WORD).map { BeatRow(beats = it) }
+        if (row.size > word && row.size % word == 0) {
+            row.beats.chunked(word).map { BeatRow(beats = it) }
         } else {
             listOf(row)
         }
@@ -92,6 +99,7 @@ private fun wordRows(rows: List<BeatRow>, density: Int): List<BeatRow> {
 }
 
 private const val WORD = 4
+private const val TERNARY_WORD = 6
 
 private fun lcm(a: Int, b: Int): Int {
     tailrec fun gcd(x: Int, y: Int): Int = if (y == 0) x else gcd(y, x % y)
