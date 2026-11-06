@@ -299,7 +299,9 @@ fun PracticeTrack(
 
             // The verdict sits under the stroke that earned it and scrolls away with it:
             // it never fades and never moves on its own, so a glance back down the lane
-            // still reads the last few strokes (decision 143).
+            // still reads the last few strokes (decision 143). A miss is no exception: its
+            // one MISS lives here too, in the readable TrackMiss, under the dropped pad --
+            // never a second copy elsewhere on the track (decision 246).
             if (judgement != null) {
                 val hitX = if (judgement.window == HitWindow.Miss) {
                     x
@@ -314,33 +316,6 @@ fun PracticeTrack(
                     showOffsetMs = showOffsetMs,
                     measurer = measurer,
                     style = letterStyle,
-                )
-            }
-        }
-
-        // The latest miss is also pinned over the lane at the hit line (decision 241): the
-        // MISS under the note leaves with it at once, while this one holds where the eye
-        // already is, then fades. Hits keep their verdicts under the lane, so the two
-        // never share a place.
-        if (loopView == null) {
-            val lastMissAt = missSeenAtMs.values.maxOrNull()
-            val sinceMs = lastMissAt?.let { positionMs - it }
-            if (sinceMs != null && sinceMs < MISS_HOLD_MS) {
-                val fadeFrom = MISS_HOLD_MS * MISS_FADE_FROM
-                val alpha = if (sinceMs <= fadeFrom) 1f else 1f - (sinceMs - fadeFrom) / (MISS_HOLD_MS - fadeFrom)
-                val word = measurer.measure(
-                    text = "MISS",
-                    style = letterStyle.copy(
-                        fontSize = (side * MISS_PIN_FRACTION).toSp(),
-                        color = RudiColors.TrackMiss.copy(alpha = alpha.coerceIn(0f, 1f)),
-                    ),
-                )
-                drawText(
-                    textLayoutResult = word,
-                    topLeft = Offset(
-                        lineX - word.size.width / 2f,
-                        (laneY - side * VERDICT_TOP_OFFSET - word.size.height).coerceAtLeast(0f),
-                    ),
                 )
             }
         }
@@ -713,10 +688,6 @@ private const val LOOP_KEY_STRIDE = 1_000_000L
 /** How far a missed pad drops, in note sides: down to the verdict row, not into it. */
 private const val MISS_FALL_DEPTH = 0.45f
 
-/** The MISS pinned at the hit line: how long it holds, when it starts to fade, its size. */
-private const val MISS_HOLD_MS = 900f
-private const val MISS_FADE_FROM = 0.6f
-private const val MISS_PIN_FRACTION = 0.46f
 
 /** The finish line: how tall it stands, how heavy it is, where its label sits. */
 private const val FINISH_TOP_FRACTION = 0.18f
