@@ -145,6 +145,14 @@ object PracticeScoring {
     const val EXPIRE_GRACE_MS = 60f
 
     /**
+     * How far past its OK window a stroke still counts as aimed at a note, in OK windows
+     * (decision 247). Inside it the stroke takes the note as a MISS instead of standing as
+     * an extra beside a missed note; the half gap to the neighbouring note bounds it too.
+     * Real runs put these strokes at 78..157 ms against an OK of 77 ms.
+     */
+    const val NEAR_MISS_OK_MULTIPLE = 2.1f
+
+    /**
      * A stroke this soon after an already counted one is a double trigger of the onset
      * detector, not a stroke: dropped before scoring. An input filter, not a handout --
      * a real extra hit is still charged, otherwise the single number would lie.

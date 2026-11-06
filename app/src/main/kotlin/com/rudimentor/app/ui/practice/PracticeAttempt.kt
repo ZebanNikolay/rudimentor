@@ -444,6 +444,12 @@ class PracticeAttempt(
         }
         val note = nearestOpenNote(adjusted, slackMs = latency.slackMs)
         if (note == null) {
+            // A stroke just outside OK was still played for that note: it takes the note as
+            // a MISS and is not charged again as an extra. Before, the one stroke counted
+            // twice -- an extra now and a miss when the note expired -- and real runs logged
+            // as many extras as misses (decision 247).
+            val aimed = nearMissNote(adjusted, slackMs = latency.slackMs)
+            if (aimed != null) return judgeNearMiss(aimed, positionMs)
             extrasInternal.add(adjusted)
             combo = 0
             return HitOutcome.Extra(positionMs = adjusted)
@@ -469,6 +475,24 @@ class PracticeAttempt(
             judgement = judgement,
             rawOffsetMs = rawOffset,
         )
+    }
+
+    /**
+     * Grades a stroke that missed the OK window of [note] but was aimed at it: the note is
+     * a MISS at once, with the stroke's offset kept for the log. It stays out of the
+     * deviation scale and the latency estimate, both of which describe strokes that landed.
+     */
+    private fun judgeNearMiss(note: PracticeNote, positionMs: Float): HitOutcome {
+        val rawOffset = positionMs - note.timeMs
+        val judgement = NoteJudgement(offsetMs = rawOffset - latency.biasMs, window = HitWindow.Miss)
+        judgementsInternal[note.index] = judgement
+        misses += 1
+        judgedCount += 1
+        combo = 0
+        lastJudged = judgement
+        lastJudgedAtMs = positionMs
+        advanceCursor()
+        return HitOutcome.Judged(noteIndex = note.index, judgement = judgement, rawOffsetMs = rawOffset)
     }
 
     /**
@@ -570,6 +594,38 @@ class PracticeAttempt(
      * The nearest note inside the OK window that has not been judged yet. Scanning
      * forward from the cursor keeps a double stroke from stealing the same note twice.
      */
+    /**
+     * The open note a stroke outside every OK window was still aimed at (decision 247): no
+     * further than [PracticeScoring.NEAR_MISS_OK_MULTIPLE] of its OK window, and nearer to
+     * it than to the next note on that side, so a stray stroke between two notes is still
+     * an extra and never steals the next one.
+     */
+    private fun nearMissNote(positionMs: Float, slackMs: Float): PracticeNote? {
+        var best: PracticeNote? = null
+        var bestDistance = Float.MAX_VALUE
+        val reachLimit = windows.widest.okMs * PracticeScoring.NEAR_MISS_OK_MULTIPLE + slackMs
+        var index = cursor
+        while (index < notes.size) {
+            val note = notes[index]
+            if (note.timeMs - positionMs > reachLimit) break
+            val signed = positionMs - note.timeMs
+            val distance = abs(signed)
+            val neighbour = if (signed < 0f) notes.getOrNull(index - 1) else notes.getOrNull(index + 1)
+            val halfGap = neighbour?.let { abs(note.timeMs - it.timeMs) / 2f } ?: Float.MAX_VALUE
+            val reach = windows.forNote(index).okMs * PracticeScoring.NEAR_MISS_OK_MULTIPLE + slackMs
+            if (judgementsInternal[index] == null &&
+                distance <= reach &&
+                distance < halfGap &&
+                distance < bestDistance
+            ) {
+                best = note
+                bestDistance = distance
+            }
+            index += 1
+        }
+        return best
+    }
+
     private fun nearestOpenNote(positionMs: Float, slackMs: Float = 0f): PracticeNote? {
         var best: PracticeNote? = null
         var bestDistance = Float.MAX_VALUE

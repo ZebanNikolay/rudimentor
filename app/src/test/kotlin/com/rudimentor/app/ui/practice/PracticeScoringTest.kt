@@ -160,6 +160,41 @@ class PracticeScoringTest {
     }
 
     @Test
+    fun `a stroke just outside OK takes its note as a miss, not as an extra beside it`() {
+        // 60 bpm at three to the beat, as the run that logged 16 extras next to 16 misses.
+        val windows = HitWindows.forMinInterval(333f)
+        val notes = notesEvery(count = 3, spacingMs = 333f)
+        val attempt = PracticeAttempt(notes, windows)
+        attempt.registerHit(notes[0].timeMs)
+        val outcome = attempt.registerHit(notes[1].timeMs - (windows.okMs + 12f))
+        attempt.registerHit(notes[2].timeMs)
+        attempt.expireMissedNotes(notes[2].timeMs + 1_000f)
+
+        assertTrue(outcome is HitOutcome.Judged)
+        assertEquals(HitWindow.Miss, attempt.judgementAt(1)?.window)
+        val result = attempt.result()
+        assertEquals(1, result.misses)
+        assertEquals(0, result.extras)
+    }
+
+    @Test
+    fun `a stroke halfway between two notes is still an extra`() {
+        val windows = HitWindows.forMinInterval(333f)
+        val notes = notesEvery(count = 3, spacingMs = 333f)
+        val attempt = PracticeAttempt(notes, windows)
+        attempt.registerHit(notes[0].timeMs)
+        // Past the half gap to the first note it is nobody's stroke.
+        val stray = attempt.registerHit(notes[0].timeMs + 140f)
+        attempt.registerHit(notes[1].timeMs)
+        attempt.registerHit(notes[2].timeMs)
+
+        assertTrue(stray is HitOutcome.Extra)
+        val result = attempt.result()
+        assertEquals(0, result.misses)
+        assertEquals(1, result.extras)
+    }
+
+    @Test
     fun `a note whose window has passed becomes a miss and breaks the combo`() {
         val windows = HitWindows.forMinInterval(500f)
         val notes = notesEvery(count = 3, spacingMs = 500f)
