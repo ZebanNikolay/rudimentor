@@ -12,7 +12,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
+import com.rudimentor.app.ui.theme.PadHand
 import com.rudimentor.app.ui.theme.RudiColors
+import com.rudimentor.app.ui.theme.handColors
 import com.rudimentor.app.ui.theme.RudiDimens
 import kotlin.math.PI
 import kotlin.math.cos
@@ -41,28 +43,31 @@ internal fun padPalette(
     lit: Boolean,
     light: Boolean = false,
     contrastLetters: Boolean = false,
+    hand: PadHand? = null,
 ): PadPalette {
     val muted = tone == PadTone.Mute
+    // The colour of the hand the pad stands for; brick when it stands for none (decision 244).
+    val colors = handColors(hand)
     return PadPalette(
         body = when {
             muted -> Color.Transparent
-            lit && tone == PadTone.Accent -> RudiColors.PadAccentLit
-            lit -> RudiColors.Brick
+            lit && tone == PadTone.Accent -> colors.accentLit
+            lit -> colors.base
             light -> RudiColors.LightPadBody
             else -> RudiColors.Surface
         },
         border = when {
             muted && lit -> RudiColors.PadMuteLitBorder
             muted -> RudiColors.PadMuteBorder
-            lit -> RudiColors.BrickLit
-            tone == PadTone.Accent -> RudiColors.Brick
+            lit -> colors.lit
+            tone == PadTone.Accent -> colors.base
             light -> RudiColors.LightPadLine
             else -> RudiColors.Line
         },
         led = when {
             muted -> RudiColors.PadLedMute
-            lit -> RudiColors.PadLedLit
-            tone == PadTone.Accent -> RudiColors.Brick
+            lit -> colors.ledLit
+            tone == PadTone.Accent -> colors.base
             round -> RudiColors.PadLedRound
             else -> RudiColors.PadLed
         },
@@ -70,12 +75,12 @@ internal fun padPalette(
             // The metronome grid is read from arm's length while playing, so its hand
             // letters step up a tier (decision 234). Lit pads are already white.
             contrastLetters && muted && !lit -> RudiColors.PadLetterMuteStrong
-            contrastLetters && !lit && tone == PadTone.Accent -> RudiColors.PadLetterAccentStrong
+            contrastLetters && !lit && tone == PadTone.Accent -> colors.letterStrong
             contrastLetters && !lit && !muted && !light -> RudiColors.PadLetterStrong
             muted && lit -> RudiColors.PadMuteLitLetter
             muted -> RudiColors.PadLetterMute
             lit -> RudiColors.PadLetterLit
-            tone == PadTone.Accent -> RudiColors.PadLetterAccent
+            tone == PadTone.Accent -> colors.letter
             light -> RudiColors.LightPadLetter
             else -> RudiColors.PadLetter
         },
@@ -194,6 +199,7 @@ internal fun DrawScope.drawPadGlow(
     side: Float,
     accent: Boolean,
     alpha: Float = 1f,
+    hand: PadHand? = null,
 ) {
     if (side <= 0f) return
     val strength = (if (accent) PAD_GLOW_ACCENT else PAD_GLOW_NORMAL) * alpha.coerceIn(0f, 1f)
@@ -201,8 +207,8 @@ internal fun DrawScope.drawPadGlow(
     val radius = side * PAD_GLOW_RADIUS_FRACTION
     drawCircle(
         brush = Brush.radialGradient(
-            0f to RudiColors.BrickLit.copy(alpha = strength),
-            0.42f to RudiColors.BrickLit.copy(alpha = strength * 0.7f),
+            0f to handColors(hand).lit.copy(alpha = strength),
+            0.42f to handColors(hand).lit.copy(alpha = strength * 0.7f),
             1f to Color.Transparent,
             center = center,
             radius = radius,

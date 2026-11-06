@@ -24,6 +24,7 @@ import com.rudimentor.app.ui.component.drawPadGlow
 import com.rudimentor.app.ui.component.padPalette
 import com.rudimentor.app.ui.theme.JetBrainsMono
 import com.rudimentor.app.ui.theme.RudiColors
+import com.rudimentor.app.ui.theme.PadHand
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /**
@@ -77,6 +78,9 @@ fun PracticeTrack(
     // the line: timing the fall from the note itself had it already dropped and faded the
     // moment it turned MISS, so the miss was gone in the last few milliseconds.
     val missSeenAtMs = remember(attempt) { HashMap<Int, Float>() }
+    // When each PERFECT was first drawn, for its flash (decision 244). A loop note is keyed
+    // by its cycle as well, or the same stroke of the next cycle would never flash.
+    val perfectSeenAtMs = remember(attempt, loop) { HashMap<Long, Float>() }
     Canvas(modifier = modifier) {
         // Reading the poll counter is what makes the track redraw every poll.
         if (frame < 0) return@Canvas
@@ -169,6 +173,8 @@ fun PracticeTrack(
 
         // A restart rewinds the clock: misses seen "in the future" belong to the old run.
         missSeenAtMs.entries.removeAll { it.value > positionMs }
+        val flashClockMs = if (loopView != null) loopPositionMs.toFloat() else positionMs
+        perfectSeenAtMs.entries.removeAll { it.value > flashClockMs || flashClockMs - it.value > PERFECT_FLASH_KEEP_MS }
         val drawingNotes = loopView?.notes?.map { it.note } ?: notes
         drawWordBlocks(
             notes = drawingNotes,
@@ -215,11 +221,15 @@ fun PracticeTrack(
             // Silence in free practice is a neutral passed pad, never a falling MISS.
             val passedInLoop = loopView != null && note.timeMs <= drawingPositionMs
             val tone = if (played || passedInLoop) PadTone.Normal else PadTone.Accent
+            // Colour is the hand (decision 244): coming -- the frame of the hand, hit -- its
+            // fill whatever the grade, missed -- grey. The grade lives on the dot and the word.
+            val hand = if (note.hand == PatternHand.Left) PadHand.Left else PadHand.Right
             val palette = padPalette(
                 round = note.hand == PatternHand.Left,
                 tone = tone,
                 lit = lit,
                 light = false,
+                hand = hand,
             )
             val faceAlpha = palette.alpha * alpha
             if (lit) {
@@ -228,6 +238,7 @@ fun PracticeTrack(
                     side = side,
                     accent = false,
                     alpha = faceAlpha,
+                    hand = hand,
                 )
             }
             drawPadFace(
@@ -257,6 +268,24 @@ fun PracticeTrack(
                     laneY - label.size.height / 2f + fallY,
                 ),
             )
+
+            // Experiment (decision 244): a PERFECT flashes a white ring round the pad for a
+            // moment. PERFECT_FLASH_MS = 0 switches it off.
+            if (PERFECT_FLASH_MS > 0f && judgement?.window == HitWindow.Perfect) {
+                val key = loopView?.notes?.get(drawingIndex)?.id
+                    ?.let { it.cycle * LOOP_KEY_STRIDE + it.localIndex }
+                    ?: note.index.toLong()
+                val sinceMs = flashClockMs - perfectSeenAtMs.getOrPut(key) { flashClockMs }
+                if (sinceMs < PERFECT_FLASH_MS) {
+                    drawPerfectFlash(
+                        center = Offset(x, laneY),
+                        side = side,
+                        round = note.hand == PatternHand.Left,
+                        progress = sinceMs / PERFECT_FLASH_MS,
+                        strokeWidth = with(density) { 2.dp.toPx() },
+                    )
+                }
+            }
 
             // The hit itself is a dot below the note, offset by how late or early it
             // landed -- the note keeps its own place on the grid.
@@ -465,6 +494,34 @@ private fun DrawScope.drawFinishLine(
     )
 }
 
+/** A white ring that grows a little off the pad and fades out (decision 244). */
+private fun DrawScope.drawPerfectFlash(
+    center: Offset,
+    side: Float,
+    round: Boolean,
+    progress: Float,
+    strokeWidth: Float,
+) {
+    val t = progress.coerceIn(0f, 1f)
+    val alpha = (1f - t) * (1f - t)
+    val ring = side * (1f + PERFECT_FLASH_GROW * t)
+    val radius = if (round) ring / 2f else ring * RudiDimens.PAD_CORNER_FRACTION
+    drawRoundRect(
+        color = RudiColors.WindowPerfect.copy(alpha = alpha),
+        topLeft = Offset(center.x - ring / 2f, center.y - ring / 2f),
+        size = Size(ring, ring),
+        cornerRadius = CornerRadius(radius, radius),
+        style = Stroke(width = strokeWidth),
+    )
+    // A faint wash over the face, so the flash lands on the note and not only around it.
+    drawRoundRect(
+        color = RudiColors.WindowPerfect.copy(alpha = alpha * PERFECT_FLASH_WASH),
+        topLeft = Offset(center.x - side / 2f, center.y - side / 2f),
+        size = Size(side, side),
+        cornerRadius = if (round) CornerRadius(side / 2f) else CornerRadius(side * RudiDimens.PAD_CORNER_FRACTION),
+    )
+}
+
 internal fun windowColor(window: HitWindow): Color = when (window) {
     HitWindow.Perfect -> RudiColors.WindowPerfect
     HitWindow.Good -> RudiColors.WindowGood
@@ -643,6 +700,15 @@ private val BAR_STRONG_WIDTH = 3.dp
 private const val BAR_INSET_FRACTION = 0.08f
 
 private const val MISS_FALL_MS = 420f
+
+/** The PERFECT flash (decision 244, an experiment): its length -- 0 turns it off -- and look. */
+private const val PERFECT_FLASH_MS = 140f
+private const val PERFECT_FLASH_GROW = 0.28f
+private const val PERFECT_FLASH_WASH = 0.35f
+// Longer than a note stays on screen (PracticeLoop.HISTORY_MS), or a note still in view
+// would lose its entry and flash again.
+private const val PERFECT_FLASH_KEEP_MS = 10_000f
+private const val LOOP_KEY_STRIDE = 1_000_000L
 
 /** How far a missed pad drops, in note sides: down to the verdict row, not into it. */
 private const val MISS_FALL_DEPTH = 0.45f

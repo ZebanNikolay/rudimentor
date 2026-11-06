@@ -28,6 +28,19 @@ object RudiColors {
      */
     val BrickBright = Color(0xFFFF5F52)
 
+    /**
+     * Left hand (decision 244): Open Color blue, matched to the brick of the right hand in
+     * luminance (0.14 / 0.16 against Brick / BrickLit 0.18 / 0.20), so red and blue side by
+     * side do not vibrate. Do not make it brighter or purer, and keep a neutral body or a gap
+     * between the two. See [HandColors].
+     */
+    val HandLeft = Color(0xFF1971C2)
+    val HandLeftLit = Color(0xFF1C7ED6)
+    /** Letter of a left pad still coming -- the pair of [PadLetterAccent]. */
+    val HandLeftSoft = Color(0xFFA5C8EC)
+    val HandLeftSoftStrong = Color(0xFFCFE2F6)
+    val HandLeftLedLit = Color(0xFFD3E5F8)
+
     /** Pad internals. */
     val PadLed = Color(0xFF3C3C3C)
     val PadLedRound = Color(0xFF5F5F5F)
@@ -80,12 +93,13 @@ object RudiColors {
     /** The soft block behind one word of the sticking on the track (decision 236). */
     val TrackWordFill = Color(0x0FFFFFFF)
     val TrackWordEdge = Color(0x1FFFFFFF)
-    // The three windows read as one heat scale away from the target: brick for
-    // PERFECT, orange for GOOD, yellow for OK (decision 130). The other order made
-    // the wider window look hotter than the tighter one.
-    val WindowPerfect = BrickLit
-    val WindowGood = Color(0xFFE38A2B)
-    val WindowOk = Color(0xFFE0C948)
+    // One grade scale for both hands, on the dot and the word under a note only, never on
+    // the note itself (decision 244, replaces the heat scale of 130): white PERFECT, yellow
+    // GOOD, orange OK, grey MISS. It darkens step by step, so it reads without telling the
+    // hues apart, and brick is left to the right hand alone.
+    val WindowPerfect = PadStar
+    val WindowGood = Color(0xFFE0C948)
+    val WindowOk = Color(0xFFE38A2B)
     val WindowMiss = Color(0xFF4A4A4A)
     /**
      * The MISS written on the track (decision 241): WindowMiss is a dimmed pad, not a word --
@@ -94,6 +108,9 @@ object RudiColors {
     val TrackMiss = Color(0xFFB8B8B4)
     val TrackExtraHit = Color(0xFF6A6A68)
 
+    /** A warning in plain text on a dark screen (the orange the old GOOD used). */
+    val WarnText = Color(0xFFE38A2B)
+
     /** Light-background logo variant, kept for external materials. */
     val LightBg = Color(0xFFF4F3EF)
     val LightWord = Color(0xFF1A1A19)
@@ -101,6 +118,48 @@ object RudiColors {
     val LightPadLine = Color(0xFFC9C6BD)
     val LightPadLetter = Color(0xFF6E6C66)
 }
+
+/** Which hand a pad stands for. A pad without one (the map, the logo, menus) stays brick. */
+enum class PadHand { Right, Left }
+
+/**
+ * The colours of one hand (decision 244): wherever a pad stands for a hand -- the practice
+ * track, the metronome -- its frame, fill, glow and letter take the colour of that hand.
+ * Not on the level map: there a pad is a level and its colour is progress.
+ */
+data class HandColors(
+    /** Frame of a coming pad, fill of a lit one. */
+    val base: Color,
+    /** Frame and halo of a lit pad. */
+    val lit: Color,
+    /** Fill of a lit accented pad. */
+    val accentLit: Color,
+    /** Letter of a coming pad, and the stronger tier of the metronome grid. */
+    val letter: Color,
+    val letterStrong: Color,
+    val ledLit: Color,
+)
+
+private val RightHandColors = HandColors(
+    base = RudiColors.Brick,
+    lit = RudiColors.BrickLit,
+    accentLit = RudiColors.PadAccentLit,
+    letter = RudiColors.PadLetterAccent,
+    letterStrong = RudiColors.PadLetterAccentStrong,
+    ledLit = RudiColors.PadLedLit,
+)
+
+private val LeftHandColors = HandColors(
+    base = RudiColors.HandLeft,
+    lit = RudiColors.HandLeftLit,
+    accentLit = RudiColors.HandLeftLit,
+    letter = RudiColors.HandLeftSoft,
+    letterStrong = RudiColors.HandLeftSoftStrong,
+    ledLit = RudiColors.HandLeftLedLit,
+)
+
+/** The colours of [hand]; no hand is the brick of the brand, the same as the right hand. */
+fun handColors(hand: PadHand?): HandColors = if (hand == PadHand.Left) LeftHandColors else RightHandColors
 
 /** Geometry shared by pad, logo and icon. */
 object RudiDimens {

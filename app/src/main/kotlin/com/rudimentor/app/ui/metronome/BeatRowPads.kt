@@ -26,6 +26,7 @@ import com.rudimentor.app.audio.Hand
 import com.rudimentor.app.ui.component.Pad
 import com.rudimentor.app.ui.component.PadShape
 import com.rudimentor.app.ui.component.PadTone
+import com.rudimentor.app.ui.theme.PadHand
 import com.rudimentor.app.ui.theme.RudiDimens
 import com.rudimentor.app.ui.theme.RudiMotion
 
@@ -93,6 +94,7 @@ internal fun BeatRowPads(
                     pressed = pressed,
                     letterFraction = RudiDimens.PAD_LETTER_FRACTION_GRID,
                     contrastLetters = true,
+                    hand = if (beat.hand == Hand.Right) PadHand.Right else PadHand.Left,
                     modifier = if (editable) {
                         Modifier.pointerInput(row, index) {
                             awaitEachGesture {

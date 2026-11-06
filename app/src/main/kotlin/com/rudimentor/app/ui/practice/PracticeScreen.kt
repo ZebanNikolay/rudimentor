@@ -755,7 +755,7 @@ fun PracticeScreen(
                     if (audioLost) R.string.practice_audio_lost else R.string.practice_audio_failed,
                 ),
                 style = MaterialTheme.typography.bodyMedium,
-                color = RudiColors.WindowGood,
+                color = RudiColors.WarnText,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .align(Alignment.Center)

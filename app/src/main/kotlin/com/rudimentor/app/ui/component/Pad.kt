@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.rudimentor.app.ui.theme.JetBrainsMono
+import com.rudimentor.app.ui.theme.PadHand
 import com.rudimentor.app.ui.theme.RudiDimens
 
 /** Pad shape encodes the hand: right is a rounded square, left is a circle. */
@@ -75,6 +76,7 @@ fun Pad(
     stars: Int = 0,
     crown: Boolean = false,
     contrastLetters: Boolean = false,
+    hand: PadHand? = null,
 ) {
     val light = variant == PadVariant.Light
     val round = shape == PadShape.Round
@@ -85,6 +87,7 @@ fun Pad(
         lit = lit,
         light = light,
         contrastLetters = contrastLetters,
+        hand = hand,
     )
 
     // A lit pad is a key with the lamp switched on: flat brick fill and an even halo
@@ -95,6 +98,7 @@ fun Pad(
                 center = this.center,
                 side = this.size.minDimension,
                 accent = tone == PadTone.Accent,
+                hand = hand,
             )
         }
     } else {

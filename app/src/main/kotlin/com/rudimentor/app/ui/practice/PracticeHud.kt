@@ -174,7 +174,7 @@ fun PracticeDeviationScale(
                 // the axis stays at the fixed -120..+120 ms so plots stay comparable.
                 window(windows.okMs, RudiColors.WindowOk.copy(alpha = 0.16f))
                 window(windows.goodMs, RudiColors.WindowGood.copy(alpha = 0.18f))
-                window(windows.perfectMs, RudiColors.Brick.copy(alpha = 0.34f))
+                window(windows.perfectMs, RudiColors.WindowPerfect.copy(alpha = 0.22f))
                 drawLine(
                     color = RudiColors.TrackHitLine,
                     start = Offset(half, midY - ZERO_HEIGHT.toPx() / 2f),
