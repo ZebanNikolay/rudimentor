@@ -212,7 +212,8 @@ fun PracticeDeviationScale(
                 }
             }
         }
-        // Room for the mean tag so it never sits under the floating transport button.
+        // Room for the mean tag; the screen keeps the scale itself clear of the transport
+        // corner (decision 245).
         Box(modifier = Modifier.width(96.dp), contentAlignment = Alignment.CenterStart) {
             if (recent.isNotEmpty()) {
                 Text(

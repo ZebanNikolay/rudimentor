@@ -686,7 +686,10 @@ fun PracticeScreen(
             )
             PracticeDeviationScale(
                 offsets = loop?.offsets ?: attempt.offsets,
-                modifier = Modifier.padding(horizontal = 18.dp),
+                // The scale ends short of the transport corner: Stop and Play float over the
+                // bottom right, and the mean tag at the end of the scale ("-38 ms") sat under
+                // Play (decision 245).
+                modifier = Modifier.padding(start = 18.dp, end = TRANSPORT_RESERVE + SCALE_TRANSPORT_GAP),
                 // The scale has to hold the offsets of every density of the attempt, so it
                 // is drawn with the widest windows (decision 151).
                 windows = windows.widest,
@@ -904,5 +907,6 @@ private const val FINISH_HOLD_MS = 450f
 
 /** Corner kept free for the floating transport button: its size plus its margin. */
 private val TRANSPORT_RESERVE = 82.dp
+private val SCALE_TRANSPORT_GAP = 10.dp
 
 private val WARNING_MAX_WIDTH = 480.dp
