@@ -320,7 +320,9 @@ fun PracticeTrack(
             }
         }
 
-        (loopView?.extrasMs ?: attempt.extras).forEach { hitMs ->
+        // A stroke that missed keeps its grey dot whether it was charged as an extra or took
+        // its note as a MISS from just outside OK (decision 250).
+        (loopView?.extrasMs ?: attempt.strayStrokes).forEach { hitMs ->
             val x = lineX + (hitMs - drawingPositionMs) * pxPerMs
             if (x < 0f || x > width) return@forEach
             drawCircle(

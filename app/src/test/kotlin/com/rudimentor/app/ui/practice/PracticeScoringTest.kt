@@ -175,6 +175,8 @@ class PracticeScoringTest {
         val result = attempt.result()
         assertEquals(1, result.misses)
         assertEquals(0, result.extras)
+        // The stroke itself is still drawn where it was played.
+        assertEquals(listOf(notes[1].timeMs - (windows.okMs + 12f)), attempt.strayStrokes)
     }
 
     @Test

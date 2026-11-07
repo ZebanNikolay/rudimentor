@@ -344,6 +344,14 @@ class PracticeAttempt(
     /** Hits that matched no note, kept as positions in milliseconds. */
     private val extrasInternal = ArrayList<Float>()
 
+    /**
+     * Every stroke that landed no note, as positions in milliseconds: the extras and the
+     * strokes that took their note as a MISS from just outside OK. The track draws each one
+     * as a grey dot where it was played, so a stroke that missed still shows how far off it
+     * was -- the count stays apart, only [extras] are charged as extra hits (decision 250).
+     */
+    private val strayStrokesInternal = ArrayList<Float>()
+
     var combo: Int = 0
         private set
     var maxCombo: Int = 0
@@ -400,6 +408,7 @@ class PracticeAttempt(
 
     val judgements: List<NoteJudgement?> get() = judgementsInternal.asList()
     val extras: List<Float> get() = extrasInternal
+    val strayStrokes: List<Float> get() = strayStrokesInternal
     val offsets: List<Float> get() = offsetsInternal
 
     fun judgementAt(index: Int): NoteJudgement? =
@@ -449,6 +458,7 @@ class PracticeAttempt(
             // twice -- an extra now and a miss when the note expired -- and real runs logged
             // as many extras as misses (decision 247).
             val aimed = nearMissNote(adjusted, slackMs = latency.slackMs)
+            strayStrokesInternal.add(adjusted)
             if (aimed != null) return judgeNearMiss(aimed, positionMs)
             extrasInternal.add(adjusted)
             combo = 0
