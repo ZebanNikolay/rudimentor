@@ -56,6 +56,19 @@ internal object CourseMapMigrations {
             fromVersion = 2,
             toVersion = 3,
         ),
+        // Transition ladder v2 (decision 249): TR-01 and TR-02 are new exercises under the old
+        // IDs, so their passes no longer mean anything; TR-03 and TR-04 are new. Everything
+        // else stays, including ST-08+ already passed before TR-03 became its prerequisite.
+        MapMigrationStep(
+            familyId = "doubles",
+            fromVersion = 1,
+            toVersion = 2,
+            completionResets = buildSet {
+                listOf("doubles.TR-01", "doubles.TR-02").forEach { levelId ->
+                    PracticeRank.entries.forEach { add(RankCompletionReset(levelId, it)) }
+                }
+            },
+        ),
     )
 
     /**

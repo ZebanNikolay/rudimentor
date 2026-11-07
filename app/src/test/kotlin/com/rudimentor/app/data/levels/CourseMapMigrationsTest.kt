@@ -81,15 +81,35 @@ class CourseMapMigrationsTest {
     }
 
     @Test
-    fun `missing migration does not advance stored version or reset progress`() {
+    fun `doubles v2 resets every rank of the rewritten TR-01 and TR-02`() {
         val migration = CourseMapMigrations.plan(
             familyId = "doubles",
             fromVersion = 1,
             toVersion = 2,
         )
 
+        assertTrue(migration.isComplete)
+        assertEquals(2, migration.appliedVersion)
+        assertEquals(
+            setOf("doubles.TR-01", "doubles.TR-02").flatMap { id ->
+                listOf(PracticeRank.Practice, PracticeRank.Groove, PracticeRank.Stage)
+                    .map { RankCompletionReset(id, it) }
+            }.toSet(),
+            migration.completionResets,
+        )
+        assertEquals(6, migration.completionResets.size)
+    }
+
+    @Test
+    fun `missing migration does not advance stored version or reset progress`() {
+        val migration = CourseMapMigrations.plan(
+            familyId = "doubles",
+            fromVersion = 2,
+            toVersion = 3,
+        )
+
         assertTrue(!migration.isComplete)
-        assertEquals(1, migration.appliedVersion)
+        assertEquals(2, migration.appliedVersion)
         assertTrue(migration.completionResets.isEmpty())
     }
 

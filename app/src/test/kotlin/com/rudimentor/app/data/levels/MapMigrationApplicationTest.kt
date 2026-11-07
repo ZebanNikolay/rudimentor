@@ -39,14 +39,14 @@ class MapMigrationApplicationTest {
     @Test
     fun `missing migration step does not mark target version as applied`() {
         val preferences = mutablePreferencesOf(
-            LevelProgressKeys.mapVersion("doubles") to 1,
+            LevelProgressKeys.mapVersion("doubles") to 2,
         )
 
         preferences.applyMapMigration(
             familyId = "doubles",
-            migration = CourseMapMigrations.plan("doubles", 1, 2),
+            migration = CourseMapMigrations.plan("doubles", 2, 3),
         )
 
-        assertEquals(1, preferences[LevelProgressKeys.mapVersion("doubles")])
+        assertEquals(2, preferences[LevelProgressKeys.mapVersion("doubles")])
     }
 }

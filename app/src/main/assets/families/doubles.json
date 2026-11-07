@@ -2600,7 +2600,7 @@
       "type": "transition",
       "modifiers": [],
       "transitionPlan": {
-        "repeatCount": 8,
+        "repeatCount": 4,
         "phases": [
           {
             "beatCount": 4,
@@ -2653,6 +2653,206 @@
                 {
                   "hands": [
                     "R"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 60,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 60,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 120,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.TR-02",
+      "type": "transition",
+      "modifiers": [],
+      "transitionPlan": {
+        "repeatCount": 4,
+        "phases": [
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
                   ]
                 }
               ]
@@ -2684,11 +2884,155 @@
       }
     },
     {
-      "id": "doubles.TR-02",
+      "id": "doubles.TR-03",
       "type": "transition",
       "modifiers": [],
       "transitionPlan": {
-        "repeatCount": 16,
+        "repeatCount": 4,
+        "phases": [
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 4,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 90,
+          "hitsPerBeat": 2
+        },
+        "groove": {
+          "bpm": 90,
+          "hitsPerBeat": 4
+        },
+        "stage": {
+          "bpm": 150,
+          "hitsPerBeat": 4
+        }
+      }
+    },
+    {
+      "id": "doubles.TR-04",
+      "type": "transition",
+      "modifiers": [],
+      "transitionPlan": {
+        "repeatCount": 8,
         "phases": [
           {
             "beatCount": 2,
@@ -2741,6 +3085,62 @@
                 {
                   "hands": [
                     "R"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 2,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "beatCount": 2,
+            "pattern": {
+              "mode": "repeat",
+              "steps": [
+                {
+                  "hands": [
+                    "L"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "R"
+                  ]
+                },
+                {
+                  "hands": [
+                    "L"
                   ]
                 }
               ]
@@ -3066,7 +3466,7 @@
     }
   ],
   "map": {
-    "version": 1,
+    "version": 2,
     "nodes": [
       {
         "lessonId": "doubles.ST-01",
@@ -3256,13 +3656,6 @@
         ]
       },
       {
-        "lessonId": "doubles.TR-02",
-        "column": "right",
-        "prerequisites": [
-          "doubles.TR-01"
-        ]
-      },
-      {
         "lessonId": "doubles.WK-03",
         "column": "left",
         "prerequisites": [
@@ -3270,10 +3663,31 @@
         ]
       },
       {
-        "lessonId": "doubles.ST-08",
+        "lessonId": "doubles.TR-02",
         "column": "center",
         "prerequisites": [
           "doubles.TR-01"
+        ]
+      },
+      {
+        "lessonId": "doubles.TR-03",
+        "column": "center",
+        "prerequisites": [
+          "doubles.TR-02"
+        ]
+      },
+      {
+        "lessonId": "doubles.TR-04",
+        "column": "right",
+        "prerequisites": [
+          "doubles.TR-03"
+        ]
+      },
+      {
+        "lessonId": "doubles.ST-08",
+        "column": "center",
+        "prerequisites": [
+          "doubles.TR-03"
         ]
       },
       {

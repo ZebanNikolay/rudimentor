@@ -44,3 +44,11 @@ The dev.53 startup crash was caused by generated optional nodes with two
 prerequisites. Generator checks passed, but `LevelCatalog.build` rejected the real
 bundled asset during `MainActivity.onCreate`. The production-loader asset test now
 fails before integration for that exact class of defect.
+
+## Released map versions
+
+- `doubles` v2 (decision 249): transition ladder TR-01…TR-04 on Stone No. 25
+  (`RRLL RLLR LLRR LRRL`). TR-01 and TR-02 are rewritten under the same IDs, so
+  every rank of both is reset; TR-03 and TR-04 are new; ST-08 now requires TR-03.
+  Already completed later lessons stay completed. Note:
+  `learning/course/data/migrations/2026-11-07-doubles-transition-ladder-v2.md`.
