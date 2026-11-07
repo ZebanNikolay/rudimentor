@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Mic lab dev screen: raw microphone capture, no recording persisted. -->
+    <!-- Hears the strokes on the pad during levels and the sound check: analysed live, never recorded. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
@@ -23,13 +23,22 @@
             android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density|fontScale|layoutDirection">
+            <!--
+              Android 16 ignores requested orientation on screens of sw600dp and up for apps
+              targeting API 36, so a tablet would open the landscape-only practice stage in
+              portrait. Until the stage has a tablet layout, keep the old behaviour. The
+              opt-out stops working at targetSdk 37: remove it before that bump.
+            -->
+            <property
+                android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+                android:value="true" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Shares the exported developer log through the system share sheet. -->
+        <!-- Hands the diagnostic log to the mail app the person chose (About, feedback) and the crash report to the share sheet. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

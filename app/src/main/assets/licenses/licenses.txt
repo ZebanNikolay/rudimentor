@@ -13,6 +13,8 @@ Apache License 2.0
     https://github.com/material-components/material-components-android
   kotlinx.coroutines -- Copyright JetBrains s.r.o.
     https://github.com/Kotlin/kotlinx.coroutines
+  Kotlin standard library -- Copyright JetBrains s.r.o. and Kotlin contributors
+    https://github.com/JetBrains/kotlin
   Material Design Icons (menu icons) -- Copyright Pictogrammers
     https://github.com/Templarian/MaterialDesign
   The full text of the Apache License 2.0 is in licenses/apache-2.0.txt

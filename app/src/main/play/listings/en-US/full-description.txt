@@ -1,12 +1,16 @@
-RudiMentor teaches drum rudiments on a practice pad. Play along to the click, and the phone's microphone scores every stroke for timing.
+RudiMentor teaches drum rudiments on a practice pad. Play along to the click, and the phone's microphone scores every stroke for timing: PERFECT, GOOD, OK or MISS, right under the note.
 
 WHAT'S INSIDE
-• 130 lessons on three maps: Singles, Doubles, Paradiddles
-• Three tempo ranks for every lesson: Practice, Groove, Stage
-• Challenge mode scores your accuracy. Practice mode loops the pattern with no score
-• Lesson types: steady patterns, one-hand isolation, unison strokes, sticking and subdivision switches, tempo ramps, weak-hand lead, endurance runs
-• Metronome with accents, muted beats and R/L on every beat
-• Sound check measures your phone's audio delay, so scoring stays fair
+• 132 lessons on three maps: Singles, Doubles, Paradiddles
+• Three difficulties for every lesson: Practice, Groove, Stage
+• Three ways into every lesson: Play level for a score and stars, Practice to loop it with no score, Metronome to hear the sticking without the mic
+• Lesson types: steady patterns, weak-hand lead, one-hand isolation, unison strokes, sticking and subdivision switches, tempo ramps, endurance runs
+• Each hand has its own colour on the track, and strokes come in short groups, so long stickings stay easy to read
+• After every run: accuracy, stars and a timing scale that shows whether you rush or drag
+• Metronome with accents, muted beats and R/L on every beat, in portrait or landscape
+
+SOUND CHECK
+About a minute: the app learns how loud your strokes are and measures how late the click reaches your headphones. Every pair of headphones keeps its own measurement, so scoring stays fair when you switch. The click plays only in headphones, because through the speaker the microphone would count it as your stroke.
 
 PRIVATE BY DESIGN
-No ads, no account, no network. The microphone is analyzed live and never recorded. Progress stays on your device.
+No ads, no account, no internet access. The microphone is analyzed live and never recorded, and the app sends nothing anywhere.

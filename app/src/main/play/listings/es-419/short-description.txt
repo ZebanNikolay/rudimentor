@@ -1,0 +1,1 @@
+Rudimentos de batería en el pad de práctica. El micrófono oye cada golpe.

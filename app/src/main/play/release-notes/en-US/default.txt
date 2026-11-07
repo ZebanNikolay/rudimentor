@@ -1,1 +1,1 @@
-First internal build of RudiMentor: metronome, the Singles / Doubles / Paradiddles level maps, microphone hit scoring and the latency Sound check.
+First release of RudiMentor: 132 rudiment lessons on the Singles, Doubles and Paradiddles maps, microphone scoring of every stroke, Practice and Metronome modes for each lesson, and a Sound check that remembers every pair of headphones.

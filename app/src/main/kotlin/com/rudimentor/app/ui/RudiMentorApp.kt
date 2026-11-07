@@ -664,17 +664,19 @@ fun RudiMentorApp(
                 buildInfo = buildInfo,
                 onBack = { screenName = Screen.Menu.name },
             )
-            Screen.Dev -> DevScreen(
+            // The bench screens stay out of a release build entirely, not just unreachable:
+            // R8 drops a branch it can prove dead, and the menu card is debug-only too.
+            Screen.Dev -> if (BuildConfig.DEBUG) DevScreen(
                 buildInfo = buildInfo,
                 onBack = { screenName = Screen.Menu.name },
                 onOpenMicLab = { screenName = Screen.MicLab.name },
                 onOpenPracticeLog = { screenName = Screen.PracticeLog.name },
             )
-            Screen.MicLab -> MicLabScreen(
+            Screen.MicLab -> if (BuildConfig.DEBUG) MicLabScreen(
                 buildInfo = buildInfo,
                 onBack = { screenName = Screen.Dev.name },
             )
-            Screen.PracticeLog -> PracticeLogScreen(
+            Screen.PracticeLog -> if (BuildConfig.DEBUG) PracticeLogScreen(
                 onBack = { screenName = Screen.Dev.name },
             )
         }

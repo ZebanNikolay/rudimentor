@@ -1,6 +1,7 @@
 package com.rudimentor.app.telemetry
 
 import android.content.Context
+import com.rudimentor.app.BuildConfig
 import com.rudimentor.app.util.AppLog
 import java.io.File
 import java.text.SimpleDateFormat
@@ -68,6 +69,10 @@ object PracticeLogStore {
 
     /** Writes one summary and its body on the log thread, then prunes the folder. */
     private fun queue(context: Context, base: String, summary: String, body: List<String>) {
+        // A bench tool: the only screen that reads these files is debug-only, and level
+        // ids and attempt results are trace-level data (decision 208). A release build
+        // keeps nothing of the run on disk.
+        if (!BuildConfig.DEBUG) return
         val directory = File(context.filesDir, DIRECTORY)
         writer.execute {
             runCatching {
@@ -130,6 +135,18 @@ object PracticeLogStore {
         }
             .onFailure { error -> AppLog.error("telemetry", "export failed", error) }
             .getOrNull()
+    }
+
+    /**
+     * Release builds write no attempt logs, but the 1.0.0-rc.1 testing build did. Removes
+     * what it left behind, once per start, on the log thread; a no-op in debug.
+     */
+    fun dropReleaseLeftovers(context: Context) {
+        if (BuildConfig.DEBUG) return
+        val directory = File(context.filesDir, DIRECTORY)
+        writer.execute {
+            runCatching { if (directory.exists()) directory.deleteRecursively() }
+        }
     }
 
     /** Deletes every saved attempt. */

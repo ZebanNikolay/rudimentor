@@ -34,8 +34,8 @@ val uploadKeyPassword = providers.environmentVariable("RUDIMENTOR_UPLOAD_KEY_PAS
 //   1.0.0-dev.N  sandbox build installed on the developer's phone
 //   1.0.0-rc.N   candidate uploaded to the internal / closed testing track
 //   1.0.0        production
-val appVersionName = "1.0.0-dev.67"
-val appVersionCode = 67
+val appVersionName = "1.0.0"
+val appVersionCode = 68
 
 base {
     archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")
@@ -123,6 +123,14 @@ android {
                     }
             }
         }
+    }
+
+    // The interface is English only for 1.0; without this filter AndroidX and
+    // Material 3 bring their own translations, and a phone set to another language would
+    // read a mix of English screens and translated library labels. Lifted together with
+    // the first values-* folder.
+    androidResources {
+        localeFilters += listOf("en")
     }
 
     buildFeatures {

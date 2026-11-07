@@ -46,6 +46,11 @@ import com.rudimentor.app.ui.theme.RudiTextStyles
 
 private const val REPO_URL = "https://github.com/ZebanNikolay/rudimentor"
 
+// The same page the store listing points to. Google Play asks for the policy inside the
+// app as well as on the listing (User Data policy), so it sits in the footer next to
+// the licenses.
+private const val PRIVACY_URL = "https://github.com/ZebanNikolay/rudimentor/blob/main/PRIVACY.md"
+
 /**
  * The About screen: what the app is, how to reach its author, what it honestly does
  * and does not do with the device, and the licenses of everything it borrows.
@@ -180,6 +185,12 @@ fun AboutScreen(
                 Spacer(modifier = Modifier.height(18.dp))
                 Footer(
                     onOpenLicenses = { showLicenses = true },
+                    onOpenPrivacy = {
+                        if (!openLink(context, PRIVACY_URL)) {
+                            clipboard.setText(AnnotatedString(PRIVACY_URL))
+                            notice = noBrowser
+                        }
+                    },
                     onOpenRepo = {
                         if (!openLink(context, REPO_URL)) {
                             clipboard.setText(AnnotatedString(REPO_URL))
@@ -229,6 +240,7 @@ private fun Header(
 @Composable
 private fun Footer(
     onOpenLicenses: () -> Unit,
+    onOpenPrivacy: () -> Unit,
     onOpenRepo: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -249,6 +261,21 @@ private fun Footer(
                 .semantics {
                     role = Role.Button
                     contentDescription = repoLabel
+                }
+                .padding(vertical = 4.dp),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        val privacyLabel = stringResource(R.string.about_privacy_link)
+        Text(
+            text = privacyLabel,
+            style = MaterialTheme.typography.bodySmall,
+            color = RudiColors.BrickBright,
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .clickable(onClick = onOpenPrivacy)
+                .semantics {
+                    role = Role.Button
+                    contentDescription = privacyLabel
                 }
                 .padding(vertical = 4.dp),
         )

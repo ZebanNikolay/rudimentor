@@ -147,7 +147,6 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="practice_summary_hits">Detected hits</string>
     <string name="practice_finishing_cycle">finishing the cycle</string>
     <string name="practice_bpm">%1$d BPM</string>
-    <string name="practice_hits_per_beat">×%1$d</string>
     <string name="practice_hud_accuracy">%1$d%%</string>
     <string name="practice_hud_errors">%1$d miss · %2$d extra</string>
     <string name="practice_mic_cd">Microphone level</string>
@@ -229,7 +228,7 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="practice_result_accuracy">Accuracy</string>
     <string name="practice_result_perfect">Perfect</string>
     <string name="practice_result_good">Good</string>
-    <string name="practice_result_ok">Ok</string>
+    <string name="practice_result_ok">OK</string>
     <string name="practice_result_full_combo">FULL COMBO</string>
     <string name="practice_result_crown">CROWN</string>
     <string name="practice_result_count_value">%1$d/%2$d</string>
@@ -242,7 +241,6 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="practice_result_best_was">was %1$d%%</string>
     <string name="practice_result_best_first">FIRST RUN</string>
     <string name="practice_result_best_kept">BEST %1$d%%</string>
-    <string name="practice_result_mean_value">%1$s</string>
     <string name="practice_result_histogram_cd">Timing spread from −120 to +120 milliseconds</string>
     <string name="practice_result_next">Next level</string>
     <string name="practice_result_retry">Try again</string>
@@ -258,7 +256,7 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="advice_extras">More strokes than notes: %1$d%% extra. A rebounding stick or a noisy room \u2014 both are heard as strokes.</string>
     <string name="advice_offset_late">You play %1$d ms behind the click, every stroke. Aim to hit with the click, not after it.</string>
     <string name="advice_offset_early">You play %1$d ms ahead of the click, every stroke. Let the click arrive before the stick.</string>
-    <string name="advice_offset_gain">Your evenness alone is worth %1$d%%: that is what this level scores once the lateness is gone.</string>
+    <string name="advice_offset_gain">Your evenness alone is worth %1$d%%: that is what this level scores once the shift is gone.</string>
     <string name="advice_drift_faster">You speed up: by the end you are %1$d ms ahead of where you started.</string>
     <string name="advice_drift_slower">You slow down: by the end you are %1$d ms behind where you started.</string>
     <string name="advice_spread">Your strokes wander by \u00b1%1$d ms. Drop the tempo until they stop wandering, then bring it back.</string>
@@ -362,7 +360,7 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="about_feedback_button">Send feedback</string>
     <string name="about_feedback_prompt">What happened, or what would you like the app to do?</string>
     <string name="about_log_attach">Attach a diagnostic log</string>
-    <string name="about_log_note">A short technical record of this device: audio output, measured latency, errors. No recordings, no practice data, nothing that identifies you.</string>
+    <string name="about_log_note">A short technical record of this device: phone model, audio output and its name (headphones may carry a name you gave them), measured latency, errors. No recordings and no practice data.</string>
     <string name="about_log_view">Read the log first</string>
     <string name="about_log_title">DIAGNOSTIC LOG</string>
     <string name="about_log_copy">Copy the log</string>
@@ -373,8 +371,9 @@ Better never to turn this on. The one case where it holds: you know your microph
     <string name="about_honest_title">THE HONEST BITS</string>
     <string name="about_honest_no_business">No ads, no subscriptions, no accounts, no analytics. The app never talks to a server \u2014 it has no network permission at all.</string>
     <string name="about_honest_mic">The microphone listens in real time to hear your hits. Audio is not recorded, not saved and not sent anywhere.</string>
-    <string name="about_honest_on_device">Your progress, settings and practice logs stay on this device. Uninstalling the app deletes them.</string>
+    <string name="about_honest_on_device">Your progress and settings are kept on this phone, and in your Android backup if it is on. The app sends nothing anywhere; uninstalling it deletes them.</string>
     <string name="about_licenses_title">Licenses</string>
+    <string name="about_privacy_link">Privacy policy</string>
     <string name="about_licenses_link">Open source licenses</string>
     <string name="about_care_title">TAKE CARE OF YOURSELF</string>
     <string name="about_care_hearing">A pad plus a metronome in headphones is loud for hours. Keep the volume low enough to hear yourself, and take breaks.</string>

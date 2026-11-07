@@ -1,10 +1,12 @@
 package com.rudimentor.app
 
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -14,6 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rudimentor.app.data.DataStoreSettingsRepository
 import com.rudimentor.app.data.levels.AssetCourseLoader
 import com.rudimentor.app.data.levels.DataStoreLevelProgressRepository
+import com.rudimentor.app.telemetry.PracticeLogStore
 import com.rudimentor.app.ui.RudiMentorApp
 import com.rudimentor.app.ui.dev.CrashReportScreen
 import com.rudimentor.app.ui.metronome.MetronomeActions
@@ -36,10 +39,17 @@ class MainActivity : ComponentActivity() {
         val buildLabel = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · " +
             "${Build.MANUFACTURER} ${Build.MODEL} · API ${Build.VERSION.SDK_INT}"
         AppLog.install(context = applicationContext, sessionLabel = buildLabel)
+        PracticeLogStore.dropReleaseLeftovers(applicationContext)
         // A non-null bundle means the activity was recreated. The practice flow is
         // built on the assumption that it is not, so it is worth seeing in the log.
         AppLog.trace("activity") { "onCreate restored=${savedInstanceState != null}" }
-        enableEdgeToEdge()
+        // The app is dark whatever the system theme is. The default style follows the
+        // system, so on a phone in light mode it drew dark status bar icons on the dark
+        // background, where the clock and the battery could not be read.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+        )
         // A crash on startup would otherwise leave no way to report it: the developer
         // screen is behind the UI that just died. So the course is built here, and any
         // failure -- this launch or the previous one -- opens the report screen instead.

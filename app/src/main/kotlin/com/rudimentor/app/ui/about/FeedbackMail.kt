@@ -21,6 +21,7 @@ import java.util.Locale
  */
 object FeedbackMail {
     const val ADDRESS = "rudimentor.app@gmail.com"
+    private const val LOG_COPY_KEEP_MS = 24L * 60L * 60L * 1000L
 
     /** Subject carries the build, so a report is never about an unknown version. */
     fun subject(buildInfo: BuildInfo): String =
@@ -104,7 +105,12 @@ object FeedbackMail {
      * the caller falls back to [send], because a report without its log still helps.
      */
     fun sendWithLog(context: Context, buildInfo: BuildInfo, prompt: String): Boolean {
-        val exported = AppLog.exportDiagnostics(File(context.cacheDir, "logs")) ?: return false
+        val folder = File(context.cacheDir, "logs")
+        // Every report leaves its copy behind, and the system clears the cache only when
+        // space runs out. A day is long enough for any mail app to have read the file.
+        val dayAgo = System.currentTimeMillis() - LOG_COPY_KEEP_MS
+        folder.listFiles()?.filter { it.lastModified() < dayAgo }?.forEach { it.delete() }
+        val exported = AppLog.exportDiagnostics(folder) ?: return false
         val uri = runCatching {
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", exported)
         }.getOrElse { error ->
