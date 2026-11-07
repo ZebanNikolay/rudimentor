@@ -5,7 +5,9 @@ import android.content.res.Configuration
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.waterfall
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
@@ -81,15 +83,21 @@ fun LandscapeStage(orientation: StageOrientation?, keepScreenOn: Boolean) {
 }
 
 /**
- * Keeps content clear of the display cutout, the system bars and the rounded
+ * Keeps content of an immersive stage screen clear of the display cutout and the rounded
  * corners of the device. [min] is the corner allowance: window insets say nothing
  * about the radius, so every edge keeps at least this much room.
+ *
+ * Only for the screens [LandscapeStage] runs immersive (the practice flow, the metronome
+ * turned on its side). Their system bars are hidden, so the bars are not room to keep:
+ * when they come back for a moment -- the lock screen, a swipe from the edge -- they
+ * overlay the stage. Padding by them made the whole stage shrink by a bar while the
+ * phone was locked and grow back on unlock, a visible jump each time (decision 248).
  */
 @Composable
 fun Modifier.stageSafePadding(min: Dp = STAGE_EDGE_MIN): Modifier {
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
-    val insets = WindowInsets.safeDrawing
+    val insets = WindowInsets.displayCutout.union(WindowInsets.waterfall)
     return with(density) {
         padding(
             start = maxOf(insets.getLeft(this, layoutDirection).toDp(), min),
