@@ -5,7 +5,7 @@ WHAT'S INSIDE
 • Three difficulties for every lesson: Practice, Groove, Stage
 • Three ways into every lesson: Play level for a score and stars, Practice to loop it with no score, Metronome to hear the sticking without the mic
 • Lesson types: steady patterns, weak-hand lead, one-hand isolation, unison strokes, sticking and subdivision switches, tempo ramps, endurance runs
-• Each hand has its own colour on the track, and strokes come in short groups, so long stickings stay easy to read
+• Each hand has its own color on the track, and strokes come in short groups, so long stickings stay easy to read
 • After every run: accuracy, stars and a timing scale that shows whether you rush or drag
 • Metronome with accents, muted beats and R/L on every beat, in portrait or landscape
 
