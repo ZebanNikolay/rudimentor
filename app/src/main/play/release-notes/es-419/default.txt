@@ -1,0 +1,1 @@
+Primera versión de RudiMentor: 132 lecciones de rudimentos en los mapas Singles, Doubles y Paradiddles, calificación de cada golpe con el micrófono, modos Practice y Metronome en cada lección y un Sound check que recuerda cada par de audífonos. La app está en inglés.
