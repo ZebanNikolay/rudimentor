@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rudimentor.app.data.DataStoreSettingsRepository
 import com.rudimentor.app.data.levels.AssetCourseLoader
 import com.rudimentor.app.data.levels.DataStoreLevelProgressRepository
+import com.rudimentor.app.stats.PlayStatsRecorder
 import com.rudimentor.app.telemetry.PracticeLogStore
 import com.rudimentor.app.ui.RudiMentorApp
 import com.rudimentor.app.ui.dev.CrashReportScreen
@@ -40,6 +41,10 @@ class MainActivity : ComponentActivity() {
             "${Build.MANUFACTURER} ${Build.MODEL} · API ${Build.VERSION.SDK_INT}"
         AppLog.install(context = applicationContext, sessionLabel = buildLabel)
         PracticeLogStore.dropReleaseLeftovers(applicationContext)
+        // The play-stats ledger runs in every build, release included, and on its own file:
+        // it has nothing to do with the debug-only practice telemetry above (decision 257).
+        PlayStatsRecorder.install(applicationContext, build = BuildConfig.VERSION_CODE)
+        PlayStatsRecorder.observe(this)
         // A non-null bundle means the activity was recreated. The practice flow is
         // built on the assumption that it is not, so it is worth seeing in the log.
         AppLog.trace("activity") { "onCreate restored=${savedInstanceState != null}" }

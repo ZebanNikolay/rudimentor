@@ -2,7 +2,8 @@
 <!--
   Cloud backup for Android 11 and below (API < 31).
 
-  Progress and settings are worth restoring on a new phone; the diagnostic log is not.
+  Progress, settings and the play-stats ledger (datastore/play_stats, decision 257) are
+  worth restoring on a new phone; the diagnostic log is not.
   It is written for the person's own report, it can name their audio hardware, and it
   has no business leaving the device on its own, so it is excluded here and in
   data_extraction_rules.xml, and it only ever travels in a mail the person sent. The

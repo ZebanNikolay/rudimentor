@@ -32,6 +32,8 @@ The app stores locally, on your device:
 - your settings (tempo, sound and calibration preferences, the headphones you
   measured and the names you gave them);
 - your progress through the levels (stars, best accuracy, unlocked levels);
+- play statistics (counts of strokes and takes, minutes played per day), kept
+  for future achievements;
 - a short technical log of the app's own events (audio output and its name,
   measured latency, errors), kept so that a problem report can explain itself.
 

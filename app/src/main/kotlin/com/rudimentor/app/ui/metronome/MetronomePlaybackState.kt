@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import com.rudimentor.app.audio.BeatGrid
 import com.rudimentor.app.audio.Metronome
@@ -46,6 +47,8 @@ class MetronomePlaybackState internal constructor(
     private val metronome: Metronome,
     private val scope: CoroutineScope,
     private val elapsedClock: () -> Long,
+    /** Told how long each run played, on Stop however it came (the play-stats ledger). */
+    private val onRunEnded: (durationMs: Long) -> Unit = {},
 ) {
     private var running by mutableStateOf(false)
     private var tick by mutableLongStateOf(0L)
@@ -104,6 +107,7 @@ class MetronomePlaybackState internal constructor(
     }
 
     fun stop() {
+        if (running) onRunEnded((elapsedClock() - startElapsedMillis).coerceAtLeast(0L))
         elapsedJob?.cancel()
         elapsedJob = null
         metronome.stop()
@@ -123,14 +127,16 @@ class MetronomePlaybackState internal constructor(
  * runs for the lifetime of the holder.
  */
 @Composable
-fun rememberMetronomePlaybackState(): MetronomePlaybackState {
+fun rememberMetronomePlaybackState(onRunEnded: (durationMs: Long) -> Unit = {}): MetronomePlaybackState {
     val scope = rememberCoroutineScope()
+    val runEnded by rememberUpdatedState(onRunEnded)
     val holder = remember(scope) {
         val metronome = Metronome(scope)
         MetronomePlaybackState(
             metronome = metronome,
             scope = scope,
             elapsedClock = { SystemClock.elapsedRealtime() },
+            onRunEnded = { runEnded(it) },
         ).also { state ->
             scope.launch {
                 metronome.ticks.collect { state.onTick(it) }

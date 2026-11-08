@@ -2,6 +2,7 @@
 <!--
   Cloud backup and device-to-device transfer for Android 12 and above (API 31+).
   The diagnostic log stays on the device it describes; see backup_rules.xml.
+  Progress, settings and play stats (datastore/) travel; nothing here excludes them.
 -->
 <data-extraction-rules>
     <cloud-backup>

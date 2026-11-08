@@ -2,6 +2,7 @@ package com.rudimentor.app.ui.practice
 
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.PracticeRank
+import com.rudimentor.app.stats.PlayStatsRules
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -29,6 +30,25 @@ class PracticeLoop(level: Level, rank: PracticeRank, bpm: Int) {
     val offsets: List<Float> get() = recentOffsets
     var hitCount: Long = 0
         private set
+
+    // Counters for the play-stats ledger (decision 257): plain arithmetic per stroke, read
+    // once when the session closes. Strokes matched to a note, by verdict, and the extras.
+    var perfectCount: Long = 0
+        private set
+    var goodCount: Long = 0
+        private set
+    var okCount: Long = 0
+        private set
+    var extraCount: Long = 0
+        private set
+
+    /**
+     * Time spent actually playing: the gaps between matched strokes, each capped, so a loop
+     * left running over a silent pad does not count as practice.
+     */
+    var activeMs: Double = 0.0
+        private set
+    private var lastMatchedMs = Double.NaN
 
     init {
         require(beatBpms.isNotEmpty() && beatBpms.all { it > 0 } && template.isNotEmpty()) {
@@ -67,6 +87,7 @@ class PracticeLoop(level: Level, rank: PracticeRank, bpm: Int) {
         hitCount += 1
         val id = nearestOpenNote(atMs)
         if (id == null) {
+            extraCount += 1
             extras.addLast(atMs)
             while (extras.size > MAX_RECENT_HITS) extras.removeFirst()
             return HitOutcome.Extra(atMs.toFloat())
@@ -74,6 +95,16 @@ class PracticeLoop(level: Level, rank: PracticeRank, bpm: Int) {
         val dueMs = noteTimeMs(id)
         val offset = (atMs - dueMs).toFloat()
         val judgement = NoteJudgement(offset, windows.forNote(id.localIndex).window(offset))
+        when (judgement.window) {
+            HitWindow.Perfect -> perfectCount += 1
+            HitWindow.Good -> goodCount += 1
+            HitWindow.Ok -> okCount += 1
+            else -> Unit
+        }
+        if (!lastMatchedMs.isNaN() && atMs > lastMatchedMs) {
+            activeMs += minOf(atMs - lastMatchedMs, ACTIVE_GAP_CAP_MS)
+        }
+        lastMatchedMs = atMs
         played[id] = Played(
             keepUntilMs = maxOf(atMs + HISTORY_MS, dueMs + windows.forNote(id.localIndex).okMs),
             judgement = judgement,
@@ -188,6 +219,7 @@ class PracticeLoop(level: Level, rank: PracticeRank, bpm: Int) {
     internal companion object {
         const val HISTORY_MS = 8_000.0
         const val MAX_RECENT_HITS = 512
+        const val ACTIVE_GAP_CAP_MS = PlayStatsRules.ACTIVE_GAP_CAP_MS.toDouble()
     }
 }
 

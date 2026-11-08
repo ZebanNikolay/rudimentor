@@ -109,6 +109,20 @@ class PracticeLoopTest {
     }
 
     @Test
+    fun `active time counts gaps between matched strokes, each capped`() {
+        val loop = loop(level(hands = "_R__L_", beats = 6))
+        listOf(LoopNoteId(0, 0), LoopNoteId(0, 1)).forEach { loop.registerHit(loop.noteTimeMs(it)) }
+        assertTrue(loop.registerHit(loop.countInMs + 5_500) is HitOutcome.Extra)
+        // Twelve seconds of silence add no more than the cap.
+        listOf(LoopNoteId(1, 0), LoopNoteId(3, 0)).forEach { loop.registerHit(loop.noteTimeMs(it)) }
+
+        assertEquals(9_000.0, loop.activeMs, 0.000001)
+        assertEquals(4L, loop.perfectCount)
+        assertEquals(1L, loop.extraCount)
+        assertEquals(0L, loop.goodCount + loop.okCount)
+    }
+
+    @Test
     fun `single note uses its own circular period as both neighbours`() {
         val loop = loop(level(hands = "R", beats = 1, bpm = 240))
         assertEquals(250.0, loop.cycleDurationMs, 0.0)

@@ -46,6 +46,7 @@ import com.rudimentor.app.audio.PracticeSession
 import com.rudimentor.app.data.levels.Family
 import com.rudimentor.app.data.levels.Level
 import com.rudimentor.app.data.levels.PracticeRank
+import com.rudimentor.app.stats.TakeEnd
 import com.rudimentor.app.telemetry.PracticeLogStore
 import com.rudimentor.app.telemetry.PracticeTelemetry
 import com.rudimentor.app.telemetry.toTelemetry
@@ -136,6 +137,12 @@ fun PracticeScreen(
     onExit: () -> Unit,
     onFinished: (PracticeResult) -> Unit,
     onPracticeFinished: (PracticeSummary) -> Unit,
+    /**
+     * The level progress already holds a completed take of this level at this rank. The
+     * play-stats ledger needs it to know whether it has seen the whole history of the variant
+     * (decision 257).
+     */
+    variantPlayedBefore: Boolean = false,
 ) {
     val context = LocalContext.current
 
@@ -229,8 +236,15 @@ fun PracticeScreen(
     // screen never read that flag and kept drawing a run whose notes nobody could play.
     var audioLost by remember(attempt) { mutableStateOf(false) }
 
+    // The play-stats side of the take that is running, closed by whichever way out comes
+    // first (decision 257).
+    val openTake = remember { OpenTake() }
+
     DisposableEffect(session) {
-        onDispose { session.stop() }
+        onDispose {
+            openTake.close(TakeEnd.Abandoned)
+            session.stop()
+        }
     }
 
     // A headphone change mid-attempt moves the click in or out of the microphone, so
@@ -258,6 +272,7 @@ fun PracticeScreen(
     OnBackgrounded {
         if (running || restartPending) {
             AppLog.trace("practice") { "backgrounded at ${positionMs.roundToInt()} ms, dropped" }
+            openTake.close(TakeEnd.Abandoned)
             closeTelemetry(
                 context, telemetry, session, attempt, positionMs,
                 aborted = true, frames = frameWatch.stop(),
@@ -319,6 +334,7 @@ fun PracticeScreen(
             if (!poll.running) {
                 AppLog.error("practice", "audio stream closed at ${positionMs.roundToInt()} ms")
                 telemetry.value?.audioEvent(positionMs, "stream", "closed")
+                openTake.close(TakeEnd.Abandoned)
                 closeTelemetry(
                     context, telemetry, session, attempt, positionMs,
                     aborted = true, frames = frameWatch.stop(),
@@ -386,6 +402,7 @@ fun PracticeScreen(
                 val now = poll.positionMs
                 positionMs = now
                 positionMsExact = poll.positionMsExact
+                openTake.tally?.positionMs = if (loop != null) poll.positionMsExact else now.toDouble()
                 // Judging runs on its own clock, a whole compensation behind the picture.
                 // A hit is reported at `arrival - appliedLatency`, so with 184 ms of
                 // compensation a stroke that landed dead on the note only reaches the
@@ -464,6 +481,7 @@ fun PracticeScreen(
                 frame += 1
                 if (loop == null && judgeNowMs > endMs) {
                     val result = attempt.result()
+                    openTake.close(TakeEnd.Completed, result)
                     closeTelemetry(
                         context = context,
                         telemetry = telemetry,
@@ -489,6 +507,7 @@ fun PracticeScreen(
     // Leaving mid-attempt drops it without a question (decision 106): the score is
     // only worth keeping once the attempt reaches the result screen.
     fun leave() {
+        openTake.close(TakeEnd.Abandoned)
         closeTelemetry(
             context, telemetry, session, attempt, positionMs,
             aborted = true, frames = frameWatch.stop(),
@@ -521,6 +540,14 @@ fun PracticeScreen(
         audioLost = false
         running = started
         if (!started) return
+        openTake.close(TakeEnd.Abandoned)
+        openTake.tally = TakeTally(
+            levelId = level.id,
+            rank = rank,
+            attempt = attempt,
+            loop = loop,
+            variantPlayedBefore = variantPlayedBefore,
+        )
         telemetry.value = PracticeTelemetry(
             header = TelemetryHeader(
                 startedAt = logStamp(),
@@ -565,6 +592,7 @@ fun PracticeScreen(
                 durationMs = (positionMsExact - loop.countInMs).coerceAtLeast(0.0).toLong(),
                 hits = loop.hitCount,
             )
+            openTake.close(TakeEnd.Completed)
             closeTelemetry(
                 context, telemetry, session, attempt, positionMs,
                 aborted = false, frames = frameWatch.stop(),
@@ -582,6 +610,7 @@ fun PracticeScreen(
             return
         }
         val result = attempt.result().copy(complete = false)
+        openTake.close(TakeEnd.Stopped, result)
         closeTelemetry(
             context = context,
             telemetry = telemetry,
@@ -604,6 +633,7 @@ fun PracticeScreen(
      * a 10% "record" behind for the finished run to beat (decision 215).
      */
     fun restartAttempt() {
+        openTake.close(TakeEnd.Abandoned)
         closeTelemetry(
             context, telemetry, session, attempt, positionMs,
             aborted = true, frames = frameWatch.stop(),

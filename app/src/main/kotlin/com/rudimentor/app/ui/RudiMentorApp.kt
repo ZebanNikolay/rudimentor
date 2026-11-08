@@ -65,6 +65,9 @@ import com.rudimentor.app.ui.soundcheck.SoundCheckScreen
 import com.rudimentor.app.ui.soundcheck.SoundCheckStep
 import com.rudimentor.app.ui.theme.RudiColors
 import com.rudimentor.app.ui.theme.RudiTextStyles
+import com.rudimentor.app.stats.PlayEvent
+import com.rudimentor.app.stats.PlayStatsRecorder
+import com.rudimentor.app.stats.StatsInstant
 import com.rudimentor.app.util.AppLog
 import kotlin.math.roundToInt
 
@@ -235,6 +238,16 @@ fun RudiMentorApp(
         AppLog.trace("nav") { "screen=${screen.name} level=${selectedLevelId ?: "-"}" }
     }
 
+    // Opening the sound check or the calibration is a fact the play-stats ledger keeps
+    // (decision 257); the configuration changes this activity handles do not re-run it.
+    LaunchedEffect(screen) {
+        when (screen) {
+            Screen.SoundCheck -> PlayStatsRecorder.record(PlayEvent.SoundCheckOpened(StatsInstant.now()))
+            Screen.Calibration -> PlayStatsRecorder.record(PlayEvent.CalibrationOpened(StatsInstant.now()))
+            else -> Unit
+        }
+    }
+
     // One stage for the whole app, so the attempt, its result and the metronome do not
     // hand the orientation back and forth between themselves.
     LandscapeStage(
@@ -387,6 +400,8 @@ fun RudiMentorApp(
                             buildInfo = buildInfo,
                             unknownOutput = unknownOutput,
                             onExit = { screenName = Screen.LevelDetail.name },
+                            variantPlayedBefore = learningProgress
+                                .forLevel(level.id, practiceRank).bestAccuracy != null,
                             onFinished = challengeFinished@{ result ->
                                 if (screenName != Screen.Practice.name ||
                                     mode != RunMode.Challenge ||
@@ -534,6 +549,11 @@ fun RudiMentorApp(
                         buildInfo = buildInfo,
                         actions = actions,
                         onBack = { screenName = metronomeBackTargetName },
+                        onRunEnded = { durationMs ->
+                            PlayStatsRecorder.record(
+                                PlayEvent.MetronomeRun(StatsInstant.now(), durationMs),
+                            )
+                        },
                     )
                 } else {
                     // The same screen and the same edits, applied to the visit instead of
@@ -557,6 +577,11 @@ fun RudiMentorApp(
                         onBack = {
                             levelMetronome = null
                             screenName = metronomeBackTargetName
+                        },
+                        onRunEnded = { durationMs ->
+                            PlayStatsRecorder.record(
+                                PlayEvent.MetronomeRun(StatsInstant.now(), durationMs, selectedLevelId),
+                            )
                         },
                     )
                 }
@@ -655,6 +680,7 @@ fun RudiMentorApp(
                     onApplyDraft(applied)
                 },
                 onFinished = {
+                    PlayStatsRecorder.record(PlayEvent.SoundCheckCompleted(StatsInstant.now()))
                     onSoundCheckDone()
                     screenName = Screen.Levels.name
                 },

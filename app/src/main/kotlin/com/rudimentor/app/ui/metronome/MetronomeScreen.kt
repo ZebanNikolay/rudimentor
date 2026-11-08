@@ -63,8 +63,10 @@ fun MetronomeScreen(
     buildInfo: BuildInfo,
     actions: MetronomeActions,
     onBack: () -> Unit,
+    /** How long each run played, for the play-stats ledger (decision 257). */
+    onRunEnded: (durationMs: Long) -> Unit = {},
 ) {
-    val playback = rememberMetronomePlaybackState()
+    val playback = rememberMetronomePlaybackState(onRunEnded)
     val snapshot = playback.snapshot
     playback.SyncWithSettings(bpm = settings.bpm, grid = settings.grid)
 
