@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The development build (com.rudimentor.app.dev) lives next to the Google Play install,
+  so its launcher label must say which one it is. See the debug buildType in
+  app/build.gradle.kts.
+-->
+<resources>
+    <string name="app_name">RudiMentor Dev</string>
+</resources>

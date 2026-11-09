@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Development build only: the launcher icon keeps the same white R and dot but sits on the
+  left-hand blue (BrandTokens.HandLeft) instead of Brick, so the dev app is never mistaken
+  for the Google Play one on the home screen.
+-->
+<resources>
+    <color name="ic_launcher_background">#1971C2</color>
+</resources>

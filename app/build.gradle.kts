@@ -31,11 +31,11 @@ val uploadKeyPassword = providers.environmentVariable("RUDIMENTOR_UPLOAD_KEY_PAS
 // Versioning: `versionName` is semver, `versionCode` is a plain monotonic counter that
 // keeps rising across every build regardless of the semver channel. Play only requires
 // monotonicity, and a counter survives building the same version twice.
-//   1.0.0-dev.N  sandbox build installed on the developer's phone
-//   1.0.0-rc.N   candidate uploaded to the internal / closed testing track
-//   1.0.0        production
-val appVersionName = "1.0.0"
-val appVersionCode = 69
+//   1.1.0-dev.N  sandbox build installed on the developer's phone
+//   1.1.0-rc.N   candidate uploaded to the internal / closed testing track
+//   1.1.0        production
+val appVersionName = "1.1.0-dev.1"
+val appVersionCode = 70
 
 base {
     archivesName.set("RudiMentor-$appVersionName-build-$appVersionCode")
@@ -65,6 +65,15 @@ android {
 
     buildTypes {
         debug {
+            // The development build is a separate app, `com.rudimentor.app.dev`, so it sits next
+            // to the Google Play install instead of colliding with it. Play delivers
+            // `com.rudimentor.app` signed with Google's app signing key; a dev-keystore build
+            // under the same id could neither update it nor be updated by it, and getting either
+            // one onto the phone would mean uninstalling the other together with its progress.
+            // The launcher label and icon background come from src/debug/res, so the two are
+            // told apart at a glance. Nothing in the code derives storage names from the
+            // package: the FileProvider authority follows ${applicationId} on its own.
+            applicationIdSuffix = ".dev"
             if (developmentKeystorePath.isPresent) {
                 signingConfig = signingConfigs.getByName("debug").apply {
                     storeFile = rootProject.file(developmentKeystorePath.get())
