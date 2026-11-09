@@ -1,5 +1,6 @@
 package com.rudimentor.app.ui.dev
 
+import com.rudimentor.app.ui.component.ScreenInsets
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -58,7 +59,7 @@ fun CrashReportScreen(
     var notice by remember { mutableStateOf<String?>(null) }
     val scroll = rememberScrollState()
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

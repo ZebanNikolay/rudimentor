@@ -1,5 +1,7 @@
 package com.rudimentor.app.ui.about
 
+import com.rudimentor.app.ui.component.ScreenInsets
+import com.rudimentor.app.ui.component.readableWidth
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -96,7 +99,7 @@ fun AboutScreen(
 
     BackHandler(onBack = onBack)
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -106,8 +109,11 @@ fun AboutScreen(
             AppToolbar(title = stringResource(R.string.about_title), onBack = onBack)
             Spacer(modifier = Modifier.height(14.dp))
 
+            // One readable column in the middle when the phone is on its side (decision 259).
             Column(
                 modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .readableWidth()
                     .fillMaxWidth()
                     .verticalScroll(scroll),
             ) {

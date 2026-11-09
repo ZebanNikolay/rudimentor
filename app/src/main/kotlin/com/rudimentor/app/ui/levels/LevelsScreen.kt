@@ -1,5 +1,10 @@
 package com.rudimentor.app.ui.levels
 
+import com.rudimentor.app.ui.component.ScreenInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import com.rudimentor.app.ui.component.isLandscape
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.Dp
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.RepeatMode
@@ -121,96 +126,181 @@ fun LevelsScreen(
     val unlocked = progress.isTabUnlocked(activeTab)
     val catalog = course.catalog(activeTab.id)
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
+    val landscape = isLandscape()
+    val toolbarActions: @Composable () -> Unit = {
+        RankButton(rank = rank, onClick = { rankDialogVisible = true })
+        Spacer(modifier = Modifier.width(8.dp))
+        // The settings of practising belong to the map, not to the main menu:
+        // the metronome has its own sheet and the two were read as one
+        // (decision 158).
+        SquareIconButton(
+            onClick = onOpenSettings,
+            contentDescription = stringResource(R.string.menu_settings),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_menu_settings),
+                contentDescription = null,
+                tint = RudiColors.Text,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+    val tabs: @Composable (Modifier) -> Unit = { modifier ->
+        FamilyTabs(
+            tabs = course.tabs,
+            progress = progress,
+            activeTabId = activeTab.id,
+            onSelectTab = onSelectTab,
+            modifier = modifier,
+        )
+    }
+    // Before the first level there is a check that the phone can hear the pad at all.
+    // The plate is the one-time call for it and can be closed; the way in lives on the
+    // map itself, so closing it never takes the check away (decision 171).
+    val showPlate = !soundCheckDone && !soundCheckPlateHidden
+    val plate: @Composable () -> Unit = {
+        SoundCheckPlate(
+            clickSounds = clickSounds,
+            onClick = onOpenSoundCheck,
+            onDismiss = onHideSoundCheckPlate,
+        )
+    }
+    val map: @Composable (Modifier, Boolean) -> Unit = { modifier, bannerOver ->
+        Box(modifier = modifier) {
+            LevelMap(
+                catalog = catalog!!,
+                progress = progress,
+                rank = rank,
+                locked = !unlocked,
+                onOpenLevel = onOpenLevel,
+                soundCheckDone = soundCheckDone,
+                onOpenSoundCheck = onOpenSoundCheck,
+                modifier = Modifier.fillMaxSize(),
+                horizontal = landscape,
+            )
+            if (!unlocked && bannerOver) {
+                LockedBanner(
+                    text = gateText(activeTab, course),
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp),
+                )
+            }
+        }
+    }
+
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
-            AppToolbar(
-                title = stringResource(R.string.levels_title),
-                onBack = onBack,
-                rightContent = {
-                    RankButton(rank = rank, onClick = { rankDialogVisible = true })
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // The settings of practising belong to the map, not to the main menu:
-                    // the metronome has its own sheet and the two were read as one
-                    // (decision 158).
-                    SquareIconButton(
-                        onClick = onOpenSettings,
-                        contentDescription = stringResource(R.string.menu_settings),
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_menu_settings),
-                            contentDescription = null,
-                            tint = RudiColors.Text,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                },
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            FamilyTabs(
-                tabs = course.tabs,
-                progress = progress,
-                activeTabId = activeTab.id,
-                onSelectTab = onSelectTab,
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            // Before the first level there is a check that the phone can hear the pad at all.
-            // The plate is the one-time call for it and can be closed; the way in lives on the
-            // map itself, so closing it never takes the check away (decision 171).
-            if (!soundCheckDone && !soundCheckPlateHidden) {
-                SoundCheckPlate(
-                    clickSounds = clickSounds,
-                    onClick = onOpenSoundCheck,
-                    onDismiss = onHideSoundCheckPlate,
+            if (landscape) {
+                // On its side the screen is a few rows high, and the tabs, the plate and the
+                // bar of the next level left the map a strip of 80 dp. The tabs move into the
+                // toolbar, and everything that is not the map stands in a column on the right
+                // of it, so the map keeps the whole height (decision 259).
+                AppToolbar(
+                    title = stringResource(R.string.levels_title),
+                    onBack = onBack,
+                    rightContent = {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        tabs(Modifier.weight(1f))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        toolbarActions()
+                    },
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-            }
-
-            if (catalog == null) {
-                // Nothing to look at yet: the map of this family is still being written.
-                MissingMap(
-                    tab = activeTab,
-                    course = course,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                ) {
-                    LevelMap(
-                        catalog = catalog,
-                        progress = progress,
-                        rank = rank,
-                        locked = !unlocked,
-                        onOpenLevel = onOpenLevel,
-                        soundCheckDone = soundCheckDone,
-                        onOpenSoundCheck = onOpenSoundCheck,
-                        modifier = Modifier.fillMaxSize(),
+                Spacer(modifier = Modifier.height(8.dp))
+                if (catalog == null) {
+                    MissingMap(
+                        tab = activeTab,
+                        course = course,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                     )
-                    if (!unlocked) {
-                        LockedBanner(
-                            text = gateText(activeTab, course),
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 8.dp),
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    ) {
+                        map(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            false,
                         )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(
+                            modifier = Modifier
+                                .width(LANDSCAPE_SIDE_WIDTH)
+                                .fillMaxHeight(),
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState()),
+                            ) {
+                                if (!unlocked) {
+                                    LockedBanner(
+                                        text = gateText(activeTab, course),
+                                        modifier = Modifier.padding(top = 8.dp),
+                                    )
+                                } else if (showPlate) {
+                                    plate()
+                                }
+                            }
+                            if (unlocked) {
+                                NextLevelBar(
+                                    catalog = catalog,
+                                    progress = progress,
+                                    rank = rank,
+                                    onOpenLevel = onOpenLevel,
+                                )
+                            }
+                        }
                     }
                 }
-                if (unlocked) {
-                    NextLevelBar(
-                        catalog = catalog,
-                        progress = progress,
-                        rank = rank,
-                        onOpenLevel = onOpenLevel,
+            } else {
+                AppToolbar(
+                    title = stringResource(R.string.levels_title),
+                    onBack = onBack,
+                    rightContent = { toolbarActions() },
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                tabs(Modifier)
+                Spacer(modifier = Modifier.height(6.dp))
+                if (showPlate) {
+                    plate()
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
+                if (catalog == null) {
+                    // Nothing to look at yet: the map of this family is still being written.
+                    MissingMap(
+                        tab = activeTab,
+                        course = course,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                     )
+                } else {
+                    map(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        true,
+                    )
+                    if (unlocked) {
+                        NextLevelBar(
+                            catalog = catalog,
+                            progress = progress,
+                            rank = rank,
+                            onOpenLevel = onOpenLevel,
+                        )
+                    }
                 }
             }
         }
@@ -336,9 +426,13 @@ private fun FamilyTabs(
     progress: LearningProgress,
     activeTabId: String,
     onSelectTab: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val noSticking = stringResource(R.string.levels_tab_sticking_none)
-    RudiTabRow(selectedTabIndex = tabs.indexOfFirst { it.id == activeTabId }.coerceAtLeast(0)) {
+    RudiTabRow(
+        selectedTabIndex = tabs.indexOfFirst { it.id == activeTabId }.coerceAtLeast(0),
+        modifier = modifier,
+    ) {
         tabs.forEach { tab ->
             val enabled = tab.available && progress.isTabUnlocked(tab)
             val selected = tab.id == activeTabId
@@ -575,14 +669,16 @@ private fun LevelMap(
     onOpenSoundCheck: () -> Unit,
     modifier: Modifier = Modifier,
     locked: Boolean = false,
+    /**
+     * Lays the path from left to right instead of bottom to top. On a phone held on its side
+     * the vertical map was a narrow strip a row or two high; along the long edge the same
+     * tree shows a dozen rows at once, with the three lanes stacked across (decision 259).
+     */
+    horizontal: Boolean = false,
 ) {
     val verticalScroll = rememberScrollState()
     val horizontalScroll = rememberScrollState()
     val density = LocalDensity.current
-    // The sound check is row zero of the map: its own row under the first level, so the
-    // levels start one row higher than the bottom padding (decision 174).
-    val mapHeight = MAP_VERTICAL_PADDING * 2 + MAP_ROW_HEIGHT * (catalog.lastRow + 1) +
-        SOUND_CHECK_ROW_HEIGHT
     // A locked family has no level to start, so no node is highlighted as the current one and
     // every pad reads as locked — the map is there to be read, not to be played.
     val currentLevel = if (locked) null else progress.currentLevel(catalog, rank)
@@ -593,60 +689,64 @@ private fun LevelMap(
         firstRow.firstOrNull { it.column == LevelColumn.Center } ?: firstRow.firstOrNull()
     }
 
+    // The quiet band follows the main path: down the middle of a vertical map, across the
+    // middle of a horizontal one.
+    val bandStops = arrayOf(
+        0f to RudiColors.Bg,
+        0.32f to RudiColors.Bg,
+        0.5f to RudiColors.SurfaceAlt.copy(alpha = 0.3f),
+        0.68f to RudiColors.Bg,
+        1f to RudiColors.Bg,
+    )
     BoxWithConstraints(
         modifier = modifier.background(
-            brush = Brush.horizontalGradient(
-                0f to RudiColors.Bg,
-                0.32f to RudiColors.Bg,
-                0.5f to RudiColors.SurfaceAlt.copy(alpha = 0.3f),
-                0.68f to RudiColors.Bg,
-                1f to RudiColors.Bg,
-            ),
+            brush = if (horizontal) {
+                Brush.verticalGradient(*bandStops)
+            } else {
+                Brush.horizontalGradient(*bandStops)
+            },
         ),
     ) {
-        // The map needs room for its widest branch; when that fits on screen it simply fills
-        // the width, so there is nothing to pan sideways and no horizontal scroll is attached.
-        // The sound-check node always sits in a side column, so that room is always needed.
-        val neededWidth = MAP_CENTER_WIDTH + MAP_COLUMN_WIDTH * 2
-        val panning = neededWidth > maxWidth
-        val mapWidth = if (panning) neededWidth else maxWidth
+        val geometry = remember(horizontal, catalog.lastRow, maxWidth, maxHeight) {
+            MapGeometry.of(horizontal, catalog.lastRow, maxWidth, maxHeight)
+        }
+        val mapWidth = geometry.width
+        val mapHeight = geometry.height
+        val panningX = mapWidth > maxWidth
+        val panningY = mapHeight > maxHeight
 
         // Wait for the stored progress before placing the map, and place it again whenever the
         // current level moves. Storage answers a frame or two after the screen is composed, and
         // until it does every level looks unplayed: the map read that as "start of the tree",
         // scrolled to the bottom and stayed there, so the learner opened the map on levels they
         // had already cleared with the current one off the top edge (decision 221).
+        val alongPath = if (horizontal) horizontalScroll else verticalScroll
+        val acrossPath = if (horizontal) verticalScroll else horizontalScroll
         LaunchedEffect(
-            verticalScroll.maxValue,
-            verticalScroll.viewportSize,
+            alongPath.maxValue,
+            alongPath.viewportSize,
             catalog.family.id,
             rank,
             progress.loaded,
             currentRow,
+            horizontal,
         ) {
-            if (verticalScroll.maxValue == 0 || !progress.loaded) return@LaunchedEffect
-            val currentY = with(density) {
-                (
-                    mapHeight - MAP_VERTICAL_PADDING - SOUND_CHECK_ROW_HEIGHT -
-                        MAP_ROW_HEIGHT * currentRow - NODE_SIZE
-                    )
-                    .roundToPx()
-            }
-            verticalScroll.scrollTo(
-                (currentY - verticalScroll.viewportSize / 2).coerceIn(0, verticalScroll.maxValue),
+            if (alongPath.maxValue == 0 || !progress.loaded) return@LaunchedEffect
+            val center = geometry.levelCenter(currentRow, 0f)
+            val currentPx = with(density) { (if (horizontal) center.x else center.y).roundToPx() }
+            alongPath.scrollTo(
+                (currentPx - alongPath.viewportSize / 2).coerceIn(0, alongPath.maxValue),
             )
         }
-        LaunchedEffect(horizontalScroll.maxValue, catalog.family.id, panning) {
-            if (panning && horizontalScroll.maxValue > 0) {
-                horizontalScroll.scrollTo(horizontalScroll.maxValue / 2)
-            }
+        LaunchedEffect(acrossPath.maxValue, catalog.family.id, horizontal) {
+            if (acrossPath.maxValue > 0) acrossPath.scrollTo(acrossPath.maxValue / 2)
         }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(verticalScroll)
-                .then(if (panning) Modifier.horizontalScroll(horizontalScroll) else Modifier),
+                .then(if (panningY) Modifier.verticalScroll(verticalScroll) else Modifier)
+                .then(if (panningX) Modifier.horizontalScroll(horizontalScroll) else Modifier),
         ) {
             val states = remember(catalog, progress, rank, locked) {
                 catalog.levels.associate {
@@ -662,23 +762,31 @@ private fun LevelMap(
                     .width(mapWidth)
                     .height(mapHeight)
                     .drawBehind {
-                        val nodePx = NODE_SIZE.toPx()
-                        val halfNode = nodePx / 2f
-                        val rowPx = MAP_ROW_HEIGHT.toPx()
-                        val columnPx = MAP_COLUMN_WIDTH.toPx()
-                        val bottomPx = MAP_VERTICAL_PADDING.toPx() +
-                            SOUND_CHECK_ROW_HEIGHT.toPx()
+                        val halfNode = NODE_SIZE.toPx() / 2f
+                        fun DpOffset.px() = Offset(x.toPx(), y.toPx())
+                        fun centerOf(level: Level) =
+                            geometry.levelCenter(level.row, level.column.direction).px()
 
-                        fun centerOf(level: Level) = Offset(
-                            x = size.width / 2f + level.column.direction * columnPx,
-                            y = size.height - bottomPx - level.row * rowPx - nodePx / 2f,
-                        )
+                        // Leave through the edge of the node box, not its inscribed circle, so
+                        // a diagonal starts outside the pad as well; along an axis this is the
+                        // plain half of the node.
+                        fun edges(from: Offset, to: Offset): Pair<Offset, Offset> {
+                            val dx = to.x - from.x
+                            val dy = to.y - from.y
+                            val length = kotlin.math.hypot(dx, dy)
+                            val unitX = dx / length
+                            val unitY = dy / length
+                            val reach = halfNode /
+                                maxOf(kotlin.math.abs(unitX), kotlin.math.abs(unitY))
+                            return Offset(from.x + unitX * reach, from.y + unitY * reach) to
+                                Offset(to.x - unitX * reach, to.y - unitY * reach)
+                        }
 
                         // Connectors follow decision 33: they start and end on the node edge,
                         // never crossing the pad, and an LED dot marks both ends. The layout
                         // only ever links neighbouring cells (decision 121), so a connector is
-                        // either vertical along a column or a straight line into the cell beside
-                        // it — on the same row or one row further along.
+                        // either straight along a lane or a straight line into the cell beside
+                        // it — in the same row or one row further along.
                         catalog.levels.forEach { level ->
                             val toCenter = centerOf(level)
                             level.prerequisiteIds.mapNotNull(catalog::level).forEach { prerequisite ->
@@ -686,32 +794,15 @@ private fun LevelMap(
                                 val passed = states[prerequisite.id] == LevelNodeState.Completed
                                 val color = if (passed) RudiColors.Brick else RudiColors.Line
                                 val stroke = (if (passed) 2.dp else 1.5.dp).toPx()
-                                val dx = toCenter.x - fromCenter.x
-                                val dy = toCenter.y - fromCenter.y
-                                // An optional level branches off sideways; everything else runs
-                                // straight up or down its own column.
-                                val branching = kotlin.math.abs(dx) > 1f
-
-                                val start: Offset
-                                val end: Offset
-                                if (branching) {
-                                    val length = kotlin.math.hypot(dx, dy)
-                                    val unitX = dx / length
-                                    val unitY = dy / length
-                                    // Leave through the edge of the node box, not its inscribed
-                                    // circle, so a diagonal starts outside the pad as well.
-                                    val reach = halfNode /
-                                        maxOf(kotlin.math.abs(unitX), kotlin.math.abs(unitY))
-                                    start = Offset(
-                                        fromCenter.x + unitX * reach,
-                                        fromCenter.y + unitY * reach,
-                                    )
-                                    end = Offset(toCenter.x - unitX * reach, toCenter.y - unitY * reach)
+                                // An optional level branches off into the next lane; everything
+                                // else runs straight along its own lane.
+                                val across = if (horizontal) {
+                                    toCenter.y - fromCenter.y
                                 } else {
-                                    val dirY = if (dy < 0f) -1f else 1f
-                                    start = Offset(fromCenter.x, fromCenter.y + dirY * halfNode)
-                                    end = Offset(toCenter.x, toCenter.y - dirY * halfNode)
+                                    toCenter.x - fromCenter.x
                                 }
+                                val branching = kotlin.math.abs(across) > 1f
+                                val (start, end) = edges(fromCenter, toCenter)
                                 drawLine(
                                     color = color,
                                     start = start,
@@ -737,24 +828,14 @@ private fun LevelMap(
                             }
                         }
 
-                        // The sound check hangs under the first level on a dashed line: the
+                        // The sound check hangs before the first level on a dashed line: the
                         // dash says it is not on the path to any rank and can be walked again
                         // at any time (decisions 171, 174).
                         if (soundCheckAnchor != null) {
-                            val anchor = centerOf(soundCheckAnchor)
-                            val node = Offset(
-                                x = size.width / 2f,
-                                y = size.height - MAP_VERTICAL_PADDING.toPx() - nodePx / 2f,
+                            val (start, end) = edges(
+                                geometry.soundCheckCenter.px(),
+                                centerOf(soundCheckAnchor),
                             )
-                            val dx = anchor.x - node.x
-                            val dy = anchor.y - node.y
-                            val length = kotlin.math.hypot(dx, dy)
-                            val unitX = dx / length
-                            val unitY = dy / length
-                            val reach = halfNode /
-                                maxOf(kotlin.math.abs(unitX), kotlin.math.abs(unitY))
-                            val start = Offset(node.x + unitX * reach, node.y + unitY * reach)
-                            val end = Offset(anchor.x - unitX * reach, anchor.y - unitY * reach)
                             drawLine(
                                 color = if (soundCheckDone) RudiColors.Brick else RudiColors.Line,
                                 start = start,
@@ -776,20 +857,12 @@ private fun LevelMap(
                     },
             ) {
                 if (soundCheckAnchor != null) {
-                    // Row zero, centred: the column beside it is empty, so the node can be
-                    // named in place instead of leaving the learner to guess the pictogram
-                    // (decision 174). The caption stays English in every locale.
-                    val x = mapWidth / 2 - NODE_SIZE / 2
-                    val y = mapHeight - MAP_VERTICAL_PADDING - NODE_SIZE
-                    Row(
-                        modifier = Modifier.absoluteOffset(x = x, y = y),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SoundCheckMapNode(
-                            done = soundCheckDone,
-                            onClick = onOpenSoundCheck,
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
+                    // Row zero, in the main lane: the lanes beside it are empty, so the node
+                    // can be named in place instead of leaving the learner to guess the
+                    // pictogram (decision 174). The caption stays English in every locale.
+                    // Beside the node on a vertical map, under it on a horizontal one.
+                    val center = geometry.soundCheckCenter
+                    val caption: @Composable () -> Unit = {
                         Text(
                             text = stringResource(R.string.sound_check_title),
                             style = RudiTextStyles.RowNumber,
@@ -799,27 +872,103 @@ private fun LevelMap(
                             modifier = Modifier.clickable(onClick = onOpenSoundCheck),
                         )
                     }
+                    if (horizontal) {
+                        Column(
+                            modifier = Modifier
+                                .absoluteOffset(
+                                    x = center.x - SOUND_CHECK_CAPTION_WIDTH / 2,
+                                    y = center.y - NODE_SIZE / 2,
+                                )
+                                .width(SOUND_CHECK_CAPTION_WIDTH),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            SoundCheckMapNode(done = soundCheckDone, onClick = onOpenSoundCheck)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            caption()
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.absoluteOffset(
+                                x = center.x - NODE_SIZE / 2,
+                                y = center.y - NODE_SIZE / 2,
+                            ),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            SoundCheckMapNode(done = soundCheckDone, onClick = onOpenSoundCheck)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            caption()
+                        }
+                    }
                 }
                 catalog.levels.forEach { level ->
-                    val x = mapWidth / 2 +
-                        MAP_COLUMN_WIDTH * level.column.direction -
-                        NODE_SIZE / 2
-                    // Levels keep their rows; the sound check row is added below them, so the
-                    // bottom of the level grid is one row above the bottom padding. Missing
-                    // this term dropped every level onto the sound check row (decision 174).
-                    val y = mapHeight - MAP_VERTICAL_PADDING - SOUND_CHECK_ROW_HEIGHT -
-                        MAP_ROW_HEIGHT * level.row - NODE_SIZE
+                    val center = geometry.levelCenter(level.row, level.column.direction)
                     LevelMapNode(
                         level = level,
                         state = states.getValue(level.id),
                         rank = rank,
                         rankProgress = progress.forLevel(level.id, rank),
                         onClick = { onOpenLevel(level.id) },
-                        modifier = Modifier.absoluteOffset(x = x, y = y),
+                        modifier = Modifier.absoluteOffset(
+                            x = center.x - NODE_SIZE / 2,
+                            y = center.y - NODE_SIZE / 2,
+                        ),
                     )
                 }
             }
         }
+    }
+}
+
+/**
+ * Where the nodes of the map stand, in either direction.
+ *
+ * A row is a step along the path, a column is a lane across it. Upright the path climbs from
+ * the bottom with the lanes side by side; on its side the path runs from left to right with
+ * the Left lane on top. The sound check owns the step before row 0 (decision 174).
+ */
+private class MapGeometry private constructor(
+    val horizontal: Boolean,
+    val width: Dp,
+    val height: Dp,
+) {
+    fun levelCenter(row: Int, direction: Float): DpOffset = if (horizontal) {
+        DpOffset(
+            x = MAP_HORIZONTAL_LEAD + SOUND_CHECK_ROW_HEIGHT + MAP_ROW_HEIGHT * row + NODE_SIZE / 2,
+            y = height / 2 + MAP_LANE_HEIGHT * direction,
+        )
+    } else {
+        DpOffset(
+            x = width / 2 + MAP_COLUMN_WIDTH * direction,
+            y = height - MAP_VERTICAL_PADDING - SOUND_CHECK_ROW_HEIGHT - MAP_ROW_HEIGHT * row -
+                NODE_SIZE / 2,
+        )
+    }
+
+    val soundCheckCenter: DpOffset
+        get() = if (horizontal) {
+            DpOffset(x = MAP_HORIZONTAL_LEAD + NODE_SIZE / 2, y = height / 2)
+        } else {
+            DpOffset(x = width / 2, y = height - MAP_VERTICAL_PADDING - NODE_SIZE / 2)
+        }
+
+    companion object {
+        fun of(horizontal: Boolean, lastRow: Int, maxWidth: Dp, maxHeight: Dp): MapGeometry =
+            if (horizontal) {
+                // The path is as long as it needs to be; across, the three lanes fill the
+                // height when it is there and scroll when it is not.
+                val length = MAP_HORIZONTAL_LEAD + SOUND_CHECK_ROW_HEIGHT +
+                    MAP_ROW_HEIGHT * lastRow + NODE_SIZE + MAP_VERTICAL_PADDING
+                val across = MAP_LANE_HEIGHT * 2 + NODE_SIZE + MAP_LANE_MARGIN * 2
+                MapGeometry(true, maxOf(length, maxWidth), maxOf(across, maxHeight))
+            } else {
+                // The map needs room for its widest branch; when that fits on screen it simply
+                // fills the width, so there is nothing to pan sideways. The sound-check
+                // caption sits beside its node, so that room is always needed.
+                val neededWidth = MAP_CENTER_WIDTH + MAP_COLUMN_WIDTH * 2
+                val mapHeight = MAP_VERTICAL_PADDING * 2 + MAP_ROW_HEIGHT * (lastRow + 1) +
+                    SOUND_CHECK_ROW_HEIGHT
+                MapGeometry(false, maxOf(neededWidth, maxWidth), mapHeight)
+            }
     }
 }
 
@@ -963,6 +1112,9 @@ private val LevelColumn.direction: Float
     }
 
 private val NODE_SIZE = 46.dp
+
+/** On its side: the column beside the map with the plate, the gate and the next level. */
+private val LANDSCAPE_SIDE_WIDTH = 280.dp
 private val MAP_ROW_HEIGHT = 78.dp
 
 /** The row the sound check owns, under row 0 of the levels (decision 174). */
@@ -970,3 +1122,11 @@ private val SOUND_CHECK_ROW_HEIGHT = MAP_ROW_HEIGHT
 private val MAP_COLUMN_WIDTH = 74.dp
 private val MAP_CENTER_WIDTH = 200.dp
 private val MAP_VERTICAL_PADDING = 30.dp
+
+/** On a horizontal map: room before the sound check, enough for its caption underneath. */
+private val MAP_HORIZONTAL_LEAD = 44.dp
+
+/** On a horizontal map: the step between lanes, tighter than upright to fit a phone on its side. */
+private val MAP_LANE_HEIGHT = 64.dp
+private val MAP_LANE_MARGIN = 12.dp
+private val SOUND_CHECK_CAPTION_WIDTH = 120.dp

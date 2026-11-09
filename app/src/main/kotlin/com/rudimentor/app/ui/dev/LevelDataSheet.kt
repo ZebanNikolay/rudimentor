@@ -1,5 +1,6 @@
 package com.rudimentor.app.ui.dev
 
+import com.rudimentor.app.ui.component.ScreenInsets
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,7 +51,7 @@ fun LevelDataSheet(
 
     BackHandler(onBack = onClose)
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

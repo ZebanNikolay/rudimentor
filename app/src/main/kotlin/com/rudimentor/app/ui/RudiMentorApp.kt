@@ -1,5 +1,13 @@
 package com.rudimentor.app.ui
 
+import com.rudimentor.app.ui.component.ScreenInsets
+import com.rudimentor.app.ui.component.isLandscape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Row
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -710,61 +718,98 @@ fun RudiMentorApp(
 }
 
 @Composable
-private fun MainMenu(
+internal fun MainMenu(
     buildInfo: BuildInfo,
     onOpenMetronome: () -> Unit,
     onOpenLevels: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenDev: () -> Unit,
 ) {
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(horizontal = 22.dp, vertical = 26.dp),
-        ) {
-            RudiMentorLogo(padSize = 26.dp)
+    val cards: @Composable () -> Unit = {
+        MenuCard(
+            title = stringResource(R.string.menu_metronome),
+            iconRes = R.drawable.ic_menu_metronome,
+            enabled = true,
+            onClick = onOpenMetronome,
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        MenuCard(
+            title = stringResource(R.string.menu_levels),
+            iconRes = R.drawable.ic_menu_levels,
+            enabled = true,
+            onClick = onOpenLevels,
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        MenuCard(
+            title = stringResource(R.string.menu_about),
+            iconRes = R.drawable.ic_menu_info,
+            enabled = true,
+            onClick = onOpenAbout,
+        )
+        if (BuildConfig.DEBUG) {
+            Spacer(modifier = Modifier.height(12.dp))
+            MenuCard(
+                title = "Developer · dev",
+                letter = "D",
+                enabled = true,
+                onClick = onOpenDev,
+            )
+        }
+    }
+    val version: @Composable () -> Unit = {
+        HorizontalDivider(color = RudiColors.Line)
+        Spacer(modifier = Modifier.height(14.dp))
+        Text(
+            text = buildInfo.displayLabel,
+            style = RudiTextStyles.RowNumber,
+            color = RudiColors.Muted,
+        )
+    }
 
-            Spacer(modifier = Modifier.height(40.dp))
-            MenuCard(
-                title = stringResource(R.string.menu_metronome),
-                iconRes = R.drawable.ic_menu_metronome,
-                enabled = true,
-                onClick = onOpenMetronome,
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            MenuCard(
-                title = stringResource(R.string.menu_levels),
-                iconRes = R.drawable.ic_menu_levels,
-                enabled = true,
-                onClick = onOpenLevels,
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            MenuCard(
-                title = stringResource(R.string.menu_about),
-                iconRes = R.drawable.ic_menu_info,
-                enabled = true,
-                onClick = onOpenAbout,
-            )
-            if (BuildConfig.DEBUG) {
-                Spacer(modifier = Modifier.height(12.dp))
-                MenuCard(
-                    title = "Developer · dev",
-                    letter = "D",
-                    enabled = true,
-                    onClick = onOpenDev,
-                )
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { contentPadding ->
+        if (isLandscape()) {
+            // On its side the column of cards did not fit under the logo and About was cut
+            // off at the bottom edge. The logo and the version take the left, the cards stand
+            // in a column of their own on the right (decision 259).
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .padding(horizontal = 22.dp, vertical = 20.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .fillMaxHeight(),
+                ) {
+                    RudiMentorLogo(padSize = 26.dp)
+                    Spacer(modifier = Modifier.weight(1f))
+                    version()
+                }
+                Spacer(modifier = Modifier.width(28.dp))
+                Column(
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    cards()
+                }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-            HorizontalDivider(color = RudiColors.Line)
-            Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = buildInfo.displayLabel,
-                style = RudiTextStyles.RowNumber,
-                color = RudiColors.Muted,
-            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .padding(horizontal = 22.dp, vertical = 26.dp),
+            ) {
+                RudiMentorLogo(padSize = 26.dp)
+                Spacer(modifier = Modifier.height(40.dp))
+                cards()
+                Spacer(modifier = Modifier.weight(1f))
+                version()
+            }
         }
     }
 }

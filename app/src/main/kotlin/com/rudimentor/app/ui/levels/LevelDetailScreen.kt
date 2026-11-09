@@ -1,5 +1,9 @@
 package com.rudimentor.app.ui.levels
 
+import com.rudimentor.app.ui.component.ScreenInsets
+import com.rudimentor.app.ui.component.isLandscape
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -95,7 +99,165 @@ fun LevelDetailScreen(
     }
     BackHandler(onBack = onBack)
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
+    val header: @Composable ColumnScope.() -> Unit = {
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            // The exercise, named: every level used to be titled after its family
+            // and read `Single Strokes` (decision 152).
+            text = level.title(family),
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp),
+            color = RudiColors.Text,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = level.subtitle(family).uppercase(),
+                style = RudiTextStyles.RowNumber,
+                color = RudiColors.Muted,
+                letterSpacing = 1.4.sp,
+            )
+            if (!level.playable) {
+                Spacer(modifier = Modifier.width(8.dp))
+                LevelTag(stringResource(R.string.level_detail_preview_tag))
+            } else if (locked) {
+                Spacer(modifier = Modifier.width(8.dp))
+                LevelTag(stringResource(R.string.levels_tab_locked_badge))
+            }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = level.purpose(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = RudiColors.Muted,
+        )
+
+        Spacer(modifier = Modifier.height(22.dp))
+        SectionLabel(stringResource(R.string.level_detail_sticking))
+        StickingMap(
+            level = level,
+            target = target,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    val tempo: @Composable ColumnScope.() -> Unit = {
+        TargetTempo(
+            bpm = target.bpm,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 22.dp),
+        )
+    }
+    val metrics: @Composable ColumnScope.() -> Unit = {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            MetricCard(
+                label = stringResource(R.string.level_detail_attempt),
+                value = attemptValue(level, target),
+                caption = attemptCaption(level, target),
+                modifier = Modifier.weight(1f),
+            )
+            MetricCard(
+                label = stringResource(R.string.level_detail_best_accuracy),
+                value = rankProgress.bestAccuracy
+                    ?.let {
+                        stringResource(
+                            R.string.level_detail_accuracy_value,
+                            (it * 100f).roundToInt(),
+                        )
+                    }
+                    ?: stringResource(R.string.level_detail_no_score),
+                caption = stringResource(
+                    if (rankProgress.completed) {
+                        R.string.level_detail_cleared
+                    } else {
+                        R.string.level_detail_not_cleared
+                    },
+                ),
+                modifier = Modifier.weight(1f),
+                trailing = {
+                    ResultMarks(
+                        stars = rankProgress.clampedStars,
+                        crown = rankProgress.crown,
+                        contentDescription = stringResource(
+                            if (rankProgress.crown) {
+                                R.string.level_detail_marks_crown
+                            } else {
+                                R.string.level_detail_marks
+                            },
+                            rankProgress.clampedStars,
+                            RankProgress.MAX_STARS,
+                        ),
+                    )
+                },
+            )
+        }
+    }
+    val details: @Composable ColumnScope.() -> Unit = {
+        LevelPlan(level = level, target = target)
+        LevelNotes(level = level, target = target, rankProgress = rankProgress, locked = locked)
+
+        if (BuildConfig.DEBUG) {
+            RudiButton(
+                text = "DEBUG · LEVEL DATA",
+                onClick = { showLevelData = true },
+                modifier = Modifier.padding(top = 18.dp),
+                style = RudiButtonStyle.Secondary,
+            )
+        }
+    }
+    val modes: @Composable (Modifier) -> Unit = { modifier ->
+        LevelSecondaryModes(
+            practiceEnabled = startable,
+            onPractice = { onStartPractice(level, rank, target.bpm, RunMode.Practice) },
+            metronomeEnabled = metronome != null && !locked,
+            onMetronome = { metronome?.let { onOpenMetronome(level, it) } },
+            modifier = modifier,
+        )
+    }
+    val playRow: @Composable () -> Unit = {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 6.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // The execution reads on the left of the bottom strip, Play on the right.
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.level_detail_execution_label).uppercase(),
+                    style = RudiTextStyles.RowNumber,
+                    color = RudiColors.Muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = executionLabel(level, target),
+                    style = RudiTextStyles.Timer,
+                    color = RudiColors.Text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            LevelPlayRow(
+                enabled = startable,
+                description = stringResource(
+                    when {
+                        !level.playable -> R.string.level_detail_preview_only
+                        locked -> R.string.level_detail_locked_only
+                        else -> R.string.level_detail_start
+                    },
+                ),
+                onPlay = { onStartPractice(level, rank, target.bpm, RunMode.Challenge) },
+            )
+        }
+    }
+
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -122,179 +284,76 @@ fun LevelDetailScreen(
                 },
             )
 
-            // The content scrolls under the small mode buttons, which float over it like a
-            // FAB menu instead of taking a block of the screen (decision 235). The spacer at
-            // the end lets the last card scroll clear of them.
-            var floatingHeight by remember { mutableIntStateOf(0) }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-            ) {
-                Column(
+            if (isLandscape()) {
+                // On its side the floating mode buttons covered half of a screen that is only
+                // a few lines high, and the tempo, the metrics and the plan sat under them.
+                // The card splits in two: what the level is on the left, scrolling; how to
+                // play it -- tempo, the two modes and Play -- pinned on the right (decision 259).
+                Row(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
+                        .weight(1f)
+                        .fillMaxWidth(),
                 ) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(
-                        // The exercise, named: every level used to be titled after its family
-                        // and read `Single Strokes` (decision 152).
-                        text = level.title(family),
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp),
-                        color = RudiColors.Text,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = level.subtitle(family).uppercase(),
-                            style = RudiTextStyles.RowNumber,
-                            color = RudiColors.Muted,
-                            letterSpacing = 1.4.sp,
-                        )
-                        if (!level.playable) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            LevelTag(stringResource(R.string.level_detail_preview_tag))
-                        } else if (locked) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            LevelTag(stringResource(R.string.levels_tab_locked_badge))
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = level.purpose(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = RudiColors.Muted,
-                    )
-
-                    Spacer(modifier = Modifier.height(22.dp))
-                    SectionLabel(stringResource(R.string.level_detail_sticking))
-                    StickingMap(
-                        level = level,
-                        target = target,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    TargetTempo(
-                        bpm = target.bpm,
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 22.dp),
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 18.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState()),
                     ) {
-                        MetricCard(
-                            label = stringResource(R.string.level_detail_attempt),
-                            value = attemptValue(level, target),
-                            caption = attemptCaption(level, target),
-                            modifier = Modifier.weight(1f),
-                        )
-                        MetricCard(
-                            label = stringResource(R.string.level_detail_best_accuracy),
-                            value = rankProgress.bestAccuracy
-                                ?.let {
-                                    stringResource(
-                                        R.string.level_detail_accuracy_value,
-                                        (it * 100f).roundToInt(),
-                                    )
-                                }
-                                ?: stringResource(R.string.level_detail_no_score),
-                            caption = stringResource(
-                                if (rankProgress.completed) {
-                                    R.string.level_detail_cleared
-                                } else {
-                                    R.string.level_detail_not_cleared
-                                },
-                            ),
-                            modifier = Modifier.weight(1f),
-                            trailing = {
-                                ResultMarks(
-                                    stars = rankProgress.clampedStars,
-                                    crown = rankProgress.crown,
-                                    contentDescription = stringResource(
-                                        if (rankProgress.crown) {
-                                            R.string.level_detail_marks_crown
-                                        } else {
-                                            R.string.level_detail_marks
-                                        },
-                                        rankProgress.clampedStars,
-                                        RankProgress.MAX_STARS,
-                                    ),
-                                )
-                            },
-                        )
+                        header()
+                        metrics()
+                        details()
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-
-                    LevelPlan(level = level, target = target)
-                    LevelNotes(level = level, target = target, rankProgress = rankProgress, locked = locked)
-
-                    if (BuildConfig.DEBUG) {
-                        RudiButton(
-                            text = "DEBUG · LEVEL DATA",
-                            onClick = { showLevelData = true },
-                            modifier = Modifier.padding(top = 18.dp),
-                            style = RudiButtonStyle.Secondary,
-                        )
+                    Spacer(modifier = Modifier.width(24.dp))
+                    Column(
+                        modifier = Modifier
+                            .width(LANDSCAPE_PLAY_PANE)
+                            .fillMaxHeight(),
+                    ) {
+                        tempo()
+                        Spacer(modifier = Modifier.weight(1f))
+                        modes(Modifier.align(Alignment.End).padding(end = 6.dp))
+                        playRow()
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Spacer(modifier = Modifier.height(with(LocalDensity.current) { floatingHeight.toDp() }))
                 }
-                LevelSecondaryModes(
-                    practiceEnabled = startable,
-                    onPractice = { onStartPractice(level, rank, target.bpm, RunMode.Practice) },
-                    metronomeEnabled = metronome != null && !locked,
-                    onMetronome = { metronome?.let { onOpenMetronome(level, it) } },
+            } else {
+                // The content scrolls under the small mode buttons, which float over it like a
+                // FAB menu instead of taking a block of the screen (decision 235). The spacer at
+                // the end lets the last card scroll clear of them.
+                var floatingHeight by remember { mutableIntStateOf(0) }
+                Box(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 6.dp, bottom = 4.dp)
-                        .onSizeChanged { floatingHeight = it.height },
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // The execution reads on the left of the bottom strip, Play on the right.
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.level_detail_execution_label).uppercase(),
-                        style = RudiTextStyles.RowNumber,
-                        color = RudiColors.Muted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        text = executionLabel(level, target),
-                        style = RudiTextStyles.Timer,
-                        color = RudiColors.Text,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        .weight(1f)
+                        .fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        header()
+                        tempo()
+                        metrics()
+                        details()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(with(LocalDensity.current) { floatingHeight.toDp() }))
+                    }
+                    modes(
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 6.dp, bottom = 4.dp)
+                            .onSizeChanged { floatingHeight = it.height },
                     )
                 }
-                LevelPlayRow(
-                    enabled = startable,
-                    description = stringResource(
-                        when {
-                            !level.playable -> R.string.level_detail_preview_only
-                            locked -> R.string.level_detail_locked_only
-                            else -> R.string.level_detail_start
-                        },
-                    ),
-                    onPlay = { onStartPractice(level, rank, target.bpm, RunMode.Challenge) },
-                )
+                playRow()
             }
         }
     }
 }
+
+/** Width of the right pane of the card on its side: the tempo, the two modes and Play. */
+private val LANDSCAPE_PLAY_PANE = 300.dp
 
 /**
  * Beats or minutes — a lesson is measured one way or the other, never both. A timed lesson

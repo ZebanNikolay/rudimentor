@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.rudimentor.app.ui.theme.RudiColors
@@ -38,7 +39,7 @@ fun ToolbarScreen(
     toolbar: @Composable () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Scaffold(containerColor = RudiColors.Bg) { insets ->
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { insets ->
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -47,7 +48,11 @@ fun ToolbarScreen(
         ) {
             toolbar()
             Spacer(modifier = Modifier.height(toolbarGap.dp))
+            // Turned on its side the body keeps a readable column in the middle; the toolbar
+            // stays on the full width so the back button is where it always is (decision 259).
             val body = Modifier
+                .align(Alignment.CenterHorizontally)
+                .readableWidth()
                 .fillMaxWidth()
                 .weight(1f)
             Column(

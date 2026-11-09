@@ -1,5 +1,6 @@
 package com.rudimentor.app.ui.metronome
 
+import com.rudimentor.app.ui.component.ScreenInsets
 import androidx.activity.compose.BackHandler
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -210,7 +211,7 @@ fun MetronomeScreen(
         )
     }
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { contentPadding ->
         if (landscape) {
             // Landscape (decision 234): the drum takes the whole left side and grows to the
             // height it has there, the controls stand in one column on the right, and the settings

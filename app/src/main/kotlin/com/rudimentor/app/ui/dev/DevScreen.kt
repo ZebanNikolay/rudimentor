@@ -1,5 +1,6 @@
 package com.rudimentor.app.ui.dev
 
+import com.rudimentor.app.ui.component.ScreenInsets
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -70,7 +71,7 @@ fun DevScreen(
         if (lines.isNotEmpty()) listState.scrollToItem(lines.lastIndex)
     }
 
-    Scaffold(containerColor = RudiColors.Bg) { contentPadding ->
+    Scaffold(containerColor = RudiColors.Bg, contentWindowInsets = ScreenInsets) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
