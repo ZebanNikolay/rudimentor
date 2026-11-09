@@ -3,6 +3,8 @@ package com.rudimentor.app.ui.component
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.waterfall
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,10 +17,13 @@ import androidx.compose.ui.unit.dp
  *
  * The Material default stops at the bars. In portrait that is enough -- the cutout lives in
  * the status bar -- but turned on its side the camera hole is on a short edge with no bar
- * over it, and edge-to-edge content ran under it (decision 259).
+ * over it, and edge-to-edge content ran under it (decision 259). The curved edges of a
+ * waterfall display are added on top, as on the practice stage ([com.rudimentor.app.ui.stageSafePadding]): the
+ * window draws into the cutout area (`SHORT_EDGES`), so nothing else keeps the content off
+ * them.
  */
 val ScreenInsets: WindowInsets
-    @Composable get() = WindowInsets.safeDrawing
+    @Composable get() = WindowInsets.safeDrawing.union(WindowInsets.waterfall)
 
 /** True while the phone is turned on its side. */
 @Composable
