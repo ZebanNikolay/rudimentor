@@ -2511,6 +2511,190 @@
       },
       "rankTargets": {
         "practice": {
+          "bpm": 40,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 40,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 80,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PDD-02",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
+          "bpm": 50,
+          "hitsPerBeat": 3
+        },
+        "groove": {
+          "bpm": 50,
+          "hitsPerBeat": 6
+        },
+        "stage": {
+          "bpm": 90,
+          "hitsPerBeat": 6
+        }
+      }
+    },
+    {
+      "id": "paradiddles.PDD-03",
+      "type": "steady",
+      "modifiers": [],
+      "pattern": {
+        "mode": "repeat",
+        "steps": [
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "L"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          },
+          {
+            "hands": [
+              "R"
+            ]
+          }
+        ]
+      },
+      "technique": {
+        "strokeStyle": "full_rebound",
+        "dynamics": "even",
+        "accents": "none"
+      },
+      "execution": {
+        "beatCount": 64
+      },
+      "rankTargets": {
+        "practice": {
           "bpm": 60,
           "hitsPerBeat": 3
         },
@@ -2525,7 +2709,7 @@
       }
     },
     {
-      "id": "paradiddles.PDD-02",
+      "id": "paradiddles.PDD-04",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -2617,7 +2801,7 @@
       }
     },
     {
-      "id": "paradiddles.PDD-03",
+      "id": "paradiddles.PDD-05",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -2709,7 +2893,7 @@
       }
     },
     {
-      "id": "paradiddles.PDD-04",
+      "id": "paradiddles.PDD-06",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -2801,7 +2985,7 @@
       }
     },
     {
-      "id": "paradiddles.PDD-05",
+      "id": "paradiddles.PDD-07",
       "type": "steady",
       "modifiers": [],
       "pattern": {
@@ -3736,15 +3920,15 @@
       },
       "rankTargets": {
         "practice": {
-          "bpm": 60,
+          "bpm": 40,
           "hitsPerBeat": 3
         },
         "groove": {
-          "bpm": 60,
+          "bpm": 40,
           "hitsPerBeat": 6
         },
         "stage": {
-          "bpm": 100,
+          "bpm": 80,
           "hitsPerBeat": 6
         }
       }
@@ -4953,7 +5137,7 @@
     }
   ],
   "map": {
-    "version": 3,
+    "version": 4,
     "nodes": [
       {
         "lessonId": "paradiddles.SP-01",
@@ -5150,10 +5334,24 @@
         ]
       },
       {
-        "lessonId": "paradiddles.PIM-02",
+        "lessonId": "paradiddles.PDD-02",
         "column": "center",
         "prerequisites": [
           "paradiddles.PDD-01"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PDD-03",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PDD-02"
+        ]
+      },
+      {
+        "lessonId": "paradiddles.PIM-02",
+        "column": "center",
+        "prerequisites": [
+          "paradiddles.PDD-03"
         ]
       },
       {
@@ -5206,7 +5404,7 @@
         ]
       },
       {
-        "lessonId": "paradiddles.PDD-02",
+        "lessonId": "paradiddles.PDD-04",
         "column": "center",
         "prerequisites": [
           "paradiddles.PIS-02"
@@ -5216,7 +5414,7 @@
         "lessonId": "paradiddles.SP-12",
         "column": "center",
         "prerequisites": [
-          "paradiddles.PDD-02"
+          "paradiddles.PDD-04"
         ]
       },
       {
@@ -5241,7 +5439,7 @@
         ]
       },
       {
-        "lessonId": "paradiddles.PDD-03",
+        "lessonId": "paradiddles.PDD-05",
         "column": "center",
         "prerequisites": [
           "paradiddles.TP-03"
@@ -5251,7 +5449,7 @@
         "lessonId": "paradiddles.PIS-03",
         "column": "center",
         "prerequisites": [
-          "paradiddles.PDD-03"
+          "paradiddles.PDD-05"
         ]
       },
       {
@@ -5290,7 +5488,7 @@
         ]
       },
       {
-        "lessonId": "paradiddles.PDD-04",
+        "lessonId": "paradiddles.PDD-06",
         "column": "center",
         "prerequisites": [
           "paradiddles.DP-05"
@@ -5300,11 +5498,11 @@
         "lessonId": "paradiddles.TP-04",
         "column": "center",
         "prerequisites": [
-          "paradiddles.PDD-04"
+          "paradiddles.PDD-06"
         ]
       },
       {
-        "lessonId": "paradiddles.PDD-05",
+        "lessonId": "paradiddles.PDD-07",
         "column": "center",
         "prerequisites": [
           "paradiddles.TP-04"
@@ -5314,7 +5512,7 @@
         "lessonId": "paradiddles.TR-02",
         "column": "right",
         "prerequisites": [
-          "paradiddles.PDD-05"
+          "paradiddles.PDD-07"
         ]
       }
     ]

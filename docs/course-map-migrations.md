@@ -52,3 +52,9 @@ fails before integration for that exact class of defect.
   every rank of both is reset; TR-03 and TR-04 are new; ST-08 now requires TR-03.
   Already completed later lessons stay completed. Note:
   `learning/course/data/migrations/2026-11-07-doubles-transition-ladder-v2.md`.
+- `paradiddles` v4 (decision 260): paradiddle-diddle entry ladder. PDD-01 (40×3)
+  and PDD-02 (50×3) are new; the former PDD-01…05 become PDD-03…07 with the same
+  tempos; WK-06 moves to 40×3 / 40×6 / 80×6; the path is PIS-01 → PDD-01 → PDD-02 →
+  PDD-03 → PIM-02 and TR-02 requires PDD-07. No resets: no PDD lesson had been
+  passed, and the old IDs are not carried over. Note:
+  `learning/course/data/migrations/2026-11-10-paradiddle-diddle-ladder-v4.md`.

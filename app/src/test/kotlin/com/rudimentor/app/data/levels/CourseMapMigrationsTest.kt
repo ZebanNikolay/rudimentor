@@ -68,15 +68,28 @@ class CourseMapMigrationsTest {
     }
 
     @Test
+    fun `paradiddles v4 keeps completion`() {
+        val migration = CourseMapMigrations.plan(
+            familyId = "paradiddles",
+            fromVersion = 3,
+            toVersion = 4,
+        )
+
+        assertTrue(migration.isComplete)
+        assertEquals(4, migration.appliedVersion)
+        assertTrue(migration.completionResets.isEmpty())
+    }
+
+    @Test
     fun `skipped releases apply every intermediate migration exactly once`() {
         val migration = CourseMapMigrations.plan(
             familyId = "paradiddles",
             fromVersion = 1,
-            toVersion = 3,
+            toVersion = 4,
         )
 
         assertTrue(migration.isComplete)
-        assertEquals(3, migration.appliedVersion)
+        assertEquals(4, migration.appliedVersion)
         assertEquals(4, migration.completionResets.size)
     }
 

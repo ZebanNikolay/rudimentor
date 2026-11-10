@@ -56,6 +56,14 @@ internal object CourseMapMigrations {
             fromVersion = 2,
             toVersion = 3,
         ),
+        // Paradiddle-diddle entry ladder (decision 260): PDD-01 and PDD-02 are new, the old
+        // PDD-01…05 move to PDD-03…07 unchanged. No PDD level had been passed, and the old
+        // IDs are not carried over -- their orphaned keys are harmless -- so nothing resets.
+        MapMigrationStep(
+            familyId = "paradiddles",
+            fromVersion = 3,
+            toVersion = 4,
+        ),
         // Transition ladder v2 (decision 249): TR-01 and TR-02 are new exercises under the old
         // IDs, so their passes no longer mean anything; TR-03 and TR-04 are new. Everything
         // else stays, including ST-08+ already passed before TR-03 became its prerequisite.

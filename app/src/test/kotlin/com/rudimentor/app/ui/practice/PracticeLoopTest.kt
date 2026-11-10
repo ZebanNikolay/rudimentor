@@ -34,10 +34,10 @@ import kotlin.math.abs
 @Config(sdk = [35])
 class PracticeLoopTest {
     @Test
-    fun `all 396 authored configurations repeat their complete sequence through distant seams`() {
+    fun `all 402 authored configurations repeat their complete sequence through distant seams`() {
         val course = AssetCourseLoader(RuntimeEnvironment.getApplication().assets).load()
         val levels = course.catalogs.values.flatMap { it.levels }
-        assertEquals(132, levels.size)
+        assertEquals(134, levels.size)
         var configurations = 0
         levels.forEach { level ->
             level.rankTargets.forEach { target ->
@@ -92,7 +92,7 @@ class PracticeLoopTest {
                 assertEquals(label, 6L, loop.hitCount)
             }
         }
-        assertEquals(396, configurations)
+        assertEquals(402, configurations)
     }
 
     @Test
